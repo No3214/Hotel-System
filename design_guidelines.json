@@ -1,0 +1,124 @@
+{
+  "project_name": "VeriÇevir",
+  "identity": {
+    "persona": "E1",
+    "mission": "Create a Hotel Data Intelligence System that feels like a tactical command center mixed with a luxury concierge.",
+    "core_principles": [
+      "Fusion over Imitation: Mix Fintech precision with Hospitality warmth.",
+      "Emotion First: The user should feel 'In Control' and 'Empowered'.",
+      "Content is King: Data is the hero. Use negative space to let metrics breathe.",
+      "Zoom In: Focus on the document status details."
+    ]
+  },
+  "theme": {
+    "mode": "dark",
+    "strategy": "Electric Luxury (Archetype 5 & 7 Hybrid)",
+    "palette": {
+      "background": {
+        "default": "bg-[#030712]",
+        "surface": "bg-[#111827]",
+        "surface_highlight": "bg-[#1f2937]"
+      },
+      "primary": {
+        "base": "bg-indigo-600",
+        "gradient": "bg-gradient-to-r from-indigo-600 to-purple-600",
+        "text": "text-indigo-400"
+      },
+      "accents": {
+        "success": "text-emerald-400",
+        "warning": "text-amber-400",
+        "error": "text-rose-400",
+        "info": "text-blue-400"
+      },
+      "border": "border-white/10"
+    }
+  },
+  "typography": {
+    "headings": {
+      "family": "Manrope, sans-serif",
+      "weights": "font-bold, font-extrabold",
+      "usage": "Use for all H1-H4. Tight tracking (tracking-tight)."
+    },
+    "body": {
+      "family": "Inter, sans-serif",
+      "weights": "font-normal, font-medium",
+      "usage": "Use for paragraphs, labels, data tables."
+    },
+    "mono": {
+      "family": "JetBrains Mono, monospace",
+      "usage": "Use for document IDs, API keys, raw data views."
+    }
+  },
+  "layout_strategy": {
+    "dashboard": "Bento Grid (Mode B: High Density)",
+    "landing": "Asymmetric Tetris Grid (Mode A)",
+    "spacing": "Generous. Use p-6 or p-8 for cards. Gap-6 for grids.",
+    "containers": "Max-width-7xl for dashboard, Full-width for Landing."
+  },
+  "components": {
+    "card": {
+      "styles": "bg-[#111827] border border-white/5 rounded-xl shadow-lg hover:border-indigo-500/30 transition-colors duration-300",
+      "header": "border-b border-white/5 p-6",
+      "content": "p-6"
+    },
+    "button": {
+      "primary": "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-lg shadow-indigo-500/20 rounded-lg px-6 py-2.5 font-medium transition-all hover:scale-[1.02]",
+      "secondary": "bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-lg px-6 py-2.5 font-medium transition-all",
+      "ghost": "hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
+    },
+    "input": {
+      "styles": "bg-[#030712] border border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-lg px-4 py-2.5 text-white placeholder:text-gray-600 transition-all"
+    },
+    "status_badge": {
+      "success": "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-0.5 rounded-full text-xs font-medium",
+      "processing": "bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2.5 py-0.5 rounded-full text-xs font-medium animate-pulse",
+      "error": "bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2.5 py-0.5 rounded-full text-xs font-medium",
+      "pending": "bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2.5 py-0.5 rounded-full text-xs font-medium"
+    }
+  },
+  "motion": {
+    "page_transition": {
+      "initial": { "opacity": 0, "y": 10 },
+      "animate": { "opacity": 1, "y": 0 },
+      "exit": { "opacity": 0, "y": -10 },
+      "transition": { "duration": 0.3, "ease": "easeOut" }
+    },
+    "list_stagger": {
+      "container": {
+        "hidden": { "opacity": 0 },
+        "show": {
+          "opacity": 1,
+          "transition": { "staggerChildren": 0.05 }
+        }
+      },
+      "item": {
+        "hidden": { "opacity": 0, "y": 20 },
+        "show": { "opacity": 1, "y": 0 }
+      }
+    }
+  },
+  "assets": {
+    "images": {
+      "hero_bg": "https://images.unsplash.com/photo-1737333635317-7bdbd58bcbda?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzOTB8MHwxfHNlYXJjaHw0fHxkaWdpdGFsJTIwZG9jdW1lbnQlMjBzY2FubmluZyUyMGFic3RyYWN0JTIwZ2xvd2luZ3xlbnwwfHx8fDE3NzExMDU1Mzd8MA&ixlib=rb-4.1.0&q=85",
+      "feature_abstract": "https://images.unsplash.com/photo-1655793310630-5bdd175e8b35?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzOTB8MHwxfHNlYXJjaHwxfHxkaWdpdGFsJTIwZG9jdW1lbnQlMjBzY2FubmluZyUyMGFic3RyYWN0JTIwZ2xvd2luZ3xlbnwwfHx8fDE3NzExMDU1Mzd8MA&ixlib=rb-4.1.0&q=85",
+      "manager_working": "https://images.unsplash.com/photo-1748207904153-a45c1ea3eaed?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2Mzl8MHwxfHNlYXJjaHwyfHxob3RlbCUyMG1hbmFnZXIlMjB3b3JraW5nJTIwb24lMjB0YWJsZXQlMjBoYXBweXxlbnwwfHx8fDE3NzExMDU1MzZ8MA&ixlib=rb-4.1.0&q=85"
+    },
+    "icons": "Use 'lucide-react' for all UI icons. Use 'Phosphor Icons' (Duotone) if available for feature cards."
+  },
+  "universal_guidelines": [
+    "NEVER use gradients on text unless it is a massive H1.",
+    "Dark Mode is mandatory. Do not create a light mode toggle.",
+    "Use 'Lucide React' icons with stroke-width={1.5} for elegance.",
+    "All interactive elements must have a data-testid attribute.",
+    "Use 'Sonner' for toasts.",
+    "Avoid 'Inter' for Headings. Use 'Manrope'.",
+    "Charts must use the custom 'Recharts' configuration with dark tooltips."
+  ],
+  "instructions_to_main_agent": [
+    "Install 'lucide-react', 'recharts', 'framer-motion', 'clsx', 'tailwind-merge' if not present.",
+    "Update tailwind.config.js to include the custom colors and fonts.",
+    "Create a 'Layout' component that wraps the app with the dark theme provider (if using next-themes) or just sets the class 'dark' on html.",
+    "Implement the 'Dashboard' first, then 'Upload', then 'Knowledge Base'.",
+    "Use the provided image URLs for the Landing Page hero and feature sections."
+  ]
+}
