@@ -10,7 +10,7 @@ requests>=2.31.0
 emergentintegrations==0.1.0
 groq==1.0.0
 openai>=1.0.0
-anthropogenic>=0.18.0
+anthropic>=0.18.0
 google-generativeai>=0.3.0
 httpx>=0.25.0
 PyPDF2>=3.0.0
