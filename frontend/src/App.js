@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import '@/App.css';
 import '@/index.css';
-import { LayoutDashboard, Upload, BookOpen, CheckSquare, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Upload, BookOpen, CheckSquare, MessageSquare, Menu, X } from 'lucide-react';
 
 // Pages
 import Dashboard from './pages/Dashboard';
 import UploadPage from './pages/UploadPage';
 import KnowledgeBasePage from './pages/KnowledgeBasePage';
 import TasksPage from './pages/TasksPage';
+import WhatsAppPage from './pages/WhatsAppPage';
 
 const App = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -17,6 +18,7 @@ const App = () => {
   const navigation = [
     { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
     { id: 'upload', name: 'Doküman Yükle', icon: Upload },
+    { id: 'whatsapp', name: 'WhatsApp', icon: MessageSquare },
     { id: 'knowledge', name: 'Bilgi Tabanı', icon: BookOpen },
     { id: 'tasks', name: 'Görevler', icon: CheckSquare },
   ];
@@ -27,6 +29,8 @@ const App = () => {
         return <Dashboard onNavigate={setCurrentPage} />;
       case 'upload':
         return <UploadPage />;
+      case 'whatsapp':
+        return <WhatsAppPage />;
       case 'knowledge':
         return <KnowledgeBasePage />;
       case 'tasks':
