@@ -20,6 +20,7 @@ from models import (
 )
 from llm_council import llm_council
 from document_processor import DocumentProcessor
+from whatsapp_parser import WhatsAppParser
 
 # Setup logging
 logging.basicConfig(
@@ -468,6 +469,55 @@ async def update_task_status(task_id: str, status: str):
         raise
     except Exception as e:
         logger.error(f"Update task error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ==================== WHATSAPP PROCESSING ====================
+
+@api_router.post("/whatsapp/parse")
+async def parse_whatsapp_export(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...)
+):
+    """Parse WhatsApp export file and create tasks"""
+    try:
+        # Read file content
+        content = await file.read()
+        text_content = content.decode('utf-8')
+        
+        # Parse WhatsApp messages
+        parser = WhatsAppParser()
+        parsed_data = parser.parse_export_file(text_content)
+        
+        # Create tasks from messages
+        whatsapp_tasks = parser.create_tasks_from_whatsapp(parsed_data)
+        
+        # Save to database
+        created_task_ids = []
+        for task_data in whatsapp_tasks:
+            task = Task(
+                title=task_data['title'],
+                description=task_data['description'],
+                priority=TaskPriority(task_data['priority']),
+                source='whatsapp',
+                metadata=task_data.get('metadata', {})
+            )
+            result = await db.tasks.insert_one(task.model_dump())
+            created_task_ids.append(str(result.inserted_id))
+        
+        return {
+            "success": True,
+            "message": "WhatsApp mesajları işlendi",
+            "statistics": {
+                "total_messages": parsed_data['total_messages'],
+                "unique_senders": len(parsed_data['unique_senders']),
+                "tasks_created": len(created_task_ids)
+            },
+            "senders": parsed_data['unique_senders'],
+            "task_ids": created_task_ids
+        }
+        
+    except Exception as e:
+        logger.error(f"WhatsApp parse error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # ==================== SEMANTIC SEARCH ====================
