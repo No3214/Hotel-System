@@ -19,7 +19,7 @@ export default function KnowledgePage() {
       .catch(console.error)
       .finally(() => setLoading(false));
   };
-  useEffect(() => { load(); }, [search]);
+  useEffect(() => { load(); }, [search]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCreate = async () => {
     if (!form.title || !form.content) return;

@@ -17,7 +17,7 @@ export default function MessagesPage() {
       .catch(console.error)
       .finally(() => setLoading(false));
   };
-  useEffect(() => { load(); }, [filter]);
+  useEffect(() => { load(); }, [filter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleTest = async () => {
     if (!testForm.message) return;

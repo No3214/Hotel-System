@@ -33,7 +33,7 @@ export default function TasksPage() {
     getTasks(params).then(r => setTasks(r.data.tasks)).catch(console.error).finally(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, [filter]);
+  useEffect(() => { load(); }, [filter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCreate = async () => {
     if (!form.title) return;
