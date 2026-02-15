@@ -172,6 +172,15 @@ export const getSocialTemplates = () => api.get('/social/templates');
 export const getSocialStats = () => api.get('/social/stats');
 export const convertImageLink = (url) => api.post('/social/convert-image-link', { url });
 
+// Kitchen Dashboard
+export const getKitchenOrders = (params) => api.get('/kitchen/orders', { params });
+export const createKitchenOrder = (data) => api.post('/kitchen/orders', data);
+export const getKitchenOrder = (id) => api.get(`/kitchen/orders/${id}`);
+export const updateKitchenOrderStatus = (id, data) => api.put(`/kitchen/orders/${id}/status`, data);
+export const cancelKitchenOrder = (id) => api.delete(`/kitchen/orders/${id}`);
+export const getKitchenSummary = () => api.get('/kitchen/summary');
+export const getKitchenNotifications = () => api.get('/kitchen/notifications');
+
 // Auth
 export const login = (data) => api.post('/auth/login', data);
 export const getMe = () => api.get('/auth/me');

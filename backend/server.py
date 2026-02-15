@@ -32,6 +32,7 @@ from routers.automation import router as automation_router
 from routers.public_menu import router as public_menu_router
 from routers.menu_admin import router as menu_admin_router
 from routers.social_media import router as social_media_router
+from routers.kitchen import router as kitchen_router
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -105,6 +106,7 @@ api.include_router(automation_router)
 api.include_router(public_menu_router)
 api.include_router(menu_admin_router)
 api.include_router(social_media_router)
+api.include_router(kitchen_router)
 
 app.include_router(api)
 
