@@ -109,4 +109,12 @@ export const autoScheduleHousekeeping = () => api.post('/housekeeping/auto-sched
 // Hotel
 export const getHotelHistory = () => api.get('/hotel/history');
 
+// Reviews
+export const getReviews = (params) => api.get('/reviews', { params });
+export const createReview = (data) => api.post('/reviews', data);
+export const generateReviewResponse = (reviewId, tone) => api.post(`/reviews/${reviewId}/generate-response?tone=${tone}`);
+export const updateReview = (id, data) => api.patch(`/reviews/${id}`, data);
+export const deleteReview = (id) => api.delete(`/reviews/${id}`);
+export const getReviewStats = () => api.get('/reviews/stats');
+
 export default api;
