@@ -181,6 +181,39 @@ async def checkout_cleaning_job():
 
 
 # =====================================================
+# JOB 4: AKSAM ODA KONTROLU (Her gun 18:00)
+# =====================================================
+
+async def evening_room_check_job():
+    """Check-out yapan misafirlerin odalarinda klima ve isiklarin kapatilmasini kontrol et"""
+    try:
+        checkouts = await get_todays_checkouts()
+
+        if not checkouts:
+            msg = "Bugun check-out yapan misafir yok. Oda kontrolu gerekmiyor."
+            await send_group_notification("evening_room_check", msg)
+            return
+
+        room_numbers = []
+        for res in checkouts:
+            room_id = res.get("room_id", "")
+            if room_id:
+                room_numbers.append(room_id)
+
+        if room_numbers:
+            rooms_text = ", ".join(sorted(room_numbers))
+            msg = f"Aksam kontrol: Bugun cikis yapan odalar ({rooms_text}) kontrol edilmeli. Klima ve isiklarin kapatildiginden emin olunuz."
+        else:
+            msg = f"Aksam kontrol: Bugun {len(checkouts)} oda cikis yapti. Klima ve isiklarin kapatildigini kontrol ediniz."
+
+        await send_group_notification("evening_room_check", msg)
+        logger.info(f"Aksam oda kontrol bildirimi gonderildi: {len(checkouts)} oda")
+
+    except Exception as e:
+        logger.error(f"Aksam oda kontrol hatasi: {e}")
+
+
+# =====================================================
 # SCHEDULER BASLATMA
 # =====================================================
 
