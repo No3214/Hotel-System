@@ -30,6 +30,7 @@ import TableReservationsPage from './pages/TableReservationsPage';
 import LifecyclePage from './pages/LifecyclePage';
 import AutomationPage from './pages/AutomationPage';
 import SocialMediaPage from './pages/SocialMediaPage';
+import KitchenPage from './pages/KitchenPage';
 
 const NAV_SECTIONS = [
   {
@@ -61,6 +62,7 @@ const NAV_SECTIONS = [
       { id: 'housekeeping', name: 'Kat Hizmetleri', icon: BedDouble },
       { id: 'staff', name: 'Personel', icon: UserCog },
       { id: 'table_reservations', name: 'Masa Rez.', icon: UtensilsCrossed },
+      { id: 'kitchen', name: 'Mutfak', icon: UtensilsCrossed },
     ],
   },
   {
@@ -100,6 +102,7 @@ const PAGES = {
   lifecycle: LifecyclePage,
   automation: AutomationPage,
   social: SocialMediaPage,
+  kitchen: KitchenPage,
   guide: FocaGuidePage,
   settings: SettingsPage,
 };
