@@ -220,7 +220,7 @@ Pricing, TableReservations, Lifecycle, Automation, Kitchen,
 | Aile Odasi | 6.000 TL |
 
 ## Upcoming Tasks
-- P1: WhatsApp Entegrasyonu (Twilio) - Otomatik hatirlama/tesekkur mesajlari
+- P1: WhatsApp Business API Yapilandirmasi (Meta Developer Portal ayarlari bekleniyor)
 - P1: HotelRunner API entegrasyonu (API bilgileri bekleniyor)
 - P2: Anti-halucinasyon modulu (chatbot)
 - P2: Rate limiter (AI endpoint'leri)
