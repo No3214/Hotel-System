@@ -49,6 +49,7 @@ const NAV_SECTIONS = [
     items: [
       { id: 'chatbot', name: 'AI Asistan', icon: Sparkles },
       { id: 'messages', name: 'Mesajlar', icon: MessageCircle },
+      { id: 'whatsapp', name: 'WhatsApp', icon: MessageCircle },
       { id: 'campaigns', name: 'Kampanyalar', icon: Mail },
       { id: 'reviews', name: 'Google Yorumlari', icon: Star },
       { id: 'lifecycle', name: 'Misafir Dongusu', icon: Heart },
