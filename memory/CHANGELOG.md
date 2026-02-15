@@ -1,5 +1,23 @@
 # Kozbeyli Konagi - Degisiklik Gunlugu
 
+## [2026-02-15] - Guvenlik + Sadakat Sistemi
+
+### Eklendi
+- **Anti-Halucinasyon Modulu:** AI yanitlarinda fiyat/telefon/hizmet dogrulamasi, confidence score
+- **Rate Limiter:** Session bazli istek siniri (chatbot: 15/dk, reviews: 10/dk), 429 yaniti
+- **Musteri Sadakat Sistemi:**
+  - 4 seviye: Bronz (0%), Gumus (%5), Altin (%10), Platin (%15)
+  - Telefon/email ile tekrar gelen misafir eslestirme
+  - Misafir profili + konaklama gecmisi
+  - VIP misafir listesi
+- **GuestsPage:** Sadakat kartlari, VIP tab, detay dialog
+
+### Test Sonuclari
+- Backend: 19/19 (%100)
+- Frontend: Tum sayfalar calisir durumda (%100)
+
+---
+
 ## [2026-02-15] - Operasyonel Otomasyon + Etkinlik Yonetimi
 
 ### Eklendi
