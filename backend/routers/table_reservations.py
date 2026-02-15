@@ -146,15 +146,39 @@ async def find_available_tables(date: str, time: str, meal_type: MealType, party
     overlapping = await get_table_reservations_in_range(date, time, end_time)
     occupied_tables = {res.get("table_id") for res in overlapping if res.get("table_id")}
     
-    # Find suitable tables
+    # Also check combined table reservations
+    for res in overlapping:
+        if res.get("combined_table_ids"):
+            for tid in res["combined_table_ids"]:
+                occupied_tables.add(tid)
+    
     available = []
+    
+    # First check single tables
     for table in TABLES:
         if table["id"] in occupied_tables:
             continue
         if table["capacity"] >= party_size:
-            available.append(table)
+            available.append({**table, "is_combined": False})
     
-    # Sort by capacity (prefer smaller suitable tables)
+    # For larger groups (5+), check combinable tables
+    if party_size > 4:
+        for combo in COMBINABLE_TABLES:
+            if combo["combined_capacity"] >= party_size:
+                # Check if all tables in combo are available
+                all_available = all(tid not in occupied_tables for tid in combo["ids"])
+                if all_available:
+                    available.append({
+                        "id": "_".join(combo["ids"]),
+                        "name": combo["name"],
+                        "capacity": combo["combined_capacity"],
+                        "type": "combined",
+                        "location": combo["location"],
+                        "is_combined": True,
+                        "combined_table_ids": combo["ids"],
+                    })
+    
+    # Sort by capacity (prefer smaller suitable tables/combos)
     available.sort(key=lambda t: t["capacity"])
     return available
 
