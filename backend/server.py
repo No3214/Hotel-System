@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, UploadFile, File, HTTPException, BackgroundTasks
+from fastapi import FastAPI, APIRouter, HTTPException, Query
 from fastapi.responses import JSONResponse
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -6,590 +6,582 @@ from dotenv import load_dotenv
 from pathlib import Path
 import os
 import logging
-from datetime import datetime, timezone, timedelta
-from typing import List, Optional
-import shutil
+from datetime import datetime, timezone
+from typing import Optional
 
-# Import our modules
-from config import MONGO_URL, DB_NAME, CORS_ORIGINS, UPLOAD_DIR, MAX_UPLOAD_SIZE, SUPPORTED_FILE_TYPES
+from config import MONGO_URL, DB_NAME, CORS_ORIGINS
 from models import (
-    Document, DocumentCreate, DocumentStatus,
-    KnowledgeItem, KnowledgeItemCreate, KnowledgeItemType,
-    Task, TaskCreate, TaskStatus, TaskPriority,
-    ProcessingJob, DashboardStats
+    ChatRequest, TaskCreate, TaskUpdate, TaskStatus, TaskPriority,
+    GuestCreate, ReservationCreate, ReservationStatus, RoomStatus,
+    EventCreate, HousekeepingCreate, HousekeepingStatus,
+    KnowledgeCreate, StaffCreate, WhatsAppMessage,
 )
-from llm_council import llm_council
-from document_processor import DocumentProcessor
-from whatsapp_parser import WhatsAppParser
+from hotel_data import (
+    HOTEL_INFO, ROOMS, RESTAURANT_MENU, HOTEL_AWARDS, HOTEL_RATINGS,
+    HOTEL_POLICIES, HOTEL_HISTORY, FOCA_LOCAL_GUIDE, GEMINI_SYSTEM_PROMPT,
+)
 
-# Setup logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Load environment
-ROOT_DIR = Path(__file__).parent
-load_dotenv(ROOT_DIR / '.env')
+load_dotenv(Path(__file__).parent / '.env')
 
-# MongoDB connection
-try:
-    client = AsyncIOMotorClient(MONGO_URL)
-    db = client[DB_NAME]
-    logger.info(f"Connected to MongoDB: {DB_NAME}")
-except Exception as e:
-    logger.error(f"MongoDB connection error: {e}")
-    raise
+client = AsyncIOMotorClient(MONGO_URL)
+db = client[DB_NAME]
 
-# Create FastAPI app
-app = FastAPI(title="VeriÇevir Hotel Management API")
-api_router = APIRouter(prefix="/api")
+app = FastAPI(title="Kozbeyli Konagi API")
+api = APIRouter(prefix="/api")
 
-# ==================== BACKGROUND TASKS ====================
 
-async def process_document_background(document_id: str, file_path: str, file_type: str):
-    """Background task to process uploaded document"""
+# ==================== HELPERS ====================
+
+def utcnow():
+    return datetime.now(timezone.utc).isoformat()
+
+
+def new_id():
+    import uuid
+    return str(uuid.uuid4())
+
+
+def clean_doc(doc):
+    if doc and "_id" in doc:
+        del doc["_id"]
+    return doc
+
+
+def clean_docs(docs):
+    return [clean_doc(d) for d in docs]
+
+
+# ==================== HEALTH ====================
+
+@api.get("/health")
+async def health():
     try:
-        logger.info(f"Processing document {document_id}...")
-        
-        # Update status to processing
-        await db.documents.update_one(
-            {"id": document_id},
-            {"$set": {"status": DocumentStatus.PROCESSING, "updated_at": datetime.now(timezone.utc)}}
-        )
-        
-        # Step 1: Extract text from file
-        logger.info("Step 1: Extracting text...")
-        extracted = await DocumentProcessor.process_file(file_path, file_type)
-        
-        if extracted["status"] == "error":
-            raise Exception(extracted.get("error", "Extraction failed"))
-        
-        raw_content = extracted["raw_content"]
-        content_hash = extracted["content_hash"]
-        needs_ocr = extracted["needs_ocr"]
-        
-        # Update document with raw content
-        await db.documents.update_one(
-            {"id": document_id},
-            {"$set": {
-                "raw_content": raw_content,
-                "content_hash": content_hash,
-                "metadata.needs_ocr": needs_ocr,
-                "metadata.content_length": extracted["content_length"]
-            }}
-        )
-        
-        # Step 2: LLM Council Analysis
-        logger.info("Step 2: Running LLM Council analysis...")
-        analysis_results = await llm_council.orchestrate_full_analysis(
-            content=raw_content,
-            file_type=file_type,
-            file_path=file_path if needs_ocr else None
-        )
-        
-        # Step 3: Save extracted knowledge items
-        logger.info("Step 3: Saving knowledge items...")
-        knowledge_items = []
-        deep_extraction = analysis_results.get("deep_extraction", {})
-        
-        if "knowledge_items" in deep_extraction:
-            for item_data in deep_extraction["knowledge_items"]:
-                knowledge_item = KnowledgeItem(
-                    document_id=document_id,
-                    item_type=KnowledgeItemType(item_data.get("type", "standard")),
-                    title=item_data.get("title", "Başlıksız"),
-                    content=item_data.get("content", ""),
-                    applicable_to=item_data.get("applicable_to", []),
-                    priority=item_data.get("priority", 5),
-                    embedding=analysis_results.get("embedding")
-                )
-                
-                result = await db.knowledge_items.insert_one(knowledge_item.model_dump())
-                knowledge_items.append(str(result.inserted_id))
-        
-        # Step 4: Create tasks
-        logger.info("Step 4: Creating tasks...")
-        created_tasks = []
-        
-        if "tasks" in deep_extraction:
-            for task_data in deep_extraction["tasks"]:
-                due_date = None
-                if "due_days" in task_data:
-                    due_date = datetime.now(timezone.utc) + timedelta(days=task_data["due_days"])
-                
-                task = Task(
-                    document_id=document_id,
-                    title=task_data.get("title", "Görev"),
-                    description=task_data.get("description"),
-                    assignee_role=task_data.get("assignee_role"),
-                    priority=TaskPriority(task_data.get("priority", "normal")),
-                    due_date=due_date,
-                    source="ai"
-                )
-                
-                result = await db.tasks.insert_one(task.model_dump())
-                created_tasks.append(str(result.inserted_id))
-        
-        # Step 5: Update document with final results
-        logger.info("Step 5: Finalizing...")
-        fast_analysis = analysis_results.get("fast_analysis", {})
-        quality_check = analysis_results.get("quality_check", {})
-        
-        await db.documents.update_one(
-            {"id": document_id},
-            {"$set": {
-                "status": DocumentStatus.COMPLETED,
-                "processed_at": datetime.now(timezone.utc),
-                "extracted_data": {
-                    "category": fast_analysis.get("category"),
-                    "title": fast_analysis.get("title"),
-                    "summary": fast_analysis.get("summary"),
-                    "keywords": fast_analysis.get("keywords", []),
-                    "knowledge_items_count": len(knowledge_items),
-                    "tasks_count": len(created_tasks)
-                },
-                "confidence_score": analysis_results.get("final_confidence", 0.5),
-                "embedding": analysis_results.get("embedding"),
-                "metadata.quality_check": quality_check,
-                "metadata.knowledge_item_ids": knowledge_items,
-                "metadata.task_ids": created_tasks
-            }}
-        )
-        
-        logger.info(f"Document {document_id} processed successfully!")
-        
-    except Exception as e:
-        logger.error(f"Error processing document {document_id}: {e}")
-        # Mark as failed
-        await db.documents.update_one(
-            {"id": document_id},
-            {"$set": {
-                "status": DocumentStatus.FAILED,
-                "metadata.error": str(e),
-                "updated_at": datetime.now(timezone.utc)
-            }}
-        )
-
-# ==================== API ROUTES ====================
-
-@api_router.get("/")
-async def root():
-    return {"message": "VeriÇevir API - Otel Yönetim Zeka Sistemi", "version": "1.0.0"}
-
-@api_router.get("/health")
-async def health_check():
-    try:
-        # Check MongoDB connection
         await db.command("ping")
-        return {"status": "healthy", "database": "connected"}
+        return {"status": "healthy", "database": "connected", "hotel": HOTEL_INFO["name"]}
     except Exception as e:
         return {"status": "unhealthy", "error": str(e)}
 
+
 # ==================== DASHBOARD ====================
 
-@api_router.get("/dashboard/stats", response_model=DashboardStats)
-async def get_dashboard_stats():
-    """Get dashboard statistics"""
-    try:
-        # Count documents
-        total_documents = await db.documents.count_documents({})
-        documents_processed = await db.documents.count_documents({"status": DocumentStatus.COMPLETED})
-        pending_documents = await db.documents.count_documents({"status": DocumentStatus.PENDING})
-        
-        # Count knowledge items
-        total_knowledge_items = await db.knowledge_items.count_documents({"status": "active"})
-        
-        # Count tasks
-        total_tasks = await db.tasks.count_documents({})
-        pending_tasks = await db.tasks.count_documents({"status": TaskStatus.PENDING})
-        
-        # Calculate average quality score
-        pipeline = [
-            {"$match": {"status": DocumentStatus.COMPLETED, "confidence_score": {"$exists": True}}},
-            {"$group": {"_id": None, "avg_quality": {"$avg": "$confidence_score"}}}
+@api.get("/dashboard/stats")
+async def dashboard_stats():
+    total_rooms = HOTEL_INFO["total_rooms"]
+    occupied = await db.reservations.count_documents({"status": ReservationStatus.CHECKED_IN})
+    total_guests = await db.guests.count_documents({})
+    total_tasks = await db.tasks.count_documents({})
+    pending_tasks = await db.tasks.count_documents({"status": TaskStatus.PENDING})
+    total_reservations = await db.reservations.count_documents({})
+    active_events = await db.events.count_documents({"is_active": True})
+    housekeeping_pending = await db.housekeeping.count_documents({"status": HousekeepingStatus.PENDING})
+
+    recent = await db.tasks.find({}, {"_id": 0}).sort("created_at", -1).limit(5).to_list(5)
+
+    return {
+        "total_rooms": total_rooms,
+        "occupied_rooms": occupied,
+        "available_rooms": total_rooms - occupied,
+        "occupancy_rate": round((occupied / total_rooms) * 100, 1) if total_rooms else 0,
+        "total_guests": total_guests,
+        "total_tasks": total_tasks,
+        "pending_tasks": pending_tasks,
+        "total_reservations": total_reservations,
+        "active_events": active_events,
+        "housekeeping_pending": housekeeping_pending,
+        "ratings": HOTEL_RATINGS,
+        "recent_tasks": recent,
+    }
+
+
+# ==================== HOTEL INFO ====================
+
+@api.get("/hotel/info")
+async def get_hotel_info():
+    return HOTEL_INFO
+
+
+@api.get("/hotel/awards")
+async def get_hotel_awards():
+    return {"awards": HOTEL_AWARDS}
+
+
+@api.get("/hotel/policies")
+async def get_hotel_policies():
+    return HOTEL_POLICIES
+
+
+@api.get("/hotel/history")
+async def get_hotel_history():
+    return HOTEL_HISTORY
+
+
+@api.get("/hotel/guide")
+async def get_local_guide():
+    return FOCA_LOCAL_GUIDE
+
+
+# ==================== ROOMS ====================
+
+@api.get("/rooms")
+async def list_rooms():
+    db_rooms = await db.rooms.find({}, {"_id": 0}).to_list(100)
+    if not db_rooms:
+        return {"rooms": ROOMS}
+    return {"rooms": db_rooms}
+
+
+@api.get("/rooms/{room_id}")
+async def get_room(room_id: str):
+    room = await db.rooms.find_one({"room_id": room_id}, {"_id": 0})
+    if not room:
+        for r in ROOMS:
+            if r["room_id"] == room_id:
+                return r
+        raise HTTPException(404, "Oda bulunamadi")
+    return room
+
+
+# ==================== MENU ====================
+
+@api.get("/menu")
+async def get_menu():
+    return {"menu": RESTAURANT_MENU, "restaurant": HOTEL_INFO["restaurant_name"]}
+
+
+@api.get("/menu/{category}")
+async def get_menu_category(category: str):
+    if category not in RESTAURANT_MENU:
+        raise HTTPException(404, f"Kategori bulunamadi: {category}")
+    return {"category": category, "items": RESTAURANT_MENU[category]}
+
+
+# ==================== GUESTS ====================
+
+@api.get("/guests")
+async def list_guests(search: Optional[str] = None, limit: int = 50, skip: int = 0):
+    query = {}
+    if search:
+        query["$or"] = [
+            {"name": {"$regex": search, "$options": "i"}},
+            {"email": {"$regex": search, "$options": "i"}},
+            {"phone": {"$regex": search, "$options": "i"}},
         ]
-        quality_result = await db.documents.aggregate(pipeline).to_list(1)
-        quality_score = quality_result[0]["avg_quality"] if quality_result else 0.7
-        
-        # Get recent activities (last 10 documents)
-        recent_docs = await db.documents.find(
-            {},
-            {"_id": 0, "id": 1, "filename": 1, "status": 1, "created_at": 1}
-        ).sort("created_at", -1).limit(10).to_list(10)
-        
-        return DashboardStats(
-            total_documents=total_documents,
-            documents_processed=documents_processed,
-            pending_documents=pending_documents,
-            total_knowledge_items=total_knowledge_items,
-            total_tasks=total_tasks,
-            pending_tasks=pending_tasks,
-            quality_score=round(quality_score, 2),
-            recent_activities=recent_docs
-        )
-        
-    except Exception as e:
-        logger.error(f"Dashboard stats error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    guests = await db.guests.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    total = await db.guests.count_documents(query)
+    return {"guests": guests, "total": total}
 
-# ==================== DOCUMENTS ====================
 
-@api_router.post("/documents/upload")
-async def upload_document(
-    background_tasks: BackgroundTasks,
-    file: UploadFile = File(...)
-):
-    """Upload and process a document"""
-    try:
-        # Validate file type
-        if file.content_type not in SUPPORTED_FILE_TYPES:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Desteklenmeyen dosya tipi: {file.content_type}"
-            )
-        
-        # Validate file size
-        file.file.seek(0, 2)  # Seek to end
-        file_size = file.file.tell()
-        file.file.seek(0)  # Reset
-        
-        if file_size > MAX_UPLOAD_SIZE:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Dosya çok büyük. Maksimum: {MAX_UPLOAD_SIZE / 1024 / 1024}MB"
-            )
-        
-        # Create document record
-        document = Document(
-            filename=file.filename,
-            file_type=file.content_type,
-            file_size=file_size,
-            file_url="",
-            status=DocumentStatus.PENDING
-        )
-        
-        # Save file
-        file_path = UPLOAD_DIR / f"{document.id}_{file.filename}"
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-        
-        document.file_url = str(file_path)
-        
-        # Insert to database
-        await db.documents.insert_one(document.model_dump())
-        
-        # Schedule background processing
-        background_tasks.add_task(
-            process_document_background,
-            document.id,
-            str(file_path),
-            file.content_type
-        )
-        
-        return {
-            "success": True,
-            "document_id": document.id,
-            "filename": file.filename,
-            "status": "processing",
-            "message": "Dosya yüklendi ve işleniyor..."
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Upload error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+@api.post("/guests")
+async def create_guest(data: GuestCreate):
+    guest = {
+        "id": new_id(),
+        **data.model_dump(),
+        "created_at": utcnow(),
+        "updated_at": utcnow(),
+        "total_stays": 0,
+        "vip": False,
+    }
+    await db.guests.insert_one(guest)
+    return clean_doc(guest)
 
-@api_router.get("/documents")
-async def list_documents(
-    status: Optional[str] = None,
-    limit: int = 50,
-    skip: int = 0
-):
-    """List documents"""
-    try:
-        query = {}
-        if status:
-            query["status"] = status
-        
-        documents = await db.documents.find(
-            query,
-            {"_id": 0}
-        ).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
-        
-        total = await db.documents.count_documents(query)
-        
-        return {
-            "documents": documents,
-            "total": total,
-            "limit": limit,
-            "skip": skip
-        }
-        
-    except Exception as e:
-        logger.error(f"List documents error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
 
-@api_router.get("/documents/{document_id}")
-async def get_document(document_id: str):
-    """Get document details"""
-    try:
-        document = await db.documents.find_one({"id": document_id}, {"_id": 0})
-        
-        if not document:
-            raise HTTPException(status_code=404, detail="Doküman bulunamadı")
-        
-        return document
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Get document error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+@api.get("/guests/{guest_id}")
+async def get_guest(guest_id: str):
+    guest = await db.guests.find_one({"id": guest_id}, {"_id": 0})
+    if not guest:
+        raise HTTPException(404, "Misafir bulunamadi")
+    return guest
 
-# ==================== KNOWLEDGE BASE ====================
 
-@api_router.get("/knowledge")
-async def list_knowledge_items(
-    item_type: Optional[str] = None,
-    search: Optional[str] = None,
-    limit: int = 50,
-    skip: int = 0
-):
-    """List knowledge items"""
-    try:
-        query = {"status": "active"}
-        
-        if item_type:
-            query["item_type"] = item_type
-        
-        if search:
-            query["$or"] = [
-                {"title": {"$regex": search, "$options": "i"}},
-                {"content": {"$regex": search, "$options": "i"}}
-            ]
-        
-        items = await db.knowledge_items.find(
-            query,
-            {"_id": 0}
-        ).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
-        
-        total = await db.knowledge_items.count_documents(query)
-        
-        return {
-            "items": items,
-            "total": total,
-            "limit": limit,
-            "skip": skip
-        }
-        
-    except Exception as e:
-        logger.error(f"List knowledge error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+@api.patch("/guests/{guest_id}")
+async def update_guest(guest_id: str, data: dict):
+    data["updated_at"] = utcnow()
+    result = await db.guests.update_one({"id": guest_id}, {"$set": data})
+    if result.matched_count == 0:
+        raise HTTPException(404, "Misafir bulunamadi")
+    return {"success": True}
 
-@api_router.get("/knowledge/{item_id}")
-async def get_knowledge_item(item_id: str):
-    """Get knowledge item details"""
-    try:
-        item = await db.knowledge_items.find_one({"id": item_id}, {"_id": 0})
-        
-        if not item:
-            raise HTTPException(status_code=404, detail="Bilgi öğesi bulunamadı")
-        
-        return item
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Get knowledge item error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+
+# ==================== RESERVATIONS ====================
+
+@api.get("/reservations")
+async def list_reservations(status: Optional[str] = None, limit: int = 50, skip: int = 0):
+    query = {}
+    if status:
+        query["status"] = status
+    items = await db.reservations.find(query, {"_id": 0}).sort("check_in", -1).skip(skip).limit(limit).to_list(limit)
+    total = await db.reservations.count_documents(query)
+    return {"reservations": items, "total": total}
+
+
+@api.post("/reservations")
+async def create_reservation(data: ReservationCreate):
+    reservation = {
+        "id": new_id(),
+        **data.model_dump(),
+        "status": ReservationStatus.PENDING,
+        "created_at": utcnow(),
+        "updated_at": utcnow(),
+    }
+    await db.reservations.insert_one(reservation)
+    return clean_doc(reservation)
+
+
+@api.patch("/reservations/{res_id}/status")
+async def update_reservation_status(res_id: str, status: str):
+    update = {"status": status, "updated_at": utcnow()}
+    if status == ReservationStatus.CHECKED_OUT:
+        update["checked_out_at"] = utcnow()
+    result = await db.reservations.update_one({"id": res_id}, {"$set": update})
+    if result.matched_count == 0:
+        raise HTTPException(404, "Rezervasyon bulunamadi")
+    return {"success": True}
+
 
 # ==================== TASKS ====================
 
-@api_router.get("/tasks")
-async def list_tasks(
-    status: Optional[str] = None,
-    priority: Optional[str] = None,
-    limit: int = 50,
-    skip: int = 0
-):
-    """List tasks"""
-    try:
-        query = {}
-        
-        if status:
-            query["status"] = status
-        
-        if priority:
-            query["priority"] = priority
-        
-        tasks = await db.tasks.find(
-            query,
-            {"_id": 0}
-        ).sort("due_date", 1).skip(skip).limit(limit).to_list(limit)
-        
-        total = await db.tasks.count_documents(query)
-        
-        return {
-            "tasks": tasks,
-            "total": total,
-            "limit": limit,
-            "skip": skip
-        }
-        
-    except Exception as e:
-        logger.error(f"List tasks error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+@api.get("/tasks")
+async def list_tasks(status: Optional[str] = None, priority: Optional[str] = None, limit: int = 50, skip: int = 0):
+    query = {}
+    if status:
+        query["status"] = status
+    if priority:
+        query["priority"] = priority
+    tasks = await db.tasks.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    total = await db.tasks.count_documents(query)
+    return {"tasks": tasks, "total": total}
 
-@api_router.patch("/tasks/{task_id}/status")
-async def update_task_status(task_id: str, status: str):
-    """Update task status"""
-    try:
-        update_data = {
-            "status": status,
-            "updated_at": datetime.now(timezone.utc)
-        }
-        
-        if status == TaskStatus.COMPLETED:
-            update_data["completed_at"] = datetime.now(timezone.utc)
-        
-        result = await db.tasks.update_one(
-            {"id": task_id},
-            {"$set": update_data}
-        )
-        
-        if result.matched_count == 0:
-            raise HTTPException(status_code=404, detail="Görev bulunamadı")
-        
-        return {"success": True, "message": "Görev durumu güncellendi"}
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Update task error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
 
-# ==================== WHATSAPP PROCESSING ====================
+@api.post("/tasks")
+async def create_task(data: TaskCreate):
+    task = {
+        "id": new_id(),
+        **data.model_dump(),
+        "status": TaskStatus.PENDING,
+        "created_at": utcnow(),
+        "updated_at": utcnow(),
+    }
+    await db.tasks.insert_one(task)
+    return clean_doc(task)
 
-@api_router.post("/whatsapp/parse")
-async def parse_whatsapp_export(
-    background_tasks: BackgroundTasks,
-    file: UploadFile = File(...)
-):
-    """Parse WhatsApp export file and create tasks"""
-    try:
-        # Read file content
-        content = await file.read()
-        text_content = content.decode('utf-8')
-        
-        # Parse WhatsApp messages
-        parser = WhatsAppParser()
-        parsed_data = parser.parse_export_file(text_content)
-        
-        # Create tasks from messages
-        whatsapp_tasks = parser.create_tasks_from_whatsapp(parsed_data)
-        
-        # Save to database
-        created_task_ids = []
-        for task_data in whatsapp_tasks:
-            task = Task(
-                title=task_data['title'],
-                description=task_data['description'],
-                priority=TaskPriority(task_data['priority']),
-                source='whatsapp',
-                metadata=task_data.get('metadata', {})
-            )
-            result = await db.tasks.insert_one(task.model_dump())
-            created_task_ids.append(str(result.inserted_id))
-        
-        return {
-            "success": True,
-            "message": "WhatsApp mesajları işlendi",
-            "statistics": {
-                "total_messages": parsed_data['total_messages'],
-                "unique_senders": len(parsed_data['unique_senders']),
-                "tasks_created": len(created_task_ids)
-            },
-            "senders": parsed_data['unique_senders'],
-            "task_ids": created_task_ids
-        }
-        
-    except Exception as e:
-        logger.error(f"WhatsApp parse error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
 
-# ==================== SEMANTIC SEARCH ====================
+@api.patch("/tasks/{task_id}")
+async def update_task(task_id: str, data: TaskUpdate):
+    update = {k: v for k, v in data.model_dump().items() if v is not None}
+    update["updated_at"] = utcnow()
+    if data.status == TaskStatus.COMPLETED:
+        update["completed_at"] = utcnow()
+    result = await db.tasks.update_one({"id": task_id}, {"$set": update})
+    if result.matched_count == 0:
+        raise HTTPException(404, "Gorev bulunamadi")
+    return {"success": True}
 
-@api_router.post("/search/semantic")
-async def semantic_search(query: str, limit: int = 10):
-    """Semantic search using embeddings"""
-    try:
-        # Generate query embedding
-        query_embedding = await llm_council.generate_embedding(query)
-        
-        if not query_embedding:
-            # Fallback to text search
-            items = await db.knowledge_items.find(
-                {
-                    "status": "active",
-                    "$or": [
-                        {"title": {"$regex": query, "$options": "i"}},
-                        {"content": {"$regex": query, "$options": "i"}}
-                    ]
-                },
-                {"_id": 0}
-            ).limit(limit).to_list(limit)
-            
-            return {"results": items, "method": "text_search"}
-        
-        # Find similar items (simple cosine similarity)
-        # In production, use vector database or MongoDB Atlas Vector Search
-        all_items = await db.knowledge_items.find(
-            {"status": "active", "embedding": {"$exists": True, "$ne": None}},
-            {"_id": 0}
-        ).to_list(1000)
-        
-        # Calculate cosine similarity
-        from numpy import dot
-        from numpy.linalg import norm
-        
-        results = []
-        for item in all_items:
-            if item.get("embedding"):
-                similarity = dot(query_embedding, item["embedding"]) / (
-                    norm(query_embedding) * norm(item["embedding"])
-                )
-                item["similarity"] = float(similarity)
-                results.append(item)
-        
-        # Sort by similarity
-        results.sort(key=lambda x: x.get("similarity", 0), reverse=True)
-        
-        return {"results": results[:limit], "method": "semantic_search"}
-        
-    except Exception as e:
-        logger.error(f"Semantic search error: {e}")
-        # Fallback to text search
-        items = await db.knowledge_items.find(
-            {
-                "status": "active",
-                "$or": [
-                    {"title": {"$regex": query, "$options": "i"}},
-                    {"content": {"$regex": query, "$options": "i"}}
-                ]
-            },
-            {"_id": 0}
-        ).limit(limit).to_list(limit)
-        
-        return {"results": items, "method": "text_search_fallback", "error": str(e)}
 
-# ==================== INCLUDE ROUTER ====================
+@api.delete("/tasks/{task_id}")
+async def delete_task(task_id: str):
+    result = await db.tasks.delete_one({"id": task_id})
+    if result.deleted_count == 0:
+        raise HTTPException(404, "Gorev bulunamadi")
+    return {"success": True}
 
-app.include_router(api_router)
 
-# Add CORS middleware
+# ==================== EVENTS ====================
+
+@api.get("/events")
+async def list_events(active_only: bool = False):
+    query = {"is_active": True} if active_only else {}
+    events = await db.events.find(query, {"_id": 0}).sort("event_date", 1).to_list(100)
+    return {"events": events}
+
+
+@api.post("/events")
+async def create_event(data: EventCreate):
+    event = {
+        "id": new_id(),
+        **data.model_dump(),
+        "created_at": utcnow(),
+        "updated_at": utcnow(),
+        "registrations": 0,
+    }
+    await db.events.insert_one(event)
+    return clean_doc(event)
+
+
+@api.patch("/events/{event_id}")
+async def update_event(event_id: str, data: dict):
+    data["updated_at"] = utcnow()
+    result = await db.events.update_one({"id": event_id}, {"$set": data})
+    if result.matched_count == 0:
+        raise HTTPException(404, "Etkinlik bulunamadi")
+    return {"success": True}
+
+
+@api.delete("/events/{event_id}")
+async def delete_event(event_id: str):
+    result = await db.events.delete_one({"id": event_id})
+    if result.deleted_count == 0:
+        raise HTTPException(404, "Etkinlik bulunamadi")
+    return {"success": True}
+
+
+# ==================== HOUSEKEEPING ====================
+
+@api.get("/housekeeping")
+async def list_housekeeping(status: Optional[str] = None):
+    query = {"status": status} if status else {}
+    logs = await db.housekeeping.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return {"logs": logs}
+
+
+@api.post("/housekeeping")
+async def create_housekeeping(data: HousekeepingCreate):
+    log = {
+        "id": new_id(),
+        **data.model_dump(),
+        "status": HousekeepingStatus.PENDING,
+        "created_at": utcnow(),
+        "updated_at": utcnow(),
+    }
+    await db.housekeeping.insert_one(log)
+    return clean_doc(log)
+
+
+@api.patch("/housekeeping/{log_id}/status")
+async def update_housekeeping(log_id: str, status: str):
+    update = {"status": status, "updated_at": utcnow()}
+    if status == HousekeepingStatus.COMPLETED:
+        update["completed_at"] = utcnow()
+    result = await db.housekeeping.update_one({"id": log_id}, {"$set": update})
+    if result.matched_count == 0:
+        raise HTTPException(404, "Kayit bulunamadi")
+    return {"success": True}
+
+
+# ==================== STAFF ====================
+
+@api.get("/staff")
+async def list_staff():
+    staff = await db.staff.find({}, {"_id": 0}).to_list(100)
+    return {"staff": staff}
+
+
+@api.post("/staff")
+async def create_staff(data: StaffCreate):
+    member = {
+        "id": new_id(),
+        **data.model_dump(),
+        "created_at": utcnow(),
+    }
+    await db.staff.insert_one(member)
+    return clean_doc(member)
+
+
+# ==================== KNOWLEDGE BASE ====================
+
+@api.get("/knowledge")
+async def list_knowledge(category: Optional[str] = None, search: Optional[str] = None, limit: int = 50):
+    query = {}
+    if category:
+        query["category"] = category
+    if search:
+        query["$or"] = [
+            {"title": {"$regex": search, "$options": "i"}},
+            {"content": {"$regex": search, "$options": "i"}},
+        ]
+    items = await db.knowledge.find(query, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
+    total = await db.knowledge.count_documents(query)
+    return {"items": items, "total": total}
+
+
+@api.post("/knowledge")
+async def create_knowledge(data: KnowledgeCreate):
+    item = {
+        "id": new_id(),
+        **data.model_dump(),
+        "created_at": utcnow(),
+        "updated_at": utcnow(),
+    }
+    await db.knowledge.insert_one(item)
+    return clean_doc(item)
+
+
+@api.delete("/knowledge/{item_id}")
+async def delete_knowledge(item_id: str):
+    result = await db.knowledge.delete_one({"id": item_id})
+    if result.deleted_count == 0:
+        raise HTTPException(404, "Bilgi bulunamadi")
+    return {"success": True}
+
+
+# ==================== AI CHATBOT ====================
+
+@api.post("/chatbot")
+async def chatbot(data: ChatRequest):
+    from gemini_service import get_chat_response, detect_intent
+
+    intent = detect_intent(data.message)
+    context = ""
+
+    if intent == "rooms":
+        context = f"Oda bilgileri: {ROOMS}"
+    elif intent == "menu":
+        context = f"Menu: {RESTAURANT_MENU}"
+    elif intent == "cancellation":
+        context = f"Politikalar: {HOTEL_POLICIES}"
+    elif intent == "local_guide":
+        context = f"Cevre rehberi: {FOCA_LOCAL_GUIDE}"
+    elif intent == "events":
+        events = await db.events.find({"is_active": True}, {"_id": 0}).to_list(20)
+        context = f"Aktif etkinlikler: {events}" if events else "Su anda aktif etkinlik bulunmuyor."
+
+    response = await get_chat_response(
+        message=data.message,
+        session_id=data.session_id,
+        system_prompt=GEMINI_SYSTEM_PROMPT,
+        context=context,
+    )
+
+    # Save message to DB
+    msg_record = {
+        "id": new_id(),
+        "session_id": data.session_id,
+        "user_message": data.message,
+        "ai_response": response,
+        "intent": intent,
+        "created_at": utcnow(),
+    }
+    await db.chat_messages.insert_one(msg_record)
+
+    return {
+        "response": response,
+        "session_id": data.session_id,
+        "intent": intent,
+    }
+
+
+@api.get("/chatbot/history/{session_id}")
+async def chat_history(session_id: str):
+    messages = await db.chat_messages.find(
+        {"session_id": session_id}, {"_id": 0}
+    ).sort("created_at", 1).to_list(100)
+    return {"messages": messages}
+
+
+@api.delete("/chatbot/session/{session_id}")
+async def clear_chat(session_id: str):
+    from gemini_service import clear_session
+    clear_session(session_id)
+    await db.chat_messages.delete_many({"session_id": session_id})
+    return {"success": True}
+
+
+# ==================== WHATSAPP WEBHOOK ====================
+
+@api.post("/whatsapp/webhook")
+async def whatsapp_webhook(data: WhatsAppMessage):
+    from gemini_service import get_chat_response, detect_intent
+
+    session_id = f"wa-{data.from_number}"
+    intent = detect_intent(data.message)
+
+    response = await get_chat_response(
+        message=data.message,
+        session_id=session_id,
+        system_prompt=GEMINI_SYSTEM_PROMPT,
+    )
+
+    msg = {
+        "id": new_id(),
+        "platform": "whatsapp",
+        "from_number": data.from_number,
+        "sender_name": data.sender_name,
+        "message": data.message,
+        "response": response,
+        "intent": intent,
+        "created_at": utcnow(),
+    }
+    await db.messages.insert_one(msg)
+
+    return {"reply": response, "intent": intent}
+
+
+@api.get("/whatsapp/messages")
+async def list_whatsapp_messages(limit: int = 50):
+    msgs = await db.messages.find(
+        {"platform": "whatsapp"}, {"_id": 0}
+    ).sort("created_at", -1).limit(limit).to_list(limit)
+    return {"messages": msgs}
+
+
+# ==================== INSTAGRAM WEBHOOK ====================
+
+@api.post("/instagram/webhook")
+async def instagram_webhook(data: dict):
+    from gemini_service import get_chat_response
+
+    msg_text = data.get("message", "")
+    sender = data.get("sender", "unknown")
+    session_id = f"ig-{sender}"
+
+    response = await get_chat_response(
+        message=msg_text,
+        session_id=session_id,
+        system_prompt=GEMINI_SYSTEM_PROMPT,
+    )
+
+    msg = {
+        "id": new_id(),
+        "platform": "instagram",
+        "sender": sender,
+        "message": msg_text,
+        "response": response,
+        "created_at": utcnow(),
+    }
+    await db.messages.insert_one(msg)
+
+    return {"reply": response}
+
+
+@api.get("/messages")
+async def list_all_messages(platform: Optional[str] = None, limit: int = 50):
+    query = {"platform": platform} if platform else {}
+    msgs = await db.messages.find(query, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
+    return {"messages": msgs}
+
+
+# ==================== SEED DATA ====================
+
+@api.post("/seed")
+async def seed_database():
+    """Seed initial hotel data into MongoDB"""
+    rooms_count = await db.rooms.count_documents({})
+    if rooms_count == 0:
+        for room in ROOMS:
+            await db.rooms.insert_one({**room, "created_at": utcnow()})
+
+    knowledge_count = await db.knowledge.count_documents({})
+    if knowledge_count == 0:
+        knowledge_items = [
+            {"id": new_id(), "title": "Iptal Politikasi", "content": HOTEL_POLICIES["cancellation"]["tr"], "category": "policy", "tags": ["iptal", "ceza"], "created_at": utcnow(), "updated_at": utcnow()},
+            {"id": new_id(), "title": "No-Show Politikasi", "content": HOTEL_POLICIES["no_show"]["tr"], "category": "policy", "tags": ["no-show", "ceza"], "created_at": utcnow(), "updated_at": utcnow()},
+            {"id": new_id(), "title": "On Odeme Kurali", "content": HOTEL_POLICIES["saturday_payment"]["tr"], "category": "policy", "tags": ["odeme", "cumartesi"], "created_at": utcnow(), "updated_at": utcnow()},
+            {"id": new_id(), "title": "Kahvalti Bilgisi", "content": HOTEL_POLICIES["breakfast"], "category": "service", "tags": ["kahvalti", "organik"], "created_at": utcnow(), "updated_at": utcnow()},
+            {"id": new_id(), "title": "Evcil Hayvan Politikasi", "content": HOTEL_POLICIES["pets"], "category": "policy", "tags": ["hayvan", "pet"], "created_at": utcnow(), "updated_at": utcnow()},
+            {"id": new_id(), "title": "Cocuk Politikasi", "content": HOTEL_POLICIES["children"], "category": "policy", "tags": ["cocuk", "bebek"], "created_at": utcnow(), "updated_at": utcnow()},
+        ]
+        for item in knowledge_items:
+            await db.knowledge.insert_one(item)
+
+    return {"success": True, "message": "Veri tabanina baslangic verileri yuklendi."}
+
+
+# ==================== SETUP ====================
+
+app.include_router(api)
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
@@ -598,12 +590,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Shutdown event
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
-    logger.info("MongoDB connection closed")
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+@app.on_event("startup")
+async def startup():
+    logger.info(f"Kozbeyli Konagi API starting - DB: {DB_NAME}")
+    # Auto-seed on startup
+    rooms_count = await db.rooms.count_documents({})
+    if rooms_count == 0:
+        for room in ROOMS:
+            await db.rooms.insert_one({**room, "created_at": utcnow()})
+        logger.info("Rooms seeded successfully")
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    client.close()
