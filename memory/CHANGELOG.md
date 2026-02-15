@@ -1,5 +1,26 @@
 # Kozbeyli Konagi - Degisiklik Gunlugu
 
+## [2026-02-15] - Operasyonel Otomasyon + Etkinlik Yonetimi
+
+### Eklendi
+- **Zamanli Gorev Sistemi (APScheduler):**
+  - Kahvalti Hazirligi: Her gece 01:00
+  - Sabah Hatirlama: Her gun 08:30 (tuvalet temizlik + check-in hazirligi)
+  - Check-out Temizlik: Her gun 12:30
+- **6 Otomasyon Botu:** Kahvalti, Sabah Hatirlama, Temizlik, Odeme, Iptal, Mutfak Tahmini
+- **Otomasyon Dashboard:** 3 tab (Botlar, Grup Bildirimleri, Islem Gecmisi)
+- **Etkinlikler:**
+  - 7 Subat Canli Muzik - Ece Yazar (Alkolu 2750 TL, Sinirsiz 5500 TL)
+  - 14 Subat Sevgililer Gunu - GORAY Akustik (Alkolu 3500 TL, Sinirsiz 6000 TL)
+  - Kapak gorseli, menu detaylari, sanatci bilgisi destegi
+- **Yeni API Endpoint'leri:** breakfast-notification, morning-reminders, cleaning-notification, scheduled-jobs, group-notifications, seed-samples
+
+### Test Sonuclari
+- Backend: 30/30 (%100)
+- Frontend: Tum sayfalar calisir durumda (%100)
+
+---
+
 ## [2026-02-15] - QR Menu Footer Guncellemesi
 
 ### Eklendi
