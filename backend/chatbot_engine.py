@@ -679,7 +679,13 @@ async def process_chatbot_message(
     if flow.state != ConversationState.IDLE:
         result = await process_table_flow(flow, message)
         if result:
-            return result
+            # message -> response olarak dönüştür
+            return {
+                "response": result.get("message", ""),
+                "intent": "table_flow",
+                "reservation_created": result.get("reservation_created", False),
+                "reservation": result.get("reservation"),
+            }
     
     # 3. Auto-reply kontrol et
     auto_reply = await get_auto_reply(message, language)
