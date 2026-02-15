@@ -253,28 +253,48 @@ HOTEL_POLICIES = {
     "cancellation": {
         "free_cancel_days": 3,
         "penalty_percent": 100,
-        "tr": "Giris tarihinden 3 gun oncesine kadar ucretsiz iptal. Sonrasi %100 ceza.",
-        "en": "Free cancellation up to 3 days before check-in. After that 100% penalty.",
+        "tr": "Giris tarihinden 72 saat (3 gun) oncesine kadar ucretsiz iptal. Sonrasi %100 ceza.",
+        "en": "Free cancellation up to 72 hours (3 days) before check-in. After that 100% penalty.",
     },
     "no_show": {
         "penalty_percent": 100,
         "tr": "Gelmeyen misafirden %100 ucret tahsil edilir.",
         "en": "100% charge for no-show guests.",
     },
+    "prepayment": {
+        "weekday": "%50 kapora",
+        "weekend": "%100 tam odeme",
+        "special_days": "%100 tam odeme (14 Subat, Yilbasi, Bayramlar)",
+        "tr": "Hafta ici %50, hafta sonu ve ozel gunlerde %100 on odeme.",
+    },
     "saturday_payment": {
-        "tr": "Cumartesi, resmi/dini bayram, 14 Subat ve yilbasinda on odeme zorunludur.",
-        "en": "Pre-payment required for Saturdays, holidays, Valentine's Day and New Year's.",
+        "tr": "Cumartesi, resmi/dini bayram, 14 Subat ve yilbasinda %100 on odeme zorunludur.",
+        "en": "100% pre-payment required for Saturdays, holidays, Valentine's Day and New Year's.",
     },
     "payment_methods": ["Kredi Karti (Visa, Mastercard)", "Banka Havalesi / EFT", "Nakit"],
+    "bank_accounts": [
+        {
+            "bank": "Ziraat Bankasi",
+            "account_holder": "Varol Oruk",
+            "iban": "TR86 0001 0003 4454 7464 5450 08",
+        },
+        {
+            "bank": "Yapi Kredi Bankasi",
+            "account_holder": "Varol Oruk",
+            "iban": "TR72 0006 7010 0000 0010 5454 18",
+            "branch": "Izmir",
+        },
+    ],
     "bank_info": {
         "account_holder": "Varol Oruk",
-        "bank": "Yapi Kredi",
-        "iban": "TR72 0006 7010 0000 0025 0736 77",
-        "note": "Havale/EFT sonrasi dekont gonderilmesi gerekmektedir.",
+        "bank": "Ziraat Bankasi",
+        "iban": "TR86 0001 0003 4454 7464 5450 08",
+        "note": "Havale/EFT sonrasi dekont gonderilmesi gerekmektedir. Aciklama kismi bos birakilmalidir.",
     },
     "children": "0-4 yas arasi ucretsiz. Ucretsiz bebek yatagi.",
-    "pets": "Evcil hayvanlar kabul edilir. Ekstra mama kaplari saglanir.",
-    "breakfast": "Organik koy kahvaltisi ucretsizdir.",
+    "pets": "Kucuk irk evcil hayvanlar ucretsiz kabul edilir. Buyuk irklar icin balkonlu oda verilebilir.",
+    "breakfast": "Tum oda fiyatlarina serpme kahvalti, sucuklu yumurta ve pisi dahildir. Kahvalti varisi takip eden sabah servis edilir.",
+    "extra_bed": "Odalara ek yatak konulmaz, kapasite oda tipine goredir.",
 }
 
 HOTEL_HISTORY = {
