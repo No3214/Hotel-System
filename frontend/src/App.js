@@ -217,8 +217,19 @@ export default function App() {
           ))}
         </nav>
 
-        {/* Toggle */}
-        <div className="p-3 border-t border-[#C4972A]/10">
+        {/* User & Toggle */}
+        <div className="p-3 border-t border-[#C4972A]/10 space-y-2">
+          {sidebarOpen && user && (
+            <div className="flex items-center justify-between px-2 py-1">
+              <div>
+                <p className="text-xs font-medium text-[#e5e5e8] truncate">{user.name}</p>
+                <p className="text-[10px] text-[#C4972A]">{user.role === 'admin' ? 'Admin' : user.role === 'reception' ? 'Resepsiyon' : user.role === 'kitchen' ? 'Mutfak' : 'Personel'}</p>
+              </div>
+              <button onClick={handleLogout} className="text-[#7e7e8a] hover:text-red-400 transition-colors" data-testid="logout-btn">
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          )}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="w-full flex items-center justify-center p-2.5 rounded-lg bg-white/5 hover:bg-[#C4972A]/10 transition-all text-[#a9a9b2] hover:text-[#C4972A]"
