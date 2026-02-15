@@ -553,7 +553,348 @@ async def list_all_messages(platform: Optional[str] = None, limit: int = 50):
     return {"messages": msgs}
 
 
-# ==================== SEED DATA ====================
+# ==================== FAZ 2: CAMPAIGNS ====================
+
+@api.get("/campaigns")
+async def list_campaigns(status: Optional[str] = None, limit: int = 50):
+    query = {"status": status} if status else {}
+    items = await db.campaigns.find(query, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
+    total = await db.campaigns.count_documents(query)
+    return {"campaigns": items, "total": total}
+
+
+@api.post("/campaigns")
+async def create_campaign(data: CampaignCreate):
+    campaign = {
+        "id": new_id(),
+        **data.model_dump(),
+        "status": CampaignStatus.DRAFT,
+        "recipients_count": 0,
+        "opened_count": 0,
+        "clicked_count": 0,
+        "created_at": utcnow(),
+        "updated_at": utcnow(),
+    }
+    await db.campaigns.insert_one(campaign)
+    return clean_doc(campaign)
+
+
+@api.patch("/campaigns/{campaign_id}/status")
+async def update_campaign_status(campaign_id: str, status: str):
+    update = {"status": status, "updated_at": utcnow()}
+    if status == CampaignStatus.SENT:
+        update["sent_at"] = utcnow()
+        # Simulate sending to guests
+        guest_count = await db.guests.count_documents({})
+        update["recipients_count"] = guest_count
+    result = await db.campaigns.update_one({"id": campaign_id}, {"$set": update})
+    if result.matched_count == 0:
+        raise HTTPException(404, "Kampanya bulunamadi")
+    return {"success": True, "recipients": update.get("recipients_count", 0)}
+
+
+@api.delete("/campaigns/{campaign_id}")
+async def delete_campaign(campaign_id: str):
+    result = await db.campaigns.delete_one({"id": campaign_id})
+    if result.deleted_count == 0:
+        raise HTTPException(404, "Kampanya bulunamadi")
+    return {"success": True}
+
+
+# ==================== FAZ 2: HOUSEKEEPING AUTOMATION ====================
+
+@api.post("/housekeeping/auto-schedule")
+async def auto_schedule_housekeeping():
+    """Auto-create cleaning tasks for checked-out rooms"""
+    checked_out = await db.reservations.find(
+        {"status": ReservationStatus.CHECKED_OUT}, {"_id": 0}
+    ).to_list(100)
+
+    created = 0
+    for res in checked_out:
+        existing = await db.housekeeping.find_one({
+            "room_number": res.get("room_type", ""),
+            "status": {"$in": [HousekeepingStatus.PENDING, HousekeepingStatus.IN_PROGRESS]},
+        })
+        if not existing:
+            log = {
+                "id": new_id(),
+                "room_number": res.get("room_type", "unknown"),
+                "task_type": "checkout_clean",
+                "priority": "high",
+                "assigned_to": None,
+                "notes": f"Oto-olusturuldu: Misafir checkout - Rez: {res.get('id', '')}",
+                "status": HousekeepingStatus.PENDING,
+                "reservation_id": res.get("id"),
+                "created_at": utcnow(),
+                "updated_at": utcnow(),
+            }
+            await db.housekeeping.insert_one(log)
+            created += 1
+
+    return {"success": True, "created": created}
+
+
+# ==================== FAZ 2: IMPROVED RESERVATIONS ====================
+
+@api.get("/reservations/{res_id}")
+async def get_reservation(res_id: str):
+    res = await db.reservations.find_one({"id": res_id}, {"_id": 0})
+    if not res:
+        raise HTTPException(404, "Rezervasyon bulunamadi")
+    return res
+
+
+@api.patch("/reservations/{res_id}")
+async def update_reservation(res_id: str, data: ReservationUpdate):
+    update = {k: v for k, v in data.model_dump().items() if v is not None}
+    update["updated_at"] = utcnow()
+
+    if data.status == ReservationStatus.CHECKED_IN:
+        update["checked_in_at"] = utcnow()
+    elif data.status == ReservationStatus.CHECKED_OUT:
+        update["checked_out_at"] = utcnow()
+
+    result = await db.reservations.update_one({"id": res_id}, {"$set": update})
+    if result.matched_count == 0:
+        raise HTTPException(404, "Rezervasyon bulunamadi")
+
+    # Auto-create housekeeping on checkout
+    if data.status == ReservationStatus.CHECKED_OUT:
+        res = await db.reservations.find_one({"id": res_id}, {"_id": 0})
+        if res:
+            log = {
+                "id": new_id(),
+                "room_number": res.get("room_type", ""),
+                "task_type": "checkout_clean",
+                "priority": "high",
+                "assigned_to": None,
+                "notes": f"Oto-olusturuldu: Check-out temizligi",
+                "status": HousekeepingStatus.PENDING,
+                "reservation_id": res_id,
+                "created_at": utcnow(),
+                "updated_at": utcnow(),
+            }
+            await db.housekeeping.insert_one(log)
+
+    return {"success": True}
+
+
+@api.delete("/reservations/{res_id}")
+async def delete_reservation(res_id: str):
+    result = await db.reservations.delete_one({"id": res_id})
+    if result.deleted_count == 0:
+        raise HTTPException(404, "Rezervasyon bulunamadi")
+    return {"success": True}
+
+
+# ==================== FAZ 3: STAFF SHIFTS ====================
+
+@api.get("/shifts")
+async def list_shifts(date: Optional[str] = None, staff_id: Optional[str] = None):
+    query = {}
+    if date:
+        query["date"] = date
+    if staff_id:
+        query["staff_id"] = staff_id
+    shifts = await db.shifts.find(query, {"_id": 0}).sort("date", -1).to_list(200)
+    return {"shifts": shifts}
+
+
+@api.post("/shifts")
+async def create_shift(data: ShiftCreate):
+    shift = {
+        "id": new_id(),
+        **data.model_dump(),
+        "created_at": utcnow(),
+    }
+    await db.shifts.insert_one(shift)
+    return clean_doc(shift)
+
+
+@api.delete("/shifts/{shift_id}")
+async def delete_shift(shift_id: str):
+    result = await db.shifts.delete_one({"id": shift_id})
+    if result.deleted_count == 0:
+        raise HTTPException(404, "Vardiya bulunamadi")
+    return {"success": True}
+
+
+@api.patch("/staff/{staff_id}")
+async def update_staff(staff_id: str, data: dict):
+    data["updated_at"] = utcnow()
+    result = await db.staff.update_one({"id": staff_id}, {"$set": data})
+    if result.matched_count == 0:
+        raise HTTPException(404, "Personel bulunamadi")
+    return {"success": True}
+
+
+@api.delete("/staff/{staff_id}")
+async def delete_staff(staff_id: str):
+    result = await db.staff.delete_one({"id": staff_id})
+    if result.deleted_count == 0:
+        raise HTTPException(404, "Personel bulunamadi")
+    return {"success": True}
+
+
+# ==================== FAZ 3: KVKK ====================
+
+@api.get("/kvkk/policy")
+async def get_kvkk_policy():
+    return {
+        "title": "Kisisel Verilerin Korunmasi Kanunu (KVKK) Politikasi",
+        "hotel": HOTEL_INFO["name"],
+        "data_controller": HOTEL_INFO["founders"],
+        "sections": [
+            {
+                "title": "Veri Sorumlusu",
+                "content": f"{HOTEL_INFO['name']} - {HOTEL_INFO['location']}"
+            },
+            {
+                "title": "Toplanan Veriler",
+                "content": "Ad soyad, telefon, e-posta, kimlik/pasaport bilgileri, konaklama gecmisi, odeme bilgileri."
+            },
+            {
+                "title": "Veri Isleme Amaci",
+                "content": "Konaklama hizmetlerinin sunulmasi, rezervasyon yonetimi, muhasebe ve faturalandirma, yasal yukumluluklerin yerine getirilmesi."
+            },
+            {
+                "title": "Veri Saklama Suresi",
+                "content": "Konaklama verileri 10 yil, muhasebe verileri yasal sure boyunca saklanir."
+            },
+            {
+                "title": "Haklariniz",
+                "content": "KVKK m.11 kapsaminda: Verilerinizin islenip islenmedigini ogrenme, islenmisse bilgi talep etme, isleme amacini ogrenme, yurti ci/yurtdisi 3. kisilere aktarilip aktarilmadigini ogrenme, duzeltilmesini/silinmesini isteme haklariniz bulunmaktadir."
+            },
+            {
+                "title": "Iletisim",
+                "content": f"E-posta: {HOTEL_INFO['email']} | Telefon: {HOTEL_INFO['phone']}"
+            },
+        ],
+    }
+
+
+# ==================== FAZ 3: SETTINGS ====================
+
+@api.get("/settings")
+async def get_settings():
+    settings = await db.settings.find_one({"type": "global"}, {"_id": 0})
+    if not settings:
+        settings = {
+            "type": "global",
+            "hotel_name": HOTEL_INFO["name"],
+            "phone": HOTEL_INFO["phone"],
+            "email": HOTEL_INFO["email"],
+            "whatsapp_enabled": True,
+            "instagram_enabled": True,
+            "auto_reply_enabled": True,
+            "auto_housekeeping": True,
+            "notification_channels": ["whatsapp", "email"],
+            "language": "tr",
+            "timezone": "Europe/Istanbul",
+        }
+    return settings
+
+
+@api.patch("/settings")
+async def update_settings(data: dict):
+    data["updated_at"] = utcnow()
+    await db.settings.update_one(
+        {"type": "global"},
+        {"$set": data},
+        upsert=True,
+    )
+    return {"success": True}
+
+
+# ==================== FAZ 4: I18N ====================
+
+TRANSLATIONS = {
+    "tr": {
+        "dashboard": "Dashboard", "rooms": "Odalar", "guests": "Misafirler",
+        "chatbot": "AI Asistan", "messages": "Mesajlar", "tasks": "Gorevler",
+        "events": "Etkinlikler", "housekeeping": "Kat Hizmetleri",
+        "knowledge": "Bilgi Bankasi", "menu": "Restoran Menu",
+        "reservations": "Rezervasyonlar", "staff": "Personel",
+        "campaigns": "Kampanyalar", "settings": "Ayarlar",
+        "welcome": "Hos Geldiniz", "occupancy": "Doluluk Orani",
+        "add": "Ekle", "save": "Kaydet", "delete": "Sil", "cancel": "Iptal",
+        "search": "Ara", "total": "Toplam", "available": "Musait",
+        "occupied": "Dolu", "pending": "Bekleyen", "completed": "Tamamlanan",
+    },
+    "en": {
+        "dashboard": "Dashboard", "rooms": "Rooms", "guests": "Guests",
+        "chatbot": "AI Assistant", "messages": "Messages", "tasks": "Tasks",
+        "events": "Events", "housekeeping": "Housekeeping",
+        "knowledge": "Knowledge Base", "menu": "Restaurant Menu",
+        "reservations": "Reservations", "staff": "Staff",
+        "campaigns": "Campaigns", "settings": "Settings",
+        "welcome": "Welcome", "occupancy": "Occupancy Rate",
+        "add": "Add", "save": "Save", "delete": "Delete", "cancel": "Cancel",
+        "search": "Search", "total": "Total", "available": "Available",
+        "occupied": "Occupied", "pending": "Pending", "completed": "Completed",
+    },
+    "de": {
+        "dashboard": "Dashboard", "rooms": "Zimmer", "guests": "Gaste",
+        "chatbot": "KI-Assistent", "messages": "Nachrichten", "tasks": "Aufgaben",
+        "events": "Veranstaltungen", "housekeeping": "Housekeeping",
+        "knowledge": "Wissensdatenbank", "menu": "Speisekarte",
+        "reservations": "Reservierungen", "staff": "Personal",
+        "campaigns": "Kampagnen", "settings": "Einstellungen",
+        "welcome": "Willkommen", "occupancy": "Belegungsrate",
+        "add": "Hinzufugen", "save": "Speichern", "delete": "Loschen", "cancel": "Abbrechen",
+        "search": "Suchen", "total": "Gesamt", "available": "Verfugbar",
+        "occupied": "Belegt", "pending": "Ausstehend", "completed": "Abgeschlossen",
+    },
+    "fr": {
+        "dashboard": "Tableau de Bord", "rooms": "Chambres", "guests": "Clients",
+        "chatbot": "Assistant IA", "messages": "Messages", "tasks": "Taches",
+        "events": "Evenements", "housekeeping": "Menage",
+        "knowledge": "Base de Connaissances", "menu": "Menu Restaurant",
+        "reservations": "Reservations", "staff": "Personnel",
+        "campaigns": "Campagnes", "settings": "Parametres",
+        "welcome": "Bienvenue", "occupancy": "Taux d'Occupation",
+        "add": "Ajouter", "save": "Sauvegarder", "delete": "Supprimer", "cancel": "Annuler",
+        "search": "Rechercher", "total": "Total", "available": "Disponible",
+        "occupied": "Occupe", "pending": "En Attente", "completed": "Termine",
+    },
+    "ru": {
+        "dashboard": "Panel Upravleniya", "rooms": "Nomera", "guests": "Gosti",
+        "chatbot": "AI Assistent", "messages": "Soobsheniya", "tasks": "Zadachi",
+        "events": "Meropriyatiya", "housekeeping": "Uborka",
+        "knowledge": "Baza Znaniy", "menu": "Menyu Restorana",
+        "reservations": "Bronirovanie", "staff": "Personal",
+        "campaigns": "Kampanii", "settings": "Nastroyki",
+        "welcome": "Dobro Pozhalovat", "occupancy": "Zanyatost",
+        "add": "Dobavit", "save": "Sokhranit", "delete": "Udalit", "cancel": "Otmena",
+        "search": "Poisk", "total": "Vsego", "available": "Dostupno",
+        "occupied": "Zanyato", "pending": "V Ozhidanii", "completed": "Zaversheno",
+    },
+}
+
+
+@api.get("/i18n/{lang}")
+async def get_translations(lang: str):
+    if lang not in TRANSLATIONS:
+        lang = "tr"
+    return {"language": lang, "translations": TRANSLATIONS[lang]}
+
+
+@api.get("/i18n")
+async def list_languages():
+    return {
+        "languages": [
+            {"code": "tr", "name": "Turkce", "flag": "TR"},
+            {"code": "en", "name": "English", "flag": "GB"},
+            {"code": "de", "name": "Deutsch", "flag": "DE"},
+            {"code": "fr", "name": "Francais", "flag": "FR"},
+            {"code": "ru", "name": "Russkiy", "flag": "RU"},
+        ],
+        "default": "tr",
+    }
+
+
+
 
 @api.post("/seed")
 async def seed_database():
