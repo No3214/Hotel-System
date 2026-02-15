@@ -7,14 +7,15 @@ HOTEL_INFO = {
     "name": "Kozbeyli Konagi",
     "name_en": "Kozbeyli Mansion",
     "type": "Butik Tas Otel & Restoran",
-    "tagline_tr": "600 yillik tarihi Osmanli tas koyunde, dogayla ic ice butik otel & restoran deneyimi",
-    "tagline_en": "Boutique hotel & restaurant experience in a 600-year-old historic Ottoman stone village",
+    "tagline_tr": "14 yillik aile isletmesi. Foca tasindan insa edilmis konagimizda dogayla ic ice butik otel & restoran deneyimi",
+    "tagline_en": "14-year family business. Boutique hotel & restaurant experience in a mansion built from Foca stone",
     "location": "Kozbeyli Koyu Kume Evleri No:188, 35680 Foca/Izmir",
     "phone": "+90 232 826 11 12",
     "phone_booking": "+90 532 234 26 86",
     "whatsapp": "+90 532 234 26 86",
     "email": "info@kozbeylikonagi.com",
     "website": "https://kozbeylikonagi.com",
+    "menu_website": "https://thefoost.com/kozbeyli-konagi/",
     "instagram": "https://instagram.com/kozbeylikonagi",
     "instagram_handle": "@kozbeylikonagi",
     "instagram_followers": 11000,
@@ -24,17 +25,19 @@ HOTEL_INFO = {
     "quiet_hours": "23:00-08:00",
     "total_rooms": 16,
     "room_breakdown": {
-        "double_rooms": 9,
-        "triple_rooms": 2,
-        "superior_rooms": 1,
-        "family_rooms": 4,
+        "iki_kisilik": 9,  # 4 tanesi tek kisi konaklamaya uygun
+        "uc_kisilik": 2,
+        "superior": 1,     # 2 veya 3 kisilik olabilir
+        "dort_kisilik": 4,
     },
-    "opened_year": 2013,
+    "opened_year": 2011,  # 14 yillik isletme
     "founders": "Inci & Varol Oruk",
     "pets_allowed": True,
+    "pets_note": "Kucuk irklar ucretsiz, buyuk irklar icin balkonlu oda",
     "free_parking": True,
     "free_wifi": True,
     "free_breakfast": True,
+    "breakfast_includes": ["Serpme kahvalti", "Sucuklu yumurta", "Pisi"],
     "alcohol_served": True,
     "event_capacity": 100,
     "reception_hours": "08:00-00:00",
@@ -47,9 +50,12 @@ HOTEL_INFO = {
     "signature_dishes": [
         "Yogurtlu Balik", "Kalamar Dolmasi", "Balik Dolmasi", "Balik Pacasi",
         "Kuzu Etli Enginar", "Zeytinyagli Enginar Dolmasi", "Sac Kavurma", "Kuzu Tandir",
+        "Konak Kofte", "Antep Fistikli Kaymakli Kunefe",
     ],
     "coordinates": {"lat": 38.7333, "lng": 26.7667},
     "license": "T.C. Kultur ve Turizm Bakanligi Tesis Izin Belgesi No: 2025-35-1824",
+    "room_amenities": ["Mini buzdolabi", "Klima", "Televizyon", "Ozel banyo", "WiFi"],
+    "room_welcome": "2-4 adet su, sallama cay, nescafe, bambu karistirma cubugu, cikolatali mini berliner",
 }
 
 ROOMS = [
