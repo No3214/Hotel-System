@@ -2,12 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { getSocialPosts, createSocialPost, updateSocialPost, deleteSocialPost, publishSocialPost, getSocialTemplates, getSocialStats } from '../api';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { Plus, Trash2, Edit2, Save, X, Send, Copy, Instagram, Facebook, Twitter, MessageCircle, Eye, BarChart3, FileText, Sparkles, Clock } from 'lucide-react';
+import { Plus, Trash2, Edit2, Save, X, Send, Copy, Instagram, Facebook, Twitter, MessageCircle, Eye, BarChart3, FileText, Sparkles, Clock, Linkedin, Video } from 'lucide-react';
 
 const PLATFORMS = [
   { id: 'instagram', name: 'Instagram', icon: Instagram, color: '#E1306C' },
   { id: 'facebook', name: 'Facebook', icon: Facebook, color: '#1877F2' },
   { id: 'twitter', name: 'X (Twitter)', icon: Twitter, color: '#e5e5e8' },
+  { id: 'tiktok', name: 'TikTok', icon: Video, color: '#00F2EA' },
+  { id: 'linkedin', name: 'LinkedIn', icon: Linkedin, color: '#0A66C2' },
   { id: 'whatsapp', name: 'WhatsApp', icon: MessageCircle, color: '#25D366' },
 ];
 
