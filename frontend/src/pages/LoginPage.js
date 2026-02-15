@@ -98,11 +98,14 @@ export default function LoginPage({ onLogin }) {
         </form>
 
         {/* Setup */}
-        <div className="text-center">
+        <div className="text-center space-y-2">
           <button onClick={handleSetup} className="text-xs text-[#5a5a65] hover:text-[#C4972A] transition-colors" data-testid="setup-admin-btn">
             Ilk kurulum? Admin olustur
           </button>
           {setupMsg && <p className="text-xs text-[#C4972A] mt-2 bg-[#C4972A]/10 rounded p-2" data-testid="setup-message">{setupMsg}</p>}
+          <p className="text-xs text-[#4a4a55] mt-3">
+            Varsayilan: admin / kozbeyli2026
+          </p>
         </div>
       </div>
     </div>
