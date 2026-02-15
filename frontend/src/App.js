@@ -105,6 +105,7 @@ const PAGES = {
   automation: AutomationPage,
   social: SocialMediaPage,
   kitchen: KitchenPage,
+  whatsapp: WhatsAppPage,
   guide: FocaGuidePage,
   settings: SettingsPage,
 };
