@@ -27,6 +27,7 @@ import ReviewsPage from './pages/ReviewsPage';
 import PricingPage from './pages/PricingPage';
 import TableReservationsPage from './pages/TableReservationsPage';
 import LifecyclePage from './pages/LifecyclePage';
+import AutomationPage from './pages/AutomationPage';
 
 const NAV_SECTIONS = [
   {
@@ -70,6 +71,7 @@ const NAV_SECTIONS = [
   {
     label: 'Sistem',
     items: [
+      { id: 'automation', name: 'Otomasyon', icon: Settings },
       { id: 'settings', name: 'Ayarlar', icon: Settings },
     ],
   },
@@ -93,6 +95,7 @@ const PAGES = {
   pricing: PricingPage,
   table_reservations: TableReservationsPage,
   lifecycle: LifecyclePage,
+  automation: AutomationPage,
   guide: FocaGuidePage,
   settings: SettingsPage,
 };
