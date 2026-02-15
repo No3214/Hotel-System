@@ -16,14 +16,14 @@ DEFAULT_THEME = {
     "colors": {
         "bg": "#7A8B6F",
         "text": "#FFFFFF",
-        "muted": "#E8E4DC",
+        "muted": "#F5F2ED",
         "card": "#F8F5F0",
         "border": "#9AAD8F",
         "primary": "#5B7A4A",
         "on_primary": "#FFFFFF",
-        "accent": "#C4972A",
-        "on_accent": "#1E1B16",
-        "link": "#B8D4A8",
+        "accent": "#FFFFFF",
+        "on_accent": "#5B7A4A",
+        "link": "#FFFFFF",
     },
     "background": {
         "mode": "gradient",
