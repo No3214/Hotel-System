@@ -341,31 +341,18 @@ export default function SocialMediaPage() {
               />
             </div>
 
-            {/* Image Upload */}
+            {/* Image from Google Drive Link */}
             <div className="glass rounded-xl p-4">
-              <label className="text-xs text-[#7e7e8a] mb-2 block">Gorsel (Opsiyonel)</label>
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleImageUpload}
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                className="hidden"
-              />
+              <label className="text-xs text-[#7e7e8a] mb-2 block">Gorsel (Google Drive Linki)</label>
               {editPost.image_url ? (
                 <div className="relative group">
                   <img 
                     src={editPost.image_url} 
                     alt="Gonderi gorseli" 
                     className="w-full h-32 object-cover rounded-lg"
+                    onError={(e) => { e.target.style.display = 'none'; }}
                   />
                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="p-2 bg-white/10 rounded-lg hover:bg-white/20 text-white"
-                      title="Degistir"
-                    >
-                      <Upload className="w-4 h-4" />
-                    </button>
                     <button
                       onClick={() => setEditPost({ ...editPost, image_url: null })}
                       className="p-2 bg-red-500/20 rounded-lg hover:bg-red-500/30 text-red-400"
@@ -376,24 +363,28 @@ export default function SocialMediaPage() {
                   </div>
                 </div>
               ) : (
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  className="w-full h-24 border-2 border-dashed border-white/10 rounded-lg flex flex-col items-center justify-center gap-2 text-[#7e7e8a] hover:border-[#C4972A]/30 hover:text-[#C4972A] transition-all"
-                  data-testid="upload-image-btn"
-                >
-                  {uploading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span className="text-xs">Yukleniyor...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Image className="w-5 h-5" />
-                      <span className="text-xs">Gorsel yukle (max 5MB)</span>
-                    </>
-                  )}
-                </button>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Input
+                      value={imageLink}
+                      onChange={(e) => setImageLink(e.target.value)}
+                      placeholder="https://drive.google.com/file/d/..."
+                      className="bg-white/5 border-white/10 text-white text-sm flex-1"
+                      data-testid="image-link-input"
+                    />
+                    <Button 
+                      onClick={handleImageLink}
+                      disabled={uploading || !imageLink.trim()}
+                      className="bg-[#5B7A4A] hover:bg-[#4a6a3a] text-white px-3"
+                      data-testid="add-image-btn"
+                    >
+                      {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                  <p className="text-[10px] text-[#5a5a65]">
+                    Google Drive'da gorseli paylasa ac, linki yapistir
+                  </p>
+                </div>
               )}
             </div>
 
