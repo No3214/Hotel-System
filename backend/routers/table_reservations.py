@@ -235,6 +235,8 @@ async def create_table_reservation(data: TableReservationCreate):
         "table_id": selected_table["id"],
         "table_name": selected_table["name"],
         "table_capacity": selected_table["capacity"],
+        "is_combined": selected_table.get("is_combined", False),
+        "combined_table_ids": selected_table.get("combined_table_ids"),
         "end_time": end_time,
         "duration_minutes": duration,
         "status": TableStatus.PENDING,
