@@ -407,7 +407,7 @@ function MenuItem({ item, colors, components, subtitle }) {
           </h3>
         </div>
         {subtitle && (
-          <span style={{ color: colors.accent, fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', opacity: 0.8 }}>
+          <span style={{ color: colors.muted, fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', opacity: 0.7 }}>
             {subtitle}
           </span>
         )}
@@ -422,7 +422,7 @@ function MenuItem({ item, colors, components, subtitle }) {
       </div>
       <div style={{ flexShrink: 0, textAlign: 'right', paddingTop: 1 }}>
         <span style={{
-          color: colors.accent, fontSize: 15, fontWeight: 600,
+          color: colors.text, fontSize: 15, fontWeight: 600,
           fontFamily: "'Inter', sans-serif",
         }}>
           {item.price_try}
