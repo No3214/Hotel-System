@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, BedDouble, Users, MessageCircle, CheckSquare,
   Calendar, Sparkles, BookOpen, UtensilsCrossed, Menu, ChevronLeft,
-  CalendarCheck, UserCog, Mail, MapPin, Settings
+  CalendarCheck, UserCog, Mail, MapPin, Settings, Star
 } from 'lucide-react';
 
 import Dashboard from './pages/Dashboard';
@@ -21,6 +21,7 @@ import StaffPage from './pages/StaffPage';
 import CampaignsPage from './pages/CampaignsPage';
 import FocaGuidePage from './pages/FocaGuidePage';
 import SettingsPage from './pages/SettingsPage';
+import ReviewsPage from './pages/ReviewsPage';
 
 const NAV_SECTIONS = [
   {
