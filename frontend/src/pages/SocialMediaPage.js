@@ -586,11 +586,27 @@ function FramePreviewMini({ post, frameStyles }) {
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
         flexShrink: 0, border: `1px solid ${styles.accent}30`,
+        position: 'relative',
+        overflow: 'hidden',
       }}
     >
-      <div style={{ width: 16, height: 1.5, background: styles.accent, marginBottom: 3, borderRadius: 1 }} />
-      <div style={{ width: 24, height: 1, background: `${styles.text}40`, marginBottom: 2, borderRadius: 1 }} />
-      <div style={{ width: 20, height: 1, background: `${styles.text}20`, borderRadius: 1 }} />
+      {post.image_url ? (
+        <>
+          <img 
+            src={post.image_url} 
+            alt="" 
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} 
+          />
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.3)' }} />
+          <Image style={{ width: 16, height: 16, color: '#fff', position: 'relative', zIndex: 1 }} />
+        </>
+      ) : (
+        <>
+          <div style={{ width: 16, height: 1.5, background: styles.accent, marginBottom: 3, borderRadius: 1 }} />
+          <div style={{ width: 24, height: 1, background: `${styles.text}40`, marginBottom: 2, borderRadius: 1 }} />
+          <div style={{ width: 20, height: 1, background: `${styles.text}20`, borderRadius: 1 }} />
+        </>
+      )}
     </div>
   );
 }
