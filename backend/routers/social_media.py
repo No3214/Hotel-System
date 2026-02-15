@@ -177,3 +177,30 @@ async def get_stats():
         "scheduled": scheduled,
         "platforms": platform_counts,
     }
+
+
+@router.post("/social/upload-image")
+async def upload_image(file: UploadFile = File(...)):
+    """Upload an image for social media posts"""
+    # Validate file type
+    allowed_types = ["image/jpeg", "image/png", "image/webp", "image/gif"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(400, f"Desteklenmeyen dosya tipi: {file.content_type}")
+    
+    # Validate file size (max 5MB)
+    contents = await file.read()
+    if len(contents) > 5 * 1024 * 1024:
+        raise HTTPException(400, "Dosya boyutu 5MB'dan buyuk olamaz")
+    
+    # Generate unique filename
+    ext = file.filename.split(".")[-1] if "." in file.filename else "jpg"
+    filename = f"{new_id()}.{ext}"
+    filepath = os.path.join(UPLOAD_DIR, filename)
+    
+    # Save file
+    with open(filepath, "wb") as f:
+        f.write(contents)
+    
+    # Return URL
+    image_url = f"/uploads/social/{filename}"
+    return {"success": True, "image_url": image_url}
