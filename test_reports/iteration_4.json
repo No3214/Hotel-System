@@ -1,0 +1,126 @@
+{
+  "summary": "Comprehensive testing of Kozbeyli Hotel Phase 25 new features: JWT Auth, Dynamic Pricing, Table Reservations, Guest Lifecycle, and Automation Bots. All 25 backend API tests passed (100%). All frontend pages working correctly with proper data-testid attributes.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_faz25_new_features.py",
+    "/app/test_reports/pytest/pytest_faz25_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [
+    "/app/backend/tests/test_faz25_new_features.py"
+  ],
+  "success_rate": {
+    "backend": "100% (25/25 tests passed)",
+    "frontend": "100% (All features working)"
+  },
+  "test_credentials": {
+    "admin_username": "admin",
+    "admin_password": "kozbeyli2026"
+  },
+  "seed_data_creation": "Test table reservations created and cleaned up after testing",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Phase 25 features fully tested: Auth (JWT with admin/reception/kitchen/staff roles), Dynamic Pricing (seasons/holidays/weekends with multipliers), Table Reservations (9 time slots, CRUD operations), Lifecycle Messages (6 templates with preview), and Automation Bots (payment reminder, cancellation check, kitchen forecast). All APIs use /api prefix. Login stores token in localStorage as 'kozbeyli_token'. Frontend pages have comprehensive data-testid attributes for testing.",
+  "tested_features": {
+    "backend_apis": {
+      "auth": [
+        "POST /api/auth/setup - creates default admin (already exists)",
+        "POST /api/auth/login - returns JWT token",
+        "GET /api/auth/me - returns user info with Bearer token",
+        "GET /api/auth/roles - 4 roles (admin/reception/kitchen/staff)"
+      ],
+      "pricing": [
+        "GET /api/pricing/calculate - dynamic pricing with seasons/holidays/weekends",
+        "GET /api/pricing/range - date range pricing calculation",
+        "GET /api/pricing/seasons - 3 seasons with multipliers",
+        "GET /api/pricing/holidays - 14 Turkish holidays"
+      ],
+      "table_reservations": [
+        "POST /api/table-reservations - create reservation",
+        "GET /api/table-reservations - list reservations",
+        "GET /api/table-reservations/availability - 9 time slots",
+        "PATCH /api/table-reservations/{id}/status - status updates",
+        "DELETE /api/table-reservations/{id} - delete reservation"
+      ],
+      "lifecycle": [
+        "GET /api/lifecycle/templates - 6 message templates",
+        "POST /api/lifecycle/preview - message preview with variables"
+      ],
+      "automation": [
+        "GET /api/automation/summary - automation stats",
+        "POST /api/automation/payment-reminder - payment bot",
+        "POST /api/automation/cancellation-check - cancellation bot",
+        "GET /api/automation/kitchen-forecast - 7-day meal forecast"
+      ],
+      "dashboard": [
+        "GET /api/dashboard/stats - room/guest/task statistics",
+        "GET /api/rooms - room list with prices"
+      ]
+    },
+    "frontend_ui": {
+      "login": [
+        "Login form with username/password",
+        "'Giris Yap' button works correctly",
+        "Admin setup button available"
+      ],
+      "dashboard": [
+        "Sidebar shows all nav items including new ones",
+        "User info displayed at sidebar bottom",
+        "Logout button works and returns to login"
+      ],
+      "pricing_page": [
+        "Room/date selection calculator",
+        "Real-time price calculation",
+        "Date range calculator with daily breakdown",
+        "Seasons and holidays display"
+      ],
+      "table_reservations_page": [
+        "9 time slots availability display",
+        "Add reservation dialog with all fields",
+        "Status filter buttons",
+        "Reservation CRUD operations"
+      ],
+      "lifecycle_page": [
+        "6 message templates displayed",
+        "Template preview functionality",
+        "WhatsApp/SMS send buttons"
+      ],
+      "automation_page": [
+        "3 bot cards (payment/cancellation/kitchen)",
+        "'Calistir' buttons work",
+        "Kitchen forecast table display",
+        "Automation logs section"
+      ]
+    }
+  },
+  "mocked_features": {
+    "lifecycle_send": "MOCKED - Simulates WhatsApp/SMS, logs to DB only",
+    "automation_bots": "MOCKED - Log to DB but don't send real messages"
+  },
+  "pricing_verification": {
+    "high_season_holiday": {
+      "date": "2026-07-15",
+      "room": "double",
+      "base_price": 3000,
+      "final_price": 5050,
+      "multipliers": "season x1.4, holiday x1.2"
+    },
+    "low_season": {
+      "date": "2026-01-15",
+      "room": "single",
+      "base_price": 2500,
+      "final_price": 2000,
+      "multiplier": "season x0.8",
+      "savings": 500
+    }
+  }
+}
