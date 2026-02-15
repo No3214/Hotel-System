@@ -137,7 +137,37 @@ Bot: "Onayliyor musunuz? Evet/Hayir"
 
 **NOT:** WhatsApp Business API henuz yapilandirilmadi - sistem mock modda. Bildirimler veritabaninda saklanir.
 
-### Tests: Backend 19/19 (%100), Frontend %100
+### Faz 13: Operasyonel Otomasyon + Etkinlik Yonetimi (TAMAMLANDI - Feb 2026)
+
+**Zamanli Gorev Sistemi (scheduler.py - APScheduler):**
+- Kahvalti Hazirligi: Her gece 01:00 - Misafir sayisi ve oda tiplerine gore kahvalti bildirimi
+- Sabah Hatirlama: Her gun 08:30 - Tuvalet temizlik/stok kontrolu + check-in odasi hazirligi
+- Check-out Temizlik: Her gun 12:30 - Cikis yapan odalarin temizlik listesi
+- Tum bildirimler WhatsApp grubuna (mock modda DB'ye kaydedilir)
+- Manuel tetikleme: Her 3 bot tek tikla calistiriabilir
+
+**Otomasyon Dashboard Guncellemesi:**
+- 6 bot karti: Kahvalti, Sabah Hatirlama, Temizlik, Odeme, Iptal, Mutfak Tahmini
+- Zamanli gorev durumu paneli (sonraki calisma zamani + aktif/durduruldu)
+- 3 tab: Botlar, Grup Bildirimleri, Islem Gecmisi
+- Summary kartlari: Toplam, Kahvalti, Temizlik, Hatirlama, Odeme, Iptal
+
+**Yeni API Endpoint'leri:**
+- POST /api/automation/breakfast-notification
+- POST /api/automation/morning-reminders
+- POST /api/automation/cleaning-notification
+- GET /api/automation/scheduled-jobs
+- GET /api/automation/group-notifications
+
+**Etkinlik Sistemi Guncellemesi:**
+- 7 Subat Canli Muzik - Ece Yazar (Fix Menu, Alkolu 2750 TL, Sinirsiz 5500 TL)
+- 14 Subat Sevgililer Gunu - GORAY Akustik (Ozel menu, Alkolu 3500 TL, Sinirsiz 6000 TL)
+- Kapak gorseli destegi
+- Menu detaylari (acilir panel)
+- Sanatci bilgisi
+- POST /api/events/seed-samples endpoint
+
+### Tests: Backend 30/30 (%100), Frontend %100 - Iteration 8
 
 ## Architecture
 ```
