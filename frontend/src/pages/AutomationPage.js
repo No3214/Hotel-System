@@ -129,6 +129,10 @@ export default function AutomationPage() {
             <div><p className="text-[10px] text-[#7e7e8a]">Hatirlama</p><p className="text-lg font-bold text-white">{summary.morning_reminders || 0}</p></div>
           </div>
           <div className="glass rounded-xl p-3 flex items-center gap-2">
+            <Moon className="w-4 h-4 text-purple-400" />
+            <div><p className="text-[10px] text-[#7e7e8a]">Aksam Knt.</p><p className="text-lg font-bold text-white">{summary.evening_checks || 0}</p></div>
+          </div>
+          <div className="glass rounded-xl p-3 flex items-center gap-2">
             <CreditCard className="w-4 h-4 text-yellow-400" />
             <div><p className="text-[10px] text-[#7e7e8a]">Odeme</p><p className="text-lg font-bold text-white">{summary.payment_reminders}</p></div>
           </div>
