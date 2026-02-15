@@ -148,21 +148,24 @@ backend/
 ├── config.py          (env vars)
 ├── models.py          (Pydantic models)
 ├── hotel_data.py      (static hotel data - UPDATED)
-├── knowledge_seed_data.py  (NEW: Message templates, knowledge base)
+├── knowledge_seed_data.py  (Message templates, knowledge base)
+├── chatbot_engine.py       (NEW: Multi-agent router, auto-reply, conversation flow)
 ├── menu_seed_data.py  (Updated menu data - 100 items, 16 cats)
 ├── gemini_service.py  (Gemini AI)
 └── routers/
     ├── auth.py, hotel.py, rooms.py, guests.py
     ├── reservations.py, tasks.py, events.py
     ├── housekeeping.py, staff.py, knowledge.py
-    ├── chatbot.py, messages.py, campaigns.py
+    ├── chatbot.py          (Enhanced with chatbot_engine)
+    ├── messages.py, campaigns.py
     ├── reviews.py, settings.py, pricing.py
     ├── table_reservations.py, lifecycle.py
     ├── automation.py
     ├── public_menu.py    (Public QR menu)
     ├── menu_admin.py     (Admin menu CRUD)
     ├── social_media.py   (Social media publisher)
-    └── kitchen.py        (NEW: Kitchen dashboard)
+    ├── kitchen.py        (Kitchen dashboard)
+    └── whatsapp.py       (NEW: WhatsApp webhook & API)
 
 frontend/
 ├── public/
@@ -174,13 +177,14 @@ frontend/
     │   ├── PublicMenuPage.js  (Premium QR menu with animations)
     │   ├── MenuPage.js        (Admin menu CRUD + theme editor)
     │   ├── SocialMediaPage.js (Social media publisher)
-    │   ├── KitchenPage.js     (NEW: Kitchen dashboard)
-    │   └── ... (21+ pages)
+    │   ├── KitchenPage.js     (Kitchen dashboard)
+    │   ├── WhatsAppPage.js    (NEW: WhatsApp integration panel)
+    │   └── ... (22+ pages)
     └── App.js
 ```
 
-## 23 Frontend Pages (+1 Public)
-Dashboard, Rooms, Guests, Reservations, Chatbot, Messages,
+## 25 Frontend Pages (+1 Public)
+Dashboard, Rooms, Guests, Reservations, Chatbot, Messages, WhatsApp,
 Campaigns, Reviews, Tasks, Events, Housekeeping, Staff,
 Knowledge, QR Menu (admin), Social Media, Foca Guide, Settings, Login,
 Pricing, TableReservations, Lifecycle, Automation, Kitchen,
