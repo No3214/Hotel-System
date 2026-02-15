@@ -130,7 +130,7 @@ Pricing, TableReservations, Lifecycle, Automation,
 - Social media publishing (marks as published, doesn't post)
 
 ## Credentials
-- Admin: admin / kozbeyli2026
+- Admin: admin / admin123
 
 ## Upcoming Tasks
 - P1: HotelRunner API entegrasyonu
