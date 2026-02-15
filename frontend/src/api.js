@@ -138,6 +138,13 @@ export const previewLifecycleMessage = (templateKey, reservationId) => api.post(
 export const sendLifecycleMessage = (templateKey, reservationId, channel) => api.post(`/lifecycle/send?template_key=${templateKey}&reservation_id=${reservationId}&channel=${channel}`);
 export const getLifecycleHistory = (params) => api.get('/lifecycle/history', { params });
 
+// Automation
+export const runPaymentReminder = () => api.post('/automation/payment-reminder');
+export const runCancellationCheck = () => api.post('/automation/cancellation-check');
+export const getKitchenForecast = (days) => api.get(`/automation/kitchen-forecast?days=${days || 7}`);
+export const getAutomationLogs = (params) => api.get('/automation/logs', { params });
+export const getAutomationSummary = () => api.get('/automation/summary');
+
 // Auth
 export const login = (data) => api.post('/auth/login', data);
 export const getMe = () => api.get('/auth/me');
