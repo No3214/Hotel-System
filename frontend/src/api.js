@@ -144,6 +144,12 @@ export const runCancellationCheck = () => api.post('/automation/cancellation-che
 export const getKitchenForecast = (days) => api.get(`/automation/kitchen-forecast?days=${days || 7}`);
 export const getAutomationLogs = (params) => api.get('/automation/logs', { params });
 export const getAutomationSummary = () => api.get('/automation/summary');
+export const runBreakfastNotification = () => api.post('/automation/breakfast-notification');
+export const runMorningReminders = () => api.post('/automation/morning-reminders');
+export const runCleaningNotification = () => api.post('/automation/cleaning-notification');
+export const getScheduledJobs = () => api.get('/automation/scheduled-jobs');
+export const getGroupNotifications = (params) => api.get('/automation/group-notifications', { params });
+export const seedSampleEvents = () => api.post('/events/seed-samples');
 
 // Public Menu (no auth)
 export const getPublicMenu = () => axios.get(`${API_BASE}/api/public/menu`);
