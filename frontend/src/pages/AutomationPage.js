@@ -79,6 +79,7 @@ export default function AutomationPage() {
       case 'breakfast': return result.notification?.message || 'Bildirim gonderildi';
       case 'morning': return `${result.notifications?.length || 0} hatirlama gonderildi`;
       case 'cleaning': return result.notification?.message || 'Temizlik bildirimi gonderildi';
+      case 'evening': return result.notification?.message || 'Aksam kontrol bildirimi gonderildi';
       case 'payment': return `${result.reminders_created} hatirlatma olusturuldu`;
       case 'cancellation': return `${result.processed} iptal islendi`;
       case 'kitchen': return `${result.forecast_days} gunluk tahmin hazir`;
