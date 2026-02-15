@@ -147,6 +147,7 @@ export const getAutomationSummary = () => api.get('/automation/summary');
 export const runBreakfastNotification = () => api.post('/automation/breakfast-notification');
 export const runMorningReminders = () => api.post('/automation/morning-reminders');
 export const runCleaningNotification = () => api.post('/automation/cleaning-notification');
+export const runEveningRoomCheck = () => api.post('/automation/evening-room-check');
 export const getScheduledJobs = () => api.get('/automation/scheduled-jobs');
 export const getGroupNotifications = (params) => api.get('/automation/group-notifications', { params });
 export const seedSampleEvents = () => api.post('/events/seed-samples');
