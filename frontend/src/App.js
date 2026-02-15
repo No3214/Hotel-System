@@ -102,6 +102,15 @@ const PAGES = {
 };
 
 export default function App() {
+  // Public menu route - accessible without auth
+  if (window.location.pathname === '/menu') {
+    return <PublicMenuPage />;
+  }
+
+  return <AdminApp />;
+}
+
+function AdminApp() {
   const [page, setPage] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [user, setUser] = useState(null);
