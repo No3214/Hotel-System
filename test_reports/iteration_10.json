@@ -1,0 +1,148 @@
+{
+  "summary": "Iteration 10 - Tested 3 NEW features: 18:00 Evening Room Check automation, Dynamic Real-time Dashboard, Multi-language Support (TR/EN/DE/FR/RU). All 20 backend API tests passed (100%). All frontend features working correctly.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "GET /api/dashboard/stats",
+        "issue": "rooms_list returns rooms without 'id' field (only 'status'). This is a data structure inconsistency - rooms collection uses 'room_id' instead of 'id'",
+        "priority": "LOW"
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration10_new_features.py",
+    "/app/test_reports/pytest/pytest_iteration10.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "React warning: 'Each child in a list should have a unique key prop' in Dashboard component - should add unique keys to list items"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration10_new_features.py"
+  ],
+  "success_rate": {
+    "backend": "100% (20/20 tests passed)",
+    "frontend": "100% (All 3 new features working)"
+  },
+  "test_credentials": {
+    "admin_username": "admin",
+    "admin_password": "admin123"
+  },
+  "seed_data_creation": "None needed",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 10 verified 3 NEW features: (1) Evening Room Check - POST /api/automation/evening-room-check works, scheduler has 4 jobs including evening_room_check at 18:00, summary includes evening_checks count, (2) Dynamic Dashboard - /api/dashboard/stats returns weekly_trend (7 days), todays_checkins, todays_checkouts, monthly_revenue, rooms_list, room_status_counts, recent_activity, CANLI indicator visible, refresh button works, (3) Multi-language - /api/i18n returns 5 languages (TR/EN/DE/FR/RU), /api/i18n/{lang} returns translations for each, language selector in sidebar works, navigation labels translate correctly.",
+  "tested_features": {
+    "evening_room_check": {
+      "endpoint": "POST /api/automation/evening-room-check",
+      "status": "WORKING",
+      "returns": {
+        "success": true,
+        "type": "evening_room_check",
+        "notification": "message with room check details"
+      },
+      "scheduled_job": {
+        "id": "evening_room_check",
+        "name": "Aksam Oda Kontrolu",
+        "schedule": "18:00 daily",
+        "status": "active"
+      },
+      "summary_field": "evening_checks count included in /api/automation/summary"
+    },
+    "dynamic_dashboard": {
+      "endpoint": "GET /api/dashboard/stats",
+      "status": "WORKING",
+      "new_fields": [
+        "weekly_trend (7 days with date, day, occupied, rate)",
+        "todays_checkins (integer)",
+        "todays_checkouts (integer)",
+        "monthly_revenue (numeric)",
+        "rooms_list (array of room objects)",
+        "room_status_counts (dict)",
+        "recent_activity (array)",
+        "recent_reservations (array)"
+      ],
+      "frontend_features": {
+        "live_indicator": "CANLI badge visible in top-right",
+        "refresh_button": "data-testid='refresh-dashboard' present and working",
+        "kpi_cards": "4 cards (occupancy, check-ins, check-outs, revenue)",
+        "mini_stats": "6 mini stat cards (guests, reservations, pending, events, cleaning, revenue)",
+        "weekly_chart": "Bar chart with 7 days (Pzt-Paz)",
+        "room_status_grid": "Color-coded room status display",
+        "platform_ratings": "Booking.com 8.8, Tripadvisor 5, Holidaycheck 5.9, Neredekal 4.7",
+        "recent_activity": "Shows recent reservations and tasks"
+      }
+    },
+    "multi_language_support": {
+      "languages_endpoint": {
+        "url": "GET /api/i18n",
+        "status": "WORKING",
+        "languages": [
+          {"code": "tr", "name": "Turkce", "flag": "TR"},
+          {"code": "en", "name": "English", "flag": "GB"},
+          {"code": "de", "name": "Deutsch", "flag": "DE"},
+          {"code": "fr", "name": "Francais", "flag": "FR"},
+          {"code": "ru", "name": "Russkiy", "flag": "RU"}
+        ]
+      },
+      "translation_endpoints": {
+        "tr": "WORKING - returns Turkish translations",
+        "en": "WORKING - Dashboard, Rooms, Guests, Live, etc.",
+        "de": "WORKING - Zimmer, Gaste, Dashboard, etc.",
+        "fr": "WORKING - Chambres, Clients, Tableau de Bord, etc.",
+        "ru": "WORKING - Nomera, Gosti, etc."
+      },
+      "frontend_features": {
+        "language_selector": "data-testid='language-selector' in sidebar footer",
+        "dropdown": "data-testid='language-dropdown' shows all 5 options",
+        "language_options": "data-testid='lang-option-{code}' for each language",
+        "translation_on_switch": "Navigation labels translate immediately",
+        "persistence": "Language saved in localStorage (kozbeyli_lang)"
+      }
+    },
+    "automation_page": {
+      "scheduled_jobs_count": 4,
+      "all_jobs": [
+        {"id": "breakfast_prep", "name": "Kahvalti Hazirligi", "schedule": "01:00 daily"},
+        {"id": "morning_reminders", "name": "Sabah Hatirlama", "schedule": "08:30 daily"},
+        {"id": "checkout_cleaning", "name": "Check-out Temizlik", "schedule": "12:30 daily"},
+        {"id": "evening_room_check", "name": "Aksam Oda Kontrolu", "schedule": "18:00 daily"}
+      ],
+      "evening_bot_card": {
+        "testid": "bot-evening",
+        "icon": "Moon",
+        "run_button": "data-testid='run-evening'"
+      },
+      "summary_stats": {
+        "total_logs": 14,
+        "breakfast_preps": 3,
+        "cleaning_notifications": 0,
+        "morning_reminders": 6,
+        "evening_checks": 5,
+        "payment_reminders": 0,
+        "cancellation_checks": 0
+      }
+    }
+  },
+  "mocked_features": {
+    "has_mocked_apis": true,
+    "mocked_apis_list": [
+      "WhatsApp group notifications - stored in DB group_notifications collection instead of real WhatsApp"
+    ]
+  },
+  "screenshots": [
+    ".screenshots/iteration10_after_login.jpg",
+    ".screenshots/iteration10_dashboard.jpg",
+    ".screenshots/iteration10_lang_dropdown.jpg",
+    ".screenshots/iteration10_english.jpg",
+    ".screenshots/iteration10_automation.jpg",
+    ".screenshots/iteration10_automation_bots.jpg",
+    ".screenshots/iteration10_german.jpg"
+  ]
+}
