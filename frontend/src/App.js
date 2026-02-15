@@ -29,6 +29,7 @@ import PricingPage from './pages/PricingPage';
 import TableReservationsPage from './pages/TableReservationsPage';
 import LifecyclePage from './pages/LifecyclePage';
 import AutomationPage from './pages/AutomationPage';
+import SocialMediaPage from './pages/SocialMediaPage';
 
 const NAV_SECTIONS = [
   {
