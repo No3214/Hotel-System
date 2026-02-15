@@ -1,5 +1,27 @@
 # Kozbeyli Konagi - Degisiklik Gunlugu
 
+## [2026-02-15] - Aksam Oda Kontrolu + Dinamik Dashboard + Coklu Dil
+
+### Eklendi
+- **18:00 Aksam Oda Kontrolu:** Check-out odalarda klima/isik kontrol hatirlatmasi (CronTrigger 18:00)
+- **Dinamik Gercek Zamanli Dashboard:**
+  - 4 KPI karti (doluluk, giris/cikis, gelir)
+  - Haftalik doluluk trendi bar grafigi
+  - Oda durum gridi (renk kodlu)
+  - Platform puanlari, son aktiviteler
+  - 30s otomatik yenileme + CANLI gostergesi
+- **Coklu Dil Destegi (5 dil):**
+  - TR, EN, DE, FR, RU
+  - LanguageProvider context + sidebar dil secici
+  - 67 anahtar/dil, localStorage'da tercih kaydi
+
+### Test Sonuclari
+- Backend: 20/20 (%100) - Iteration 10
+- Frontend: Tum ozellikler calisir durumda (%100)
+
+---
+
+
 ## [2026-02-15] - Guvenlik + Sadakat Sistemi
 
 ### Eklendi
