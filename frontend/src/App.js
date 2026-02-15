@@ -12,7 +12,7 @@ import ChatbotPage from './pages/ChatbotPage';
 import TasksPage from './pages/TasksPage';
 import EventsPage from './pages/EventsPage';
 import HousekeepingPage from './pages/HousekeepingPage';
-import KnowledgePage from './pages/KnowledgePage';
+import KnowledgePage from './pages/KnowledgeBasePage';
 import MenuPage from './pages/MenuPage';
 import MessagesPage from './pages/MessagesPage';
 
