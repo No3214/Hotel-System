@@ -249,8 +249,17 @@ def start_scheduler():
         replace_existing=True,
     )
 
+    # 18:00 - Aksam oda kontrolu (klima/isik kapatma)
+    scheduler.add_job(
+        evening_room_check_job,
+        CronTrigger(hour=18, minute=0),
+        id="evening_room_check",
+        name="Aksam Oda Kontrolu",
+        replace_existing=True,
+    )
+
     scheduler.start()
-    logger.info("Scheduler baslatildi - 3 zamanli gorev aktif")
+    logger.info("Scheduler baslatildi - 4 zamanli gorev aktif")
 
 
 def get_scheduled_jobs():
