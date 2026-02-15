@@ -10,13 +10,14 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import {
   Bot, CreditCard, XCircle, UtensilsCrossed, Play, Clock,
-  Coffee, Sparkles, Brush, Bell, CalendarClock, MessageSquare
+  Coffee, Sparkles, Brush, Bell, CalendarClock, MessageSquare, Moon
 } from 'lucide-react';
 
 const BOTS = [
   { id: 'breakfast', name: 'Kahvalti Hazirligi', desc: 'Sabah kahvalti misafir sayisi bildirimi', icon: Coffee, color: '#f59e0b', schedule: 'Her gece 01:00' },
   { id: 'morning', name: 'Sabah Hatirlama', desc: 'Tuvalet temizlik + check-in odasi hazirligi', icon: Sparkles, color: '#3b82f6', schedule: 'Her gun 08:30' },
   { id: 'cleaning', name: 'Temizlik Listesi', desc: 'Check-out sonrasi temizlenecek oda listesi', icon: Brush, color: '#10b981', schedule: 'Her gun 12:30' },
+  { id: 'evening', name: 'Aksam Oda Kontrolu', desc: 'Cikis yapan odalarda klima/isik kontrolu', icon: Moon, color: '#8b5cf6', schedule: 'Her gun 18:00' },
   { id: 'payment', name: 'Odeme Hatirlatma', desc: 'Cumartesi check-in: on odeme kontrolu', icon: CreditCard, color: '#eab308', schedule: 'Manuel' },
   { id: 'cancellation', name: 'Iptal Denetcisi', desc: 'Iptal ceza hesaplama otomasyonu', icon: XCircle, color: '#ef4444', schedule: 'Manuel' },
   { id: 'kitchen', name: 'Mutfak Tahmini', desc: '7 gunluk yemek planlama', icon: UtensilsCrossed, color: '#22c55e', schedule: 'Manuel' },
