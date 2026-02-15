@@ -165,13 +165,13 @@ export default function Dashboard({ onNavigate }) {
               const colors = ROOM_STATUS_COLORS[st] || ROOM_STATUS_COLORS.available;
               return (
                 <div
-                  key={room.id}
+                  key={room.room_id}
                   className={`${colors.bg} rounded-md p-1.5 text-center cursor-pointer hover:scale-105 transition-transform`}
-                  title={`${room.name || room.id} - ${st}`}
-                  data-testid={`room-cell-${room.id}`}
+                  title={`${room.name_tr || room.room_id} - ${st}`}
+                  data-testid={`room-cell-${room.room_id}`}
                 >
                   <span className={`text-[10px] font-bold ${colors.text}`}>
-                    {(room.name || room.id || '').replace('room_', '')}
+                    {(room.name_tr || room.room_id || '').substring(0, 12)}
                   </span>
                 </div>
               );
