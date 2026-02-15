@@ -33,7 +33,9 @@ export default function SocialMediaPage() {
   const [view, setView] = useState('list'); // list, create, edit, preview
   const [editPost, setEditPost] = useState(null);
   const [filter, setFilter] = useState('all');
+  const [uploading, setUploading] = useState(false);
   const previewRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const loadData = async () => {
     try {
@@ -60,8 +62,24 @@ export default function SocialMediaPage() {
       frame_style: 'default',
       hashtags: tpl.hashtags || ['KozbeyliKonagi'],
       status: 'draft',
+      image_url: null,
     });
     setView('create');
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setUploading(true);
+    try {
+      const res = await uploadSocialImage(file);
+      setEditPost({ ...editPost, image_url: res.data.image_url });
+    } catch (err) {
+      console.error('Gorsel yuklenemedi:', err);
+      alert('Gorsel yuklenemedi. Lutfen tekrar deneyin.');
+    }
+    setUploading(false);
   };
 
   const handleSave = async () => {
