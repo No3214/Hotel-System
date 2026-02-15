@@ -39,6 +39,7 @@ const NAV_SECTIONS = [
       { id: 'chatbot', name: 'AI Asistan', icon: Sparkles },
       { id: 'messages', name: 'Mesajlar', icon: MessageCircle },
       { id: 'campaigns', name: 'Kampanyalar', icon: Mail },
+      { id: 'reviews', name: 'Google Yorumlari', icon: Star },
     ],
   },
   {
@@ -80,6 +81,7 @@ const PAGES = {
   reservations: ReservationsPage,
   staff: StaffPage,
   campaigns: CampaignsPage,
+  reviews: ReviewsPage,
   guide: FocaGuidePage,
   settings: SettingsPage,
 };
