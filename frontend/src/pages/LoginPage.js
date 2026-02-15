@@ -30,7 +30,15 @@ export default function LoginPage({ onLogin }) {
   const handleSetup = async () => {
     try {
       const res = await setupAdmin();
-      setSetupMsg(`Admin olusturuldu! Kullanici: ${res.data.username} / Sifre: ${res.data.password}`);
+      if (res.data.has_users) {
+        // System already set up
+        setSetupMsg('Sistem zaten kurulmus. Mevcut admin bilgilerini kullanin.');
+      } else if (res.data.username && res.data.password) {
+        // New admin created
+        setSetupMsg(`Admin olusturuldu! Kullanici: ${res.data.username} / Sifre: ${res.data.password}`);
+      } else {
+        setSetupMsg(res.data.message || 'Kurulum tamamlandi');
+      }
     } catch (err) {
       setSetupMsg(err.response?.data?.detail || err.response?.data?.message || 'Hata');
     }
