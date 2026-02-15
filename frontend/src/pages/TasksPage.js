@@ -1,188 +1,147 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { CheckCircle, Clock, AlertCircle, ChevronRight } from 'lucide-react';
-import { listTasks, updateTaskStatus } from '../api';
+import { getTasks, createTask, updateTask, deleteTask } from '../api';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Badge } from '../components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { CheckSquare, Plus, Trash2, Clock, AlertCircle } from 'lucide-react';
 
-const TasksPage = () => {
+const PRIORITY_COLORS = {
+  low: 'bg-gray-500/20 text-gray-400',
+  normal: 'bg-blue-500/20 text-blue-400',
+  high: 'bg-orange-500/20 text-orange-400',
+  urgent: 'bg-red-500/20 text-red-400',
+};
+
+const STATUS_COLORS = {
+  pending: 'bg-yellow-500/20 text-yellow-400',
+  in_progress: 'bg-blue-500/20 text-blue-400',
+  completed: 'bg-green-500/20 text-green-400',
+  cancelled: 'bg-gray-500/20 text-gray-400',
+};
+
+export default function TasksPage() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [filter, setFilter] = useState('all');
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({ title: '', description: '', priority: 'normal', assignee_role: '' });
 
-  useEffect(() => {
-    fetchTasks();
-  }, [filterStatus]);
-
-  const fetchTasks = async () => {
-    try {
-      setLoading(true);
-      const params = filterStatus !== 'all' ? { status: filterStatus } : {};
-      const data = await listTasks(params);
-      setTasks(data.tasks || []);
-    } catch (error) {
-      console.error('Error fetching tasks:', error);
-    } finally {
-      setLoading(false);
-    }
+  const load = () => {
+    const params = filter !== 'all' ? { status: filter } : {};
+    getTasks(params).then(r => setTasks(r.data.tasks)).catch(console.error).finally(() => setLoading(false));
   };
 
-  const handleStatusChange = async (taskId, newStatus) => {
-    try {
-      await updateTaskStatus(taskId, newStatus);
-      // Update local state
-      setTasks(prev => prev.map(task => 
-        task.id === taskId ? { ...task, status: newStatus } : task
-      ));
-    } catch (error) {
-      console.error('Error updating task status:', error);
-    }
+  useEffect(() => { load(); }, [filter]);
+
+  const handleCreate = async () => {
+    if (!form.title) return;
+    await createTask(form);
+    setForm({ title: '', description: '', priority: 'normal', assignee_role: '' });
+    setOpen(false);
+    load();
   };
 
-  const getPriorityColor = (priority) => {
-    const colors = {
-      urgent: 'text-red-400 bg-red-500/10 border-red-500/20',
-      high: 'text-orange-400 bg-orange-500/10 border-orange-500/20',
-      normal: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
-      low: 'text-gray-400 bg-gray-500/10 border-gray-500/20'
-    };
-    return colors[priority] || colors.normal;
+  const handleStatusChange = async (id, status) => {
+    await updateTask(id, { status });
+    load();
   };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'completed': return <CheckCircle className="w-5 h-5 text-emerald-400" />;
-      case 'in_progress': return <Clock className="w-5 h-5 text-blue-400 animate-pulse" />;
-      case 'pending': return <Clock className="w-5 h-5 text-amber-400" />;
-      default: return <AlertCircle className="w-5 h-5 text-gray-400" />;
-    }
-  };
-
-  const getStatusLabel = (status) => {
-    const labels = {
-      pending: 'Bekliyor',
-      in_progress: 'Devam Ediyor',
-      completed: 'Tamamlandı',
-      cancelled: 'İptal'
-    };
-    return labels[status] || status;
+  const handleDelete = async (id) => {
+    await deleteTask(id);
+    load();
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto" data-testid="tasks-page">
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
-      >
-        <h1 className="text-4xl font-heading font-bold mb-2">Görevler</h1>
-        <p className="text-gray-400">Dokümanlardan otomatik oluşturulan ve manuel görevler</p>
-      </motion.div>
-
-      {/* Filters */}
-      <div className="bg-bg-surface border border-white/5 rounded-xl p-6 mb-6">
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="text-sm text-gray-400">Durum:</span>
-          {['all', 'pending', 'in_progress', 'completed'].map(status => (
-            <button
-              key={status}
-              onClick={() => setFilterStatus(status)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                filterStatus === status
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-white/5 text-gray-400 hover:bg-white/10'
-              }`}
-              data-testid={`filter-${status}`}
-            >
-              {status === 'all' ? 'Tümü' :
-               status === 'pending' ? 'Bekliyor' :
-               status === 'in_progress' ? 'Devam Ediyor' :
-               'Tamamlandı'}
-            </button>
-          ))}
+    <div className="p-6 lg:p-8 space-y-6 max-w-[1400px]" data-testid="tasks-page">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl lg:text-3xl font-bold text-[#C4972A]">Gorevler</h1>
+          <p className="text-[#7e7e8a] text-sm mt-1">{tasks.length} gorev</p>
         </div>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-[#C4972A] hover:bg-[#a87a1f] text-white" data-testid="add-task-btn">
+              <Plus className="w-4 h-4 mr-2" /> Gorev Ekle
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="bg-[#1a1a22] border-[#C4972A]/20">
+            <DialogHeader><DialogTitle className="text-[#C4972A]">Yeni Gorev</DialogTitle></DialogHeader>
+            <div className="space-y-3">
+              <Input placeholder="Gorev basligi *" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })}
+                className="bg-white/5 border-white/10" data-testid="task-title-input" />
+              <Input placeholder="Aciklama" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
+                className="bg-white/5 border-white/10" />
+              <Select value={form.priority} onValueChange={v => setForm({ ...form, priority: v })}>
+                <SelectTrigger className="bg-white/5 border-white/10"><SelectValue /></SelectTrigger>
+                <SelectContent className="bg-[#1a1a22] border-[#C4972A]/20">
+                  <SelectItem value="low">Dusuk</SelectItem>
+                  <SelectItem value="normal">Normal</SelectItem>
+                  <SelectItem value="high">Yuksek</SelectItem>
+                  <SelectItem value="urgent">Acil</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input placeholder="Atanan rol (mutfak/resepsiyon/kat)" value={form.assignee_role} onChange={e => setForm({ ...form, assignee_role: e.target.value })}
+                className="bg-white/5 border-white/10" />
+              <Button onClick={handleCreate} className="w-full bg-[#C4972A] hover:bg-[#a87a1f]" data-testid="save-task-btn">Kaydet</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      {/* Tasks List */}
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
-        </div>
-      ) : tasks.length === 0 ? (
-        <div className="bg-bg-surface border border-white/5 rounded-xl p-12 text-center">
-          <CheckCircle className="w-16 h-16 mx-auto mb-4 text-gray-600" />
-          <h3 className="text-xl font-semibold mb-2">Görev bulunamadı</h3>
-          <p className="text-gray-400">Henüz hiç görev oluşturulmadı.</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {tasks.map((task, index) => (
-            <motion.div
-              key={task.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.05 }}
-              className="bg-bg-surface border border-white/5 rounded-xl p-6 card-hover"
-              data-testid="task-item"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-4 flex-1">
-                  {getStatusIcon(task.status)}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <h3 className="text-lg font-semibold">{task.title}</h3>
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${getPriorityColor(task.priority)}`}>
-                        {task.priority === 'urgent' ? 'Acil' :
-                         task.priority === 'high' ? 'Yüksek' :
-                         task.priority === 'normal' ? 'Normal' : 'Düşük'}
-                      </span>
-                    </div>
+      {/* Filters */}
+      <div className="flex gap-2 flex-wrap">
+        {['all', 'pending', 'in_progress', 'completed'].map(f => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`px-3 py-1.5 rounded-full text-xs transition-all ${
+              filter === f ? 'bg-[#C4972A]/20 text-[#C4972A]' : 'bg-white/5 text-[#7e7e8a] hover:bg-white/10'
+            }`}
+            data-testid={`filter-${f}`}
+          >
+            {f === 'all' ? 'Tumu' : f === 'pending' ? 'Bekleyen' : f === 'in_progress' ? 'Devam Eden' : 'Tamamlanan'}
+          </button>
+        ))}
+      </div>
 
-                    {task.description && (
-                      <p className="text-gray-400 text-sm mb-3">{task.description}</p>
-                    )}
-
-                    <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500">
-                      {task.assignee_role && (
-                        <span>Sorumlu: <span className="text-white">{task.assignee_role}</span></span>
-                      )}
-                      {task.due_date && (
-                        <span>Teslim: <span className="text-white">
-                          {new Date(task.due_date).toLocaleDateString('tr-TR')}
-                        </span></span>
-                      )}
-                      <span>Kaynak: <span className="text-white">{task.source === 'ai' ? 'AI' : 'Manuel'}</span></span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Status Actions */}
-                <div className="flex items-center space-x-2">
-                  {task.status === 'pending' && (
-                    <button
-                      onClick={() => handleStatusChange(task.id, 'in_progress')}
-                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium transition-all"
-                      data-testid="btn-start-task"
-                    >
-                      Başlat
-                    </button>
-                  )}
-                  {task.status === 'in_progress' && (
-                    <button
-                      onClick={() => handleStatusChange(task.id, 'completed')}
-                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 rounded-lg text-sm font-medium transition-all"
-                      data-testid="btn-complete-task"
-                    >
-                      Tamamla
-                    </button>
-                  )}
-                  <ChevronRight className="w-5 h-5 text-gray-600" />
+      {/* Task List */}
+      <div className="space-y-3">
+        {tasks.map(task => (
+          <div key={task.id} className="glass rounded-xl p-4 hover:gold-glow transition-all" data-testid={`task-${task.id}`}>
+            <div className="flex items-start gap-3">
+              <button
+                onClick={() => handleStatusChange(task.id, task.status === 'completed' ? 'pending' : 'completed')}
+                className={`w-5 h-5 rounded border-2 flex-shrink-0 mt-0.5 flex items-center justify-center transition-all ${
+                  task.status === 'completed' ? 'bg-[#C4972A] border-[#C4972A]' : 'border-[#7e7e8a] hover:border-[#C4972A]'
+                }`}
+              >
+                {task.status === 'completed' && <CheckSquare className="w-3 h-3 text-white" />}
+              </button>
+              <div className="flex-1 min-w-0">
+                <p className={`font-medium ${task.status === 'completed' ? 'line-through text-[#7e7e8a]' : ''}`}>{task.title}</p>
+                {task.description && <p className="text-xs text-[#7e7e8a] mt-1">{task.description}</p>}
+                <div className="flex items-center gap-2 mt-2">
+                  <Badge className={PRIORITY_COLORS[task.priority]}>{task.priority}</Badge>
+                  <Badge className={STATUS_COLORS[task.status]}>{task.status}</Badge>
+                  {task.assignee_role && <span className="text-xs text-[#7e7e8a]">{task.assignee_role}</span>}
+                  {task.source && <span className="text-xs text-[#C4972A]/50">{task.source}</span>}
                 </div>
               </div>
-            </motion.div>
-          ))}
-        </div>
-      )}
+              <button onClick={() => handleDelete(task.id)} className="text-[#7e7e8a] hover:text-red-400 transition-colors">
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        ))}
+        {tasks.length === 0 && !loading && (
+          <div className="text-center py-12 text-[#7e7e8a]">
+            <CheckSquare className="w-12 h-12 mx-auto mb-3 opacity-30" />
+            <p>Gorev bulunamadi</p>
+          </div>
+        )}
+      </div>
     </div>
   );
-};
-
-export default TasksPage;
+}
