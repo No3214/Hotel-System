@@ -35,7 +35,6 @@ export default function SocialMediaPage() {
   const [filter, setFilter] = useState('all');
   const [uploading, setUploading] = useState(false);
   const previewRef = useRef(null);
-  const fileInputRef = useRef(null);
 
   const loadData = async () => {
     try {
