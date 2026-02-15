@@ -72,4 +72,41 @@ export const sendWhatsAppWebhook = (data) => api.post('/whatsapp/webhook', data)
 // Seed
 export const seedDatabase = () => api.post('/seed');
 
+// Campaigns
+export const getCampaigns = (params) => api.get('/campaigns', { params });
+export const createCampaign = (data) => api.post('/campaigns', data);
+export const updateCampaignStatus = (id, status) => api.patch(`/campaigns/${id}/status?status=${status}`);
+export const deleteCampaign = (id) => api.delete(`/campaigns/${id}`);
+
+// Shifts
+export const getShifts = (params) => api.get('/shifts', { params });
+export const createShift = (data) => api.post('/shifts', data);
+export const deleteShift = (id) => api.delete(`/shifts/${id}`);
+
+// Staff extended
+export const updateStaff = (id, data) => api.patch(`/staff/${id}`, data);
+export const deleteStaff = (id) => api.delete(`/staff/${id}`);
+
+// Reservations extended
+export const getReservation = (id) => api.get(`/reservations/${id}`);
+export const updateReservation = (id, data) => api.patch(`/reservations/${id}`, data);
+export const deleteReservation = (id) => api.delete(`/reservations/${id}`);
+
+// Settings
+export const getSettings = () => api.get('/settings');
+export const updateSettings = (data) => api.patch('/settings', data);
+
+// KVKK
+export const getKvkkPolicy = () => api.get('/kvkk/policy');
+
+// i18n
+export const getTranslations = (lang) => api.get(`/i18n/${lang}`);
+export const getLanguages = () => api.get('/i18n');
+
+// Housekeeping auto
+export const autoScheduleHousekeeping = () => api.post('/housekeeping/auto-schedule');
+
+// Hotel
+export const getHotelHistory = () => api.get('/hotel/history');
+
 export default api;
