@@ -381,8 +381,11 @@ Bu bilgiler doğru mu? Onaylıyor musunuz?
     # Onay bekleniyor
     if flow.state == ConversationState.TABLE_CONFIRM:
         if any(word in lower for word in ["evet", "onay", "tamam", "ok", "yes", "dogru", "doğru"]):
+            # Flow verisini önce kaydet
+            flow_data = flow.data.copy()
+            
             # Rezervasyonu kaydet
-            reservation = await create_table_reservation_from_flow(flow.data)
+            reservation = await create_table_reservation_from_flow(flow_data)
             
             # Grup bildirimi için kaydet
             await save_notification_for_group(reservation)
@@ -395,9 +398,9 @@ Bu bilgiler doğru mu? Onaylıyor musunuz?
 
 Rezervasyon No: #{reservation['id'][:8].upper()}
 
-📅 {flow.data['date_display']}
-⏰ {flow.data['time']}
-👥 {flow.data['party_size']} kişi
+📅 {flow_data.get('date_display', reservation.get('date', ''))}
+⏰ {flow_data.get('time', reservation.get('time', ''))}
+👥 {flow_data.get('party_size', reservation.get('party_size', ''))} kişi
 
 Sizi bekliyoruz! 🏨
 
