@@ -3,11 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, BedDouble, Users, MessageCircle, CheckSquare,
   Calendar, Sparkles, BookOpen, UtensilsCrossed, Menu, ChevronLeft,
-  CalendarCheck, UserCog, Mail, MapPin, Settings, Star, TrendingUp, Heart, LogOut
+  CalendarCheck, UserCog, Mail, MapPin, Settings, Star, TrendingUp, Heart, LogOut, QrCode
 } from 'lucide-react';
 
 import { setAuthToken, getMe } from './api';
 import LoginPage from './pages/LoginPage';
+import PublicMenuPage from './pages/PublicMenuPage';
 import Dashboard from './pages/Dashboard';
 import RoomsPage from './pages/RoomsPage';
 import GuestsPage from './pages/GuestsPage';
