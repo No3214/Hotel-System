@@ -31,6 +31,7 @@ import LifecyclePage from './pages/LifecyclePage';
 import AutomationPage from './pages/AutomationPage';
 import SocialMediaPage from './pages/SocialMediaPage';
 import KitchenPage from './pages/KitchenPage';
+import WhatsAppPage from './pages/WhatsAppPage';
 
 const NAV_SECTIONS = [
   {
