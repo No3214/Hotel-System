@@ -203,8 +203,64 @@ async def automation_summary():
     total_logs = await db.automation_logs.count_documents({})
     payment_reminders = await db.automation_logs.count_documents({"type": "payment_reminder"})
     cancellation_checks = await db.automation_logs.count_documents({"type": "cancellation_penalty"})
+    breakfast_preps = await db.automation_logs.count_documents({"type": "breakfast_prep"})
+    cleaning_notifications = await db.automation_logs.count_documents({"type": "checkout_cleaning"})
+    morning_reminders = await db.automation_logs.count_documents({"type": {"$in": ["morning_toilet_reminder", "morning_checkin_reminder"]}})
     return {
         "total_logs": total_logs,
         "payment_reminders": payment_reminders,
         "cancellation_checks": cancellation_checks,
+        "breakfast_preps": breakfast_preps,
+        "cleaning_notifications": cleaning_notifications,
+        "morning_reminders": morning_reminders,
     }
+
+
+# ==================== OPERASYONEL OTOMASYON ====================
+
+@router.post("/automation/breakfast-notification")
+async def run_breakfast_notification():
+    """Kahvalti hazirligi bildirimini manuel tetikle"""
+    await breakfast_prep_job()
+    last_log = await db.automation_logs.find_one(
+        {"type": "breakfast_prep"}, {"_id": 0}, sort=[("created_at", -1)]
+    )
+    return {"success": True, "type": "breakfast_prep", "notification": last_log}
+
+
+@router.post("/automation/morning-reminders")
+async def run_morning_reminders():
+    """Sabah hatirlama mesajlarini manuel tetikle"""
+    await morning_reminders_job()
+    logs = await db.automation_logs.find(
+        {"type": {"$in": ["morning_toilet_reminder", "morning_checkin_reminder"]}},
+        {"_id": 0}
+    ).sort("created_at", -1).limit(2).to_list(2)
+    return {"success": True, "type": "morning_reminders", "notifications": logs}
+
+
+@router.post("/automation/cleaning-notification")
+async def run_cleaning_notification():
+    """Temizlik listesi bildirimini manuel tetikle"""
+    await checkout_cleaning_job()
+    last_log = await db.automation_logs.find_one(
+        {"type": "checkout_cleaning"}, {"_id": 0}, sort=[("created_at", -1)]
+    )
+    return {"success": True, "type": "checkout_cleaning", "notification": last_log}
+
+
+@router.get("/automation/scheduled-jobs")
+async def list_scheduled_jobs():
+    """Zamanli gorevlerin durumunu getir"""
+    jobs = get_scheduled_jobs()
+    return {"jobs": jobs, "total": len(jobs)}
+
+
+@router.get("/automation/group-notifications")
+async def list_group_notifications(notification_type: Optional[str] = None, limit: int = 50):
+    """Grup bildirimlerini listele"""
+    query = {"type": notification_type} if notification_type else {}
+    notifications = await db.group_notifications.find(
+        query, {"_id": 0}
+    ).sort("created_at", -1).limit(limit).to_list(limit)
+    return {"notifications": notifications, "total": len(notifications)}
