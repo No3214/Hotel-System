@@ -339,6 +339,62 @@ export default function SocialMediaPage() {
               />
             </div>
 
+            {/* Image Upload */}
+            <div className="glass rounded-xl p-4">
+              <label className="text-xs text-[#7e7e8a] mb-2 block">Gorsel (Opsiyonel)</label>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImageUpload}
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+              />
+              {editPost.image_url ? (
+                <div className="relative group">
+                  <img 
+                    src={editPost.image_url} 
+                    alt="Gonderi gorseli" 
+                    className="w-full h-32 object-cover rounded-lg"
+                  />
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="p-2 bg-white/10 rounded-lg hover:bg-white/20 text-white"
+                      title="Degistir"
+                    >
+                      <Upload className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setEditPost({ ...editPost, image_url: null })}
+                      className="p-2 bg-red-500/20 rounded-lg hover:bg-red-500/30 text-red-400"
+                      title="Kaldir"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="w-full h-24 border-2 border-dashed border-white/10 rounded-lg flex flex-col items-center justify-center gap-2 text-[#7e7e8a] hover:border-[#C4972A]/30 hover:text-[#C4972A] transition-all"
+                  data-testid="upload-image-btn"
+                >
+                  {uploading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span className="text-xs">Yukleniyor...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Image className="w-5 h-5" />
+                      <span className="text-xs">Gorsel yukle (max 5MB)</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+
             {/* Save */}
             <div className="flex gap-2">
               <Button onClick={handleSave} className="bg-[#C4972A] hover:bg-[#a87a1f] text-white" data-testid="save-post-btn">
