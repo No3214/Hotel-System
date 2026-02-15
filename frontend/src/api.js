@@ -1,72 +1,75 @@
 import axios from 'axios';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+const API_BASE = process.env.REACT_APP_BACKEND_URL;
 
-export const api = axios.create({
-  baseURL: API,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+const api = axios.create({
+  baseURL: `${API_BASE}/api`,
+  headers: { 'Content-Type': 'application/json' },
 });
 
 // Dashboard
-export const getDashboardStats = async () => {
-  const response = await api.get('/dashboard/stats');
-  return response.data;
-};
+export const getDashboardStats = () => api.get('/dashboard/stats');
 
-// Documents
-export const uploadDocument = async (file) => {
-  const formData = new FormData();
-  formData.append('file', file);
-  
-  const response = await api.post('/documents/upload', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
-  return response.data;
-};
+// Hotel Info
+export const getHotelInfo = () => api.get('/hotel/info');
+export const getHotelAwards = () => api.get('/hotel/awards');
+export const getHotelPolicies = () => api.get('/hotel/policies');
+export const getLocalGuide = () => api.get('/hotel/guide');
 
-export const listDocuments = async (params = {}) => {
-  const response = await api.get('/documents', { params });
-  return response.data;
-};
+// Rooms
+export const getRooms = () => api.get('/rooms');
+export const getRoom = (id) => api.get(`/rooms/${id}`);
 
-export const getDocument = async (documentId) => {
-  const response = await api.get(`/documents/${documentId}`);
-  return response.data;
-};
+// Menu
+export const getMenu = () => api.get('/menu');
 
-// Knowledge Base
-export const listKnowledgeItems = async (params = {}) => {
-  const response = await api.get('/knowledge', { params });
-  return response.data;
-};
+// Guests
+export const getGuests = (params) => api.get('/guests', { params });
+export const createGuest = (data) => api.post('/guests', data);
+export const getGuest = (id) => api.get(`/guests/${id}`);
+export const updateGuest = (id, data) => api.patch(`/guests/${id}`, data);
 
-export const getKnowledgeItem = async (itemId) => {
-  const response = await api.get(`/knowledge/${itemId}`);
-  return response.data;
-};
+// Reservations
+export const getReservations = (params) => api.get('/reservations', { params });
+export const createReservation = (data) => api.post('/reservations', data);
+export const updateReservationStatus = (id, status) => api.patch(`/reservations/${id}/status?status=${status}`);
 
 // Tasks
-export const listTasks = async (params = {}) => {
-  const response = await api.get('/tasks', { params });
-  return response.data;
-};
+export const getTasks = (params) => api.get('/tasks', { params });
+export const createTask = (data) => api.post('/tasks', data);
+export const updateTask = (id, data) => api.patch(`/tasks/${id}`, data);
+export const deleteTask = (id) => api.delete(`/tasks/${id}`);
 
-export const updateTaskStatus = async (taskId, status) => {
-  const response = await api.patch(`/tasks/${taskId}/status`, null, {
-    params: { status }
-  });
-  return response.data;
-};
+// Events
+export const getEvents = (params) => api.get('/events', { params });
+export const createEvent = (data) => api.post('/events', data);
+export const updateEvent = (id, data) => api.patch(`/events/${id}`, data);
+export const deleteEvent = (id) => api.delete(`/events/${id}`);
 
-// Search
-export const semanticSearch = async (query, limit = 10) => {
-  const response = await api.post('/search/semantic', null, {
-    params: { query, limit }
-  });
-  return response.data;
-};
+// Housekeeping
+export const getHousekeeping = (params) => api.get('/housekeeping', { params });
+export const createHousekeeping = (data) => api.post('/housekeeping', data);
+export const updateHousekeepingStatus = (id, status) => api.patch(`/housekeeping/${id}/status?status=${status}`);
+
+// Staff
+export const getStaff = () => api.get('/staff');
+export const createStaff = (data) => api.post('/staff', data);
+
+// Knowledge Base
+export const getKnowledge = (params) => api.get('/knowledge', { params });
+export const createKnowledge = (data) => api.post('/knowledge', data);
+export const deleteKnowledge = (id) => api.delete(`/knowledge/${id}`);
+
+// Chatbot
+export const sendChatMessage = (data) => api.post('/chatbot', data);
+export const getChatHistory = (sessionId) => api.get(`/chatbot/history/${sessionId}`);
+export const clearChat = (sessionId) => api.delete(`/chatbot/session/${sessionId}`);
+
+// Messages (WhatsApp/Instagram)
+export const getMessages = (params) => api.get('/messages', { params });
+export const sendWhatsAppWebhook = (data) => api.post('/whatsapp/webhook', data);
+
+// Seed
+export const seedDatabase = () => api.post('/seed');
+
+export default api;

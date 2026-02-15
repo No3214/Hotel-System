@@ -1,54 +1,98 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Manrope:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --gold-50: #fdf8ef;
+  --gold-100: #f9edda;
+  --gold-200: #f2d7b0;
+  --gold-300: #e9bc7d;
+  --gold-400: #dfa04e;
+  --gold-500: #C4972A;
+  --gold-600: #a87a1f;
+  --gold-700: #8a5f1a;
+  --gold-800: #6d4a18;
+  --gold-900: #5a3d16;
+
+  --dark-50: #f5f5f6;
+  --dark-100: #e5e5e8;
+  --dark-200: #cdcdd2;
+  --dark-300: #a9a9b2;
+  --dark-400: #7e7e8a;
+  --dark-500: #63636f;
+  --dark-600: #55555f;
+  --dark-700: #494950;
+  --dark-800: #1a1a22;
+  --dark-900: #0f0f14;
+  --dark-950: #0a0a0f;
+
+  --radius: 0.625rem;
+  --font-heading: 'Playfair Display', serif;
+  --font-body: 'Inter', sans-serif;
 }
 
-body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background: #030712;
-  color: #ffffff;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@layer base {
+  * { @apply border-border; }
+  body {
+    @apply bg-[#0a0a0f] text-[#e5e5e8];
+    font-family: var(--font-body);
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+  }
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: 'Manrope', sans-serif;
-  font-weight: 700;
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #0f0f14; }
+::-webkit-scrollbar-thumb { background: #C4972A40; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #C4972A80; }
+
+/* Gold glow effect */
+.gold-glow {
+  box-shadow: 0 0 20px rgba(196, 151, 42, 0.15);
 }
 
-code, pre {
-  font-family: 'JetBrains Mono', monospace;
+.gold-glow-strong {
+  box-shadow: 0 0 30px rgba(196, 151, 42, 0.25);
 }
 
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+/* Glass morphism */
+.glass {
+  background: rgba(26, 26, 34, 0.7);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(196, 151, 42, 0.1);
 }
 
-::-webkit-scrollbar-track {
-  background: #111827;
+/* Animations */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-::-webkit-scrollbar-thumb {
-  background: #374151;
-  border-radius: 4px;
+@keyframes pulseGold {
+  0%, 100% { box-shadow: 0 0 5px rgba(196, 151, 42, 0.2); }
+  50% { box-shadow: 0 0 20px rgba(196, 151, 42, 0.4); }
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #4b5563;
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out forwards;
 }
 
-/* Smooth animations */
-* {
-  transition-property: background-color, border-color, color, fill, stroke;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
+.animate-pulse-gold {
+  animation: pulseGold 3s ease-in-out infinite;
+}
+
+/* Chat bubbles */
+.chat-bubble-user {
+  background: linear-gradient(135deg, #C4972A, #a87a1f);
+  border-radius: 18px 18px 4px 18px;
+}
+
+.chat-bubble-ai {
+  background: rgba(26, 26, 34, 0.9);
+  border: 1px solid rgba(196, 151, 42, 0.15);
+  border-radius: 18px 18px 18px 4px;
 }
