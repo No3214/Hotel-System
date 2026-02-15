@@ -100,6 +100,49 @@ const PAGES = {
 export default function App() {
   const [page, setPage] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('kozbeyli_user');
+    const token = localStorage.getItem('kozbeyli_token');
+    if (saved && token) {
+      setUser(JSON.parse(saved));
+      getMe().then(r => {
+        const u = r.data;
+        setUser(u);
+        localStorage.setItem('kozbeyli_user', JSON.stringify(u));
+      }).catch(() => {
+        setAuthToken(null);
+        setUser(null);
+      });
+    }
+    setAuthLoading(false);
+  }, []);
+
+  const handleLogin = (userData) => {
+    setUser(userData);
+  };
+
+  const handleLogout = () => {
+    setAuthToken(null);
+    setUser(null);
+  };
+
+  if (authLoading) return <div className="min-h-screen bg-[#0a0a0f]" />;
+  if (!user) return <LoginPage onLogin={handleLogin} />;
+
+  const hasPermission = (pageId) => {
+    if (!user) return false;
+    if (user.role === 'admin') return true;
+    const perms = user.permissions || [];
+    return perms.includes('*') || perms.includes(pageId);
+  };
+
+  const filteredSections = NAV_SECTIONS.map(section => ({
+    ...section,
+    items: section.items.filter(item => hasPermission(item.id)),
+  })).filter(section => section.items.length > 0);
 
   const PageComponent = PAGES[page] || Dashboard;
 
