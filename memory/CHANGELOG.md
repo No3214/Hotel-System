@@ -117,19 +117,67 @@
 
 ### P0 - Yuksek Oncelik
 - [ ] HotelRunner API entegrasyonu (OTA senkronizasyonu)
+- [ ] WhatsApp Business API entegrasyonu
+  - Check-out sonrasi tesekkur + yorum istegi
+  - Temizlik ekibine bildirim
+  - Rezervasyon hatirlatma (1 gun once)
+  - Organizasyon sorularinda otomatik bilgi
 
 ### P1 - Orta Oncelik  
-- [ ] WhatsApp/SMS hatirlatma (rezervasyondan 2 saat once)
-- [ ] Masa QR kodu olusturma (masaya ozel menu)
-- [ ] Musteri sadakat programi
+- [ ] Musteri sadakat programi (sik gelen misafirlere indirim)
+- [ ] Ozel gun takibi (dogum gunu/yildonumu hatirlatma)
 
 ### P2 - Dusuk Oncelik
-- [ ] WhatsApp OTP giris
-- [ ] Gercek zamanli resepsiyon uyarilari
-- [ ] Mutfak tedarik tahmini (doluluga gore)
 - [ ] Coklu dil destegi (EN, DE, RU)
 
-### P3 - Gelecek
-- [ ] Mobil uygulama (React Native)
-- [ ] POS entegrasyonu
-- [ ] Muhasebe raporlari
+---
+
+## Deploy Onerileri (Teknik Bilgi Gerekmez)
+
+### En Ucuz & Kolay: Railway.app
+- Maliyet: ~$5-10/ay
+- Tek tikla deploy
+- MongoDB dahil
+- SSL otomatik
+
+### Alternatif: Render.com
+- Maliyet: Ucretsiz baslangic, ~$7/ay pro
+- Kolay kullanim
+- Otomatik olceklendirme
+
+### Profesyonel: DigitalOcean App Platform
+- Maliyet: ~$12/ay
+- Daha guvenilir
+- Turkiye'ye yakin sunucu
+
+---
+
+## WhatsApp Entegrasyonu Icin Gerekenler
+
+1. **Meta Business Hesabi** (Ucretsiz)
+   - business.facebook.com adresinden olusturulur
+   - Isletme dogrulama gerekli (1-3 gun)
+
+2. **WhatsApp Business API**
+   - Aylik ~$15-50 (mesaj sayisina gore)
+   - Alternatif: 360dialog, Twilio WhatsApp
+
+3. **Webhook Kurulumu**
+   - Mesaj gelince otomatik islem
+   - Check-out bilgisi gelince temizlik bildirimi
+
+---
+
+## Iptal Politikasi (Sisteme Eklendi)
+
+### Normal Gunler
+- 3 gun oncesine kadar: Ucretsiz iptal
+- 3 gun icinde: %100 ceza
+
+### Ozel Gunler (On Odeme Zorunlu)
+- Cumartesi
+- Pazar
+- Resmi/Dini Bayramlar
+- 14 Subat
+- Yilbasi
+- Ozel Etkinlik Gunleri
