@@ -93,6 +93,7 @@ export default function AutomationPage() {
       case 'morning_toilet_reminder': return <Sparkles className="w-3.5 h-3.5 text-blue-400" />;
       case 'morning_checkin_reminder': return <Bell className="w-3.5 h-3.5 text-blue-400" />;
       case 'checkout_cleaning': return <Brush className="w-3.5 h-3.5 text-green-400" />;
+      case 'evening_room_check': return <Moon className="w-3.5 h-3.5 text-purple-400" />;
       case 'payment_reminder': return <CreditCard className="w-3.5 h-3.5 text-yellow-400" />;
       case 'cancellation_penalty': return <XCircle className="w-3.5 h-3.5 text-red-400" />;
       default: return <Bot className="w-3.5 h-3.5 text-[#C4972A]" />;
