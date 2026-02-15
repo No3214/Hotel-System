@@ -1,16 +1,33 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 from database import db
 from helpers import utcnow, new_id, clean_doc
-import os
-import base64
+import re
 
 router = APIRouter(tags=["social-media"])
 
-# Upload directory for social media images
-UPLOAD_DIR = "/app/frontend/public/uploads/social"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+def convert_drive_link(url: str) -> str:
+    """Convert Google Drive share link to direct image URL"""
+    # Pattern 1: https://drive.google.com/file/d/FILE_ID/view
+    match = re.search(r'drive\.google\.com/file/d/([a-zA-Z0-9_-]+)', url)
+    if match:
+        file_id = match.group(1)
+        return f"https://drive.google.com/uc?export=view&id={file_id}"
+    
+    # Pattern 2: https://drive.google.com/open?id=FILE_ID
+    match = re.search(r'drive\.google\.com/open\?id=([a-zA-Z0-9_-]+)', url)
+    if match:
+        file_id = match.group(1)
+        return f"https://drive.google.com/uc?export=view&id={file_id}"
+    
+    # Pattern 3: Already direct link or other URL
+    if 'drive.google.com/uc' in url:
+        return url
+    
+    # Return as-is if not a Drive link (could be any image URL)
+    return url
 
 
 class PostCreate(BaseModel):
