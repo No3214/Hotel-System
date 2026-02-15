@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, BedDouble, Users, MessageCircle, CheckSquare,
   Calendar, Sparkles, BookOpen, UtensilsCrossed, Menu, ChevronLeft,
-  CalendarCheck, UserCog, Mail, MapPin, Settings, Star
+  CalendarCheck, UserCog, Mail, MapPin, Settings, Star, TrendingUp, Heart
 } from 'lucide-react';
 
 import Dashboard from './pages/Dashboard';
@@ -22,6 +22,9 @@ import CampaignsPage from './pages/CampaignsPage';
 import FocaGuidePage from './pages/FocaGuidePage';
 import SettingsPage from './pages/SettingsPage';
 import ReviewsPage from './pages/ReviewsPage';
+import PricingPage from './pages/PricingPage';
+import TableReservationsPage from './pages/TableReservationsPage';
+import LifecyclePage from './pages/LifecyclePage';
 
 const NAV_SECTIONS = [
   {
@@ -31,6 +34,7 @@ const NAV_SECTIONS = [
       { id: 'reservations', name: 'Rezervasyonlar', icon: CalendarCheck },
       { id: 'rooms', name: 'Odalar', icon: BedDouble },
       { id: 'guests', name: 'Misafirler', icon: Users },
+      { id: 'pricing', name: 'Fiyatlama', icon: TrendingUp },
     ],
   },
   {
@@ -40,6 +44,7 @@ const NAV_SECTIONS = [
       { id: 'messages', name: 'Mesajlar', icon: MessageCircle },
       { id: 'campaigns', name: 'Kampanyalar', icon: Mail },
       { id: 'reviews', name: 'Google Yorumlari', icon: Star },
+      { id: 'lifecycle', name: 'Misafir Dongusu', icon: Heart },
     ],
   },
   {
@@ -49,6 +54,7 @@ const NAV_SECTIONS = [
       { id: 'events', name: 'Etkinlikler', icon: Calendar },
       { id: 'housekeeping', name: 'Kat Hizmetleri', icon: BedDouble },
       { id: 'staff', name: 'Personel', icon: UserCog },
+      { id: 'table_reservations', name: 'Masa Rez.', icon: UtensilsCrossed },
     ],
   },
   {
@@ -82,6 +88,9 @@ const PAGES = {
   staff: StaffPage,
   campaigns: CampaignsPage,
   reviews: ReviewsPage,
+  pricing: PricingPage,
+  table_reservations: TableReservationsPage,
+  lifecycle: LifecyclePage,
   guide: FocaGuidePage,
   settings: SettingsPage,
 };
