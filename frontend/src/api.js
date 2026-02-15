@@ -196,6 +196,14 @@ export const listUsers = () => api.get('/auth/users');
 export const deleteUser = (id) => api.delete(`/auth/users/${id}`);
 export const getRoles = () => api.get('/auth/roles');
 
+// Loyalty / Sadakat
+export const getLoyaltyLevels = () => api.get('/loyalty/levels');
+export const getLoyaltyGuests = (params) => api.get('/loyalty/guests', { params });
+export const getGuestLoyalty = (id) => api.get(`/loyalty/guest/${id}`);
+export const updateGuestLoyalty = (id) => api.post(`/loyalty/update-guest/${id}`);
+export const matchReturningGuest = (params) => api.post('/loyalty/match-guest', null, { params });
+export const getLoyaltyStats = () => api.get('/loyalty/stats');
+
 // Set auth token
 export const setAuthToken = (token) => {
   if (token) {
