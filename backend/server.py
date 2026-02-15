@@ -130,6 +130,11 @@ async def startup():
             await db.rooms.insert_one({**room, "created_at": utcnow()})
         logger.info("Rooms seeded successfully")
 
+    # Scheduler baslat
+    from scheduler import start_scheduler
+    start_scheduler()
+    logger.info("Scheduler started")
+
 
 @app.on_event("shutdown")
 async def shutdown():
