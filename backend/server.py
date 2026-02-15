@@ -28,6 +28,7 @@ from routers.settings import router as settings_router
 from routers.pricing import router as pricing_router
 from routers.table_reservations import router as table_router
 from routers.lifecycle import router as lifecycle_router
+from routers.automation import router as automation_router
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -97,6 +98,7 @@ api.include_router(settings_router)
 api.include_router(pricing_router)
 api.include_router(table_router)
 api.include_router(lifecycle_router)
+api.include_router(automation_router)
 
 app.include_router(api)
 
