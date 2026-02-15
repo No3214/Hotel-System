@@ -39,18 +39,19 @@ class TableReservationCreate(BaseModel):
 
 # Masa tanımları
 TABLES = [
-    # 2-3 kişilik masalar (13 adet)
-    {"id": "T01", "name": "Masa 1", "capacity": 3, "type": "small", "location": "indoor"},
-    {"id": "T02", "name": "Masa 2", "capacity": 3, "type": "small", "location": "indoor"},
-    {"id": "T03", "name": "Masa 3", "capacity": 3, "type": "small", "location": "indoor"},
-    {"id": "T04", "name": "Masa 4", "capacity": 3, "type": "small", "location": "indoor"},
-    {"id": "T05", "name": "Masa 5", "capacity": 3, "type": "small", "location": "indoor"},
-    {"id": "T06", "name": "Masa 6", "capacity": 2, "type": "small", "location": "indoor"},
-    {"id": "T07", "name": "Masa 7", "capacity": 2, "type": "small", "location": "indoor"},
-    {"id": "T08", "name": "Masa 8", "capacity": 3, "type": "small", "location": "outdoor"},
-    {"id": "T09", "name": "Masa 9", "capacity": 3, "type": "small", "location": "outdoor"},
-    {"id": "T10", "name": "Masa 10", "capacity": 2, "type": "small", "location": "outdoor"},
-    {"id": "T11", "name": "Masa 11", "capacity": 2, "type": "small", "location": "outdoor"},
+    # 2 kişilik masalar (9 adet)
+    {"id": "T01", "name": "Masa 1", "capacity": 2, "type": "small", "location": "indoor"},
+    {"id": "T02", "name": "Masa 2", "capacity": 2, "type": "small", "location": "indoor"},
+    {"id": "T03", "name": "Masa 3", "capacity": 2, "type": "small", "location": "indoor"},
+    {"id": "T04", "name": "Masa 4", "capacity": 2, "type": "small", "location": "indoor"},
+    {"id": "T05", "name": "Masa 5", "capacity": 2, "type": "small", "location": "indoor"},
+    {"id": "T06", "name": "Masa 6", "capacity": 2, "type": "small", "location": "outdoor"},
+    {"id": "T07", "name": "Masa 7", "capacity": 2, "type": "small", "location": "outdoor"},
+    {"id": "T08", "name": "Masa 8", "capacity": 2, "type": "small", "location": "outdoor"},
+    {"id": "T09", "name": "Masa 9", "capacity": 2, "type": "small", "location": "outdoor"},
+    # 3 kişilik masalar (4 adet)
+    {"id": "T10", "name": "Masa 10", "capacity": 3, "type": "small", "location": "indoor"},
+    {"id": "T11", "name": "Masa 11", "capacity": 3, "type": "small", "location": "indoor"},
     {"id": "T12", "name": "Masa 12", "capacity": 3, "type": "small", "location": "outdoor"},
     {"id": "T13", "name": "Masa 13", "capacity": 3, "type": "small", "location": "outdoor"},
     # 4 kişilik masalar (6 adet)
@@ -60,6 +61,13 @@ TABLES = [
     {"id": "T17", "name": "Masa 17", "capacity": 4, "type": "medium", "location": "outdoor"},
     {"id": "T18", "name": "Masa 18", "capacity": 4, "type": "medium", "location": "outdoor"},
     {"id": "T19", "name": "Masa 19", "capacity": 4, "type": "medium", "location": "outdoor"},
+]
+
+# Birleştirilebilir masa grupları (büyük gruplar için)
+COMBINABLE_TABLES = [
+    {"ids": ["T14", "T15"], "combined_capacity": 8, "name": "Masa 14-15 (Birlesik)", "location": "indoor"},
+    {"ids": ["T17", "T18"], "combined_capacity": 8, "name": "Masa 17-18 (Birlesik)", "location": "outdoor"},
+    {"ids": ["T14", "T15", "T16"], "combined_capacity": 12, "name": "Masa 14-15-16 (Birlesik)", "location": "indoor"},
 ]
 
 # Öğün süreleri (dakika)
