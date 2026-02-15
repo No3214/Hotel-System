@@ -223,11 +223,11 @@ export default function PublicMenuPage() {
           transition={{ duration: 0.6, delay: 0.5 }}
           style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 12 }}
         >
-          <div style={{ width: 50, height: 1, background: `${colors.accent}60` }} />
-          <span className="menu-heading" style={{ color: colors.accent, fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase' }}>
+          <div style={{ width: 50, height: 1, background: `${colors.text}40` }} />
+          <span className="menu-heading" style={{ color: colors.muted, fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase' }}>
             {data.restaurant}
           </span>
-          <div style={{ width: 50, height: 1, background: `${colors.accent}60` }} />
+          <div style={{ width: 50, height: 1, background: `${colors.text}40` }} />
         </motion.div>
       </motion.header>
 
