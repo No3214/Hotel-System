@@ -145,6 +145,22 @@ export const getKitchenForecast = (days) => api.get(`/automation/kitchen-forecas
 export const getAutomationLogs = (params) => api.get('/automation/logs', { params });
 export const getAutomationSummary = () => api.get('/automation/summary');
 
+// Public Menu (no auth)
+export const getPublicMenu = () => axios.get(`${API_BASE}/api/public/menu`);
+export const getPublicTheme = () => axios.get(`${API_BASE}/api/public/theme`);
+
+// Menu Admin
+export const getMenuItems = (category) => api.get('/menu-admin/items', { params: category ? { category } : {} });
+export const createMenuItem = (data) => api.post('/menu-admin/items', data);
+export const updateMenuItem = (id, data) => api.patch(`/menu-admin/items/${id}`, data);
+export const deleteMenuItem = (id) => api.delete(`/menu-admin/items/${id}`);
+export const getMenuCategories = () => api.get('/menu-admin/categories');
+export const createMenuCategory = (data) => api.post('/menu-admin/categories', data);
+export const updateMenuCategory = (id, data) => api.patch(`/menu-admin/categories/${id}`, data);
+export const deleteMenuCategory = (id) => api.delete(`/menu-admin/categories/${id}`);
+export const getMenuTheme = () => api.get('/menu-admin/theme');
+export const updateMenuTheme = (data) => api.patch('/menu-admin/theme', data);
+
 // Auth
 export const login = (data) => api.post('/auth/login', data);
 export const getMe = () => api.get('/auth/me');
