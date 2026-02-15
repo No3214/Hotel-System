@@ -62,3 +62,26 @@ def detect_intent(message: str) -> str:
             if keyword in message_lower:
                 return intent
     return "general"
+
+
+async def get_review_response(prompt: str, system_prompt: str) -> str:
+    """Generate a professional response to a Google review"""
+    from emergentintegrations.llm.chat import LlmChat, UserMessage
+
+    try:
+        if not GOOGLE_API_KEY:
+            return "AI servisi su anda yapilandiriliyor. Lutfen daha sonra tekrar deneyin."
+
+        chat = LlmChat(
+            api_key=GOOGLE_API_KEY,
+            session_id=f"review-{id(prompt)}",
+            system_message=system_prompt,
+        ).with_model("gemini", "gemini-2.5-flash")
+
+        user_msg = UserMessage(text=prompt)
+        response = await chat.send_message(user_msg)
+        return response
+
+    except Exception as e:
+        logger.error(f"Gemini review response error: {e}")
+        return "Yanitlama sirasinda bir hata olustu. Lutfen tekrar deneyin."
