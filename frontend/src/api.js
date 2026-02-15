@@ -117,4 +117,25 @@ export const updateReview = (id, data) => api.patch(`/reviews/${id}`, data);
 export const deleteReview = (id) => api.delete(`/reviews/${id}`);
 export const getReviewStats = () => api.get('/reviews/stats');
 
+// Dynamic Pricing
+export const calculatePrice = (roomId, date) => api.get(`/pricing/calculate?room_id=${roomId}&date=${date}`);
+export const getPriceRange = (roomId, start, end) => api.get(`/pricing/range?room_id=${roomId}&start_date=${start}&end_date=${end}`);
+export const getSeasons = () => api.get('/pricing/seasons');
+export const getHolidays = () => api.get('/pricing/holidays');
+
+// Table Reservations
+export const getTableReservations = (params) => api.get('/table-reservations', { params });
+export const createTableReservation = (data) => api.post('/table-reservations', data);
+export const updateTableReservationStatus = (id, status, tableNumber) => api.patch(`/table-reservations/${id}/status?status=${status}${tableNumber ? `&table_number=${tableNumber}` : ''}`);
+export const deleteTableReservation = (id) => api.delete(`/table-reservations/${id}`);
+export const getTableAvailability = (date) => api.get(`/table-reservations/availability?date=${date}`);
+export const getTableStats = () => api.get('/table-reservations/stats');
+
+// Guest Lifecycle
+export const getLifecycleTemplates = () => api.get('/lifecycle/templates');
+export const getLifecycleTemplate = (key) => api.get(`/lifecycle/templates/${key}`);
+export const previewLifecycleMessage = (templateKey, reservationId) => api.post(`/lifecycle/preview?template_key=${templateKey}${reservationId ? `&reservation_id=${reservationId}` : ''}`);
+export const sendLifecycleMessage = (templateKey, reservationId, channel) => api.post(`/lifecycle/send?template_key=${templateKey}&reservation_id=${reservationId}&channel=${channel}`);
+export const getLifecycleHistory = (params) => api.get('/lifecycle/history', { params });
+
 export default api;
