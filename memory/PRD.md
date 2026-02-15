@@ -99,7 +99,45 @@ GitHub repo: https://github.com/No3214/BillionDollar
 - Gunluk ozet istatistikleri
 - API: /api/kitchen/orders, /api/kitchen/summary, /api/kitchen/notifications
 
-### Tests: Backend 17/17 (%100), Frontend %100
+### Faz 12: WhatsApp Entegrasyonu + Akilli Chatbot (TAMAMLANDI - Feb 2026)
+
+**Akilli Chatbot Engine (chatbot_engine.py):**
+- Multi-Agent Router: Reservation, Table, Restaurant, Concierge, Housekeeping, Events, General
+- Intent Detection: 15+ intent kategorisi (table_reservation, room_reservation, menu, location, wifi, checkin, pets, contact vb.)
+- Auto-Reply Engine: Kural tabanli aninda yanitlar (selamlama, wifi, konum, iletisim vb.)
+- Conversation Flow Manager: Cok adimli konusma akisi yonetimi
+
+**Masa Rezervasyonu Akisi (Tam Otomatik):**
+```
+Musteri: "Masa ayirtmak istiyorum"
+Bot: "Hangi tarih icin?" -> Tarih parse (15 Subat, yarin, cumartesi vb.)
+Bot: "Saat kacta?" -> Saat parse (aksam 8, 20:00 vb.)
+Bot: "Kac kisi?" -> Sayi parse
+Bot: "Isim?" -> Isim kayit
+Bot: "Telefon?" -> Telefon format
+Bot: "Onayliyor musunuz? Evet/Hayir"
+-> EVET: Rezervasyon olustur + Grup bildirimi gonder
+-> HAYIR: Iptal
+```
+
+**WhatsApp Webhook Router (routers/whatsapp.py):**
+- GET /api/webhook/whatsapp - Meta webhook dogrulama
+- POST /api/webhook/whatsapp - Gelen mesaj isleme
+- GET /api/whatsapp/messages - Mesaj listesi
+- GET /api/whatsapp/sessions - Konusma oturumlari
+- GET /api/whatsapp/notifications - Grup bildirimleri
+- POST /api/whatsapp/send - Manuel mesaj gonderme
+- GET /api/whatsapp/config - API yapilandirma durumu
+
+**WhatsApp Admin Sayfasi (WhatsAppPage.js):**
+- Rezervasyon Bildirimleri paneli
+- Konusmalar listesi ve detay
+- API ayarlari ve webhook URL
+- Mock mod destegi (API olmadan calisir)
+
+**NOT:** WhatsApp Business API henuz yapilandirilmadi - sistem mock modda. Bildirimler veritabaninda saklanir.
+
+### Tests: Backend 19/19 (%100), Frontend %100
 
 ## Architecture
 ```
