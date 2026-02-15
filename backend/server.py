@@ -101,6 +101,8 @@ api.include_router(pricing_router)
 api.include_router(table_router)
 api.include_router(lifecycle_router)
 api.include_router(automation_router)
+api.include_router(public_menu_router)
+api.include_router(menu_admin_router)
 
 app.include_router(api)
 
