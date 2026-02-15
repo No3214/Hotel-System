@@ -108,6 +108,7 @@ api.include_router(public_menu_router)
 api.include_router(menu_admin_router)
 api.include_router(social_media_router)
 api.include_router(kitchen_router)
+api.include_router(whatsapp_router)
 
 app.include_router(api)
 
