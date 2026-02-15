@@ -291,8 +291,8 @@ Oduller:
 Oda Tipleri:
 - Tek Kisilik: 1-2 kisi, 25m2, 2500 TL / 80 EUR
 - Cift Kisilik: 2 kisi, 25m2, 3000 TL / 90 EUR
-- Superior: 3 kisi, 35m2, 4500 TL / 135 EUR
-- Aile: 4 kisi, 50m2, 5000 TL / 150 EUR
+- Superior: 3 kisi, 50m2, 5000 TL / 150 EUR
+- Aile: 4 kisi, 60m2, 6000 TL / 180 EUR
 - Tum odalarda: Klima, TV, WiFi, ozel banyo
 
 Restoran: Antakya Sofrasi
