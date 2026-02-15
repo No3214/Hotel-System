@@ -170,13 +170,7 @@ export const deleteSocialPost = (id) => api.delete(`/social/posts/${id}`);
 export const publishSocialPost = (id) => api.post(`/social/posts/${id}/publish`);
 export const getSocialTemplates = () => api.get('/social/templates');
 export const getSocialStats = () => api.get('/social/stats');
-export const uploadSocialImage = (file) => {
-  const formData = new FormData();
-  formData.append('file', file);
-  return api.post('/social/upload-image', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  });
-};
+export const convertImageLink = (url) => api.post('/social/convert-image-link', { url });
 
 // Auth
 export const login = (data) => api.post('/auth/login', data);
