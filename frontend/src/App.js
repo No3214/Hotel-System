@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, BedDouble, Users, MessageCircle, CheckSquare,
   Calendar, Sparkles, BookOpen, UtensilsCrossed, Menu, ChevronLeft,
-  CalendarCheck, UserCog, Mail, MapPin, Settings, Star, TrendingUp, Heart, LogOut, QrCode
+  CalendarCheck, UserCog, Mail, MapPin, Settings, Star, TrendingUp, Heart, LogOut, QrCode, Share2
 } from 'lucide-react';
 
 import { setAuthToken, getMe } from './api';
