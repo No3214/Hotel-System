@@ -161,6 +161,16 @@ export const deleteMenuCategory = (id) => api.delete(`/menu-admin/categories/${i
 export const getMenuTheme = () => api.get('/menu-admin/theme');
 export const updateMenuTheme = (data) => api.patch('/menu-admin/theme', data);
 
+// Social Media
+export const getSocialPosts = (params) => api.get('/social/posts', { params });
+export const createSocialPost = (data) => api.post('/social/posts', data);
+export const getSocialPost = (id) => api.get(`/social/posts/${id}`);
+export const updateSocialPost = (id, data) => api.patch(`/social/posts/${id}`, data);
+export const deleteSocialPost = (id) => api.delete(`/social/posts/${id}`);
+export const publishSocialPost = (id) => api.post(`/social/posts/${id}/publish`);
+export const getSocialTemplates = () => api.get('/social/templates');
+export const getSocialStats = () => api.get('/social/stats');
+
 // Auth
 export const login = (data) => api.post('/auth/login', data);
 export const getMe = () => api.get('/auth/me');
