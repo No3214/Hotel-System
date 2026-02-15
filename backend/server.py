@@ -34,6 +34,7 @@ from routers.menu_admin import router as menu_admin_router
 from routers.social_media import router as social_media_router
 from routers.kitchen import router as kitchen_router
 from routers.whatsapp import router as whatsapp_router
+from routers.loyalty import router as loyalty_router
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
