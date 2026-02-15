@@ -1,219 +1,155 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { FileText, CheckCircle, Clock, AlertCircle, TrendingUp, Upload } from 'lucide-react';
 import { getDashboardStats } from '../api';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
+import {
+  BedDouble, Users, CheckSquare, Calendar, Star, TrendingUp,
+  Sparkles, Clock, AlertCircle
+} from 'lucide-react';
 
-const StatCard = ({ icon: Icon, label, value, trend, color }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    className="bg-bg-surface border border-white/5 rounded-xl p-6 card-hover"
-    data-testid={`stat-${label.toLowerCase().replace(/\s/g, '-')}`}
-  >
-    <div className="flex items-center justify-between mb-4">
-      <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center`}>
-        <Icon className="w-6 h-6 text-white" />
-      </div>
-      {trend && (
-        <div className="flex items-center text-sm text-emerald-400">
-          <TrendingUp className="w-4 h-4 mr-1" />
-          <span>{trend}</span>
-        </div>
-      )}
-    </div>
-    <div className="text-3xl font-bold font-heading mb-1">{value}</div>
-    <div className="text-sm text-gray-400">{label}</div>
-  </motion.div>
-);
+const STAT_CARDS = [
+  { key: 'total_rooms', label: 'Toplam Oda', icon: BedDouble, color: '#C4972A' },
+  { key: 'occupied_rooms', label: 'Dolu Oda', icon: BedDouble, color: '#22c55e' },
+  { key: 'total_guests', label: 'Misafirler', icon: Users, color: '#6366f1' },
+  { key: 'total_reservations', label: 'Rezervasyonlar', icon: Calendar, color: '#ec4899' },
+  { key: 'pending_tasks', label: 'Bekleyen Gorevler', icon: CheckSquare, color: '#f59e0b' },
+  { key: 'active_events', label: 'Aktif Etkinlikler', icon: Calendar, color: '#14b8a6' },
+];
 
-const RecentActivity = ({ activities }) => (
-  <div className="bg-bg-surface border border-white/5 rounded-xl p-6" data-testid="recent-activities">
-    <h3 className="text-lg font-heading font-bold mb-4">Son Aktiviteler</h3>
-    <div className="space-y-3">
-      {activities.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
-          <FileText className="w-12 h-12 mx-auto mb-2 opacity-50" />
-          <p>Henüz doküman yüklenmedi</p>
-        </div>
-      ) : (
-        activities.map((activity, index) => (
-          <motion.div
-            key={activity.id || index}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.05 }}
-            className="flex items-center justify-between py-3 border-b border-white/5 last:border-0"
-            data-testid="activity-item"
-          >
-            <div className="flex items-center space-x-3">
-              <FileText className="w-5 h-5 text-indigo-400" />
-              <div>
-                <p className="text-sm font-medium">{activity.filename}</p>
-                <p className="text-xs text-gray-500">
-                  {new Date(activity.created_at).toLocaleString('tr-TR')}
-                </p>
-              </div>
-            </div>
-            <span className={`status-badge status-${activity.status}`}>
-              {activity.status === 'completed' ? 'Tamamlandı' :
-               activity.status === 'processing' ? 'İşleniyor' :
-               activity.status === 'failed' ? 'Hata' : 'Bekliyor'}
-            </span>
-          </motion.div>
-        ))
-      )}
-    </div>
-  </div>
-);
-
-const Dashboard = ({ onNavigate }) => {
+export default function Dashboard({ onNavigate }) {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const data = await getDashboardStats();
-        setStats(data);
-        setLoading(false);
-      } catch (err) {
-        setError(err.message);
-        setLoading(false);
-      }
-    };
-
-    fetchStats();
-    // Refresh every 10 seconds
-    const interval = setInterval(fetchStats, 10000);
-    return () => clearInterval(interval);
+    getDashboardStats()
+      .then(r => setStats(r.data))
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+      <div className="p-8 space-y-6">
+        <div className="h-8 w-64 bg-white/5 rounded animate-pulse" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="h-28 bg-white/5 rounded-xl animate-pulse" />
+          ))}
+        </div>
       </div>
     );
   }
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-red-400">Hata: {error}</div>
-      </div>
-    );
-  }
+  const ratings = stats?.ratings || {};
 
   return (
-    <div className="p-6 max-w-7xl mx-auto" data-testid="dashboard-page">
+    <div className="p-6 lg:p-8 space-y-8 max-w-[1400px]" data-testid="dashboard-page">
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
-      >
-        <h1 className="text-4xl font-heading font-bold mb-2">
-          Hoş Geldiniz 👋
+      <div className="animate-fade-in-up">
+        <h1 className="text-3xl lg:text-4xl font-bold text-[#C4972A]">
+          Kozbeyli Konagi
         </h1>
-        <p className="text-gray-400">Otel yönetim sisteminizin genel durumu</p>
-      </motion.div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <StatCard
-          icon={FileText}
-          label="Toplam Doküman"
-          value={stats.total_documents}
-          color="from-indigo-600 to-purple-600"
-        />
-        <StatCard
-          icon={CheckCircle}
-          label="İşlenen Doküman"
-          value={stats.documents_processed}
-          trend="+12%"
-          color="from-emerald-600 to-teal-600"
-        />
-        <StatCard
-          icon={Clock}
-          label="Bekleyen Görev"
-          value={stats.pending_tasks}
-          color="from-amber-600 to-orange-600"
-        />
-        <StatCard
-          icon={TrendingUp}
-          label="Kalite Skoru"
-          value={`${(stats.quality_score * 100).toFixed(0)}%`}
-          color="from-blue-600 to-cyan-600"
-        />
+        <p className="text-[#7e7e8a] mt-1">Otel Yonetim Paneli</p>
       </div>
 
-      {/* Two Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Activities */}
-        <div className="lg:col-span-2">
-          <RecentActivity activities={stats.recent_activities || []} />
+      {/* Occupancy Bar */}
+      <div className="glass rounded-xl p-5 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-sm font-medium text-[#a9a9b2]">Doluluk Orani</span>
+          <span className="text-2xl font-bold text-[#C4972A]">{stats?.occupancy_rate || 0}%</span>
         </div>
+        <div className="w-full bg-[#1a1a22] rounded-full h-3">
+          <div
+            className="bg-gradient-to-r from-[#C4972A] to-[#dfa04e] h-3 rounded-full transition-all duration-1000"
+            style={{ width: `${stats?.occupancy_rate || 0}%` }}
+          />
+        </div>
+        <div className="flex justify-between mt-2 text-xs text-[#7e7e8a]">
+          <span>{stats?.occupied_rooms || 0} dolu</span>
+          <span>{stats?.available_rooms || 0} bos</span>
+          <span>{stats?.total_rooms || 16} toplam</span>
+        </div>
+      </div>
 
-        {/* Quick Actions */}
-        <div className="bg-bg-surface border border-white/5 rounded-xl p-6" data-testid="quick-actions">
-          <h3 className="text-lg font-heading font-bold mb-4">Hızlı İşlemler</h3>
-          <div className="space-y-3">
-            <button
-              onClick={() => onNavigate('upload')}
-              className="w-full py-3 px-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-lg font-medium transition-all hover:scale-[1.02] flex items-center justify-center space-x-2"
-              data-testid="btn-upload-document"
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        {STAT_CARDS.map((card, i) => {
+          const Icon = card.icon;
+          const value = stats?.[card.key] ?? 0;
+          return (
+            <div
+              key={card.key}
+              className="glass rounded-xl p-5 hover:gold-glow transition-all duration-300 animate-fade-in-up cursor-pointer"
+              style={{ animationDelay: `${0.1 + i * 0.05}s` }}
+              onClick={() => {
+                if (card.key === 'pending_tasks') onNavigate?.('tasks');
+                if (card.key === 'total_guests') onNavigate?.('guests');
+                if (card.key === 'active_events') onNavigate?.('events');
+              }}
+              data-testid={`stat-${card.key}`}
             >
-              <Upload className="w-5 h-5" />
-              <span>Doküman Yükle</span>
-            </button>
-            <button
-              onClick={() => onNavigate('knowledge')}
-              className="w-full py-3 px-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg font-medium transition-all"
-              data-testid="btn-view-knowledge"
-            >
-              Bilgi Tabanı
-            </button>
-            <button
-              onClick={() => onNavigate('tasks')}
-              className="w-full py-3 px-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg font-medium transition-all"
-              data-testid="btn-view-tasks"
-            >
-              Görevler
-            </button>
-          </div>
-
-          {/* System Status */}
-          <div className="mt-6 pt-6 border-t border-white/5">
-            <h4 className="text-sm font-semibold mb-3">Sistem Durumu</h4>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-400">API</span>
-                <div className="flex items-center text-emerald-400">
-                  <div className="w-2 h-2 rounded-full bg-emerald-400 mr-2 animate-pulse"></div>
-                  Aktif
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-[#7e7e8a] mb-1">{card.label}</p>
+                  <p className="text-2xl font-bold" style={{ color: card.color }}>{value}</p>
                 </div>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-400">Database</span>
-                <div className="flex items-center text-emerald-400">
-                  <div className="w-2 h-2 rounded-full bg-emerald-400 mr-2 animate-pulse"></div>
-                  Bağlı
-                </div>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-400">LLM Council</span>
-                <div className="flex items-center text-emerald-400">
-                  <div className="w-2 h-2 rounded-full bg-emerald-400 mr-2 animate-pulse"></div>
-                  Hazır
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: `${card.color}20` }}>
+                  <Icon className="w-5 h-5" style={{ color: card.color }} />
                 </div>
               </div>
             </div>
+          );
+        })}
+      </div>
+
+      {/* Ratings & Recent Tasks */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Platform Ratings */}
+        <div className="glass rounded-xl p-5">
+          <h3 className="text-lg font-semibold text-[#C4972A] mb-4 flex items-center gap-2">
+            <Star className="w-5 h-5" /> Platform Puanlari
+          </h3>
+          <div className="space-y-3">
+            {Object.entries(ratings).map(([platform, data]) => (
+              <div key={platform} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                <span className="text-sm capitalize">{platform.replace('_', '.')}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-bold text-[#C4972A]">{data.score}</span>
+                  <span className="text-xs text-[#7e7e8a]">/ {data.max || 10}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Recent Tasks */}
+        <div className="glass rounded-xl p-5">
+          <h3 className="text-lg font-semibold text-[#C4972A] mb-4 flex items-center gap-2">
+            <CheckSquare className="w-5 h-5" /> Son Gorevler
+          </h3>
+          <div className="space-y-2">
+            {(stats?.recent_tasks || []).slice(0, 5).map((task) => (
+              <div key={task.id} className="flex items-center gap-3 p-3 bg-white/5 rounded-lg">
+                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                  task.priority === 'urgent' ? 'bg-red-500' :
+                  task.priority === 'high' ? 'bg-orange-500' :
+                  task.priority === 'normal' ? 'bg-blue-500' : 'bg-gray-500'
+                }`} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm truncate">{task.title}</p>
+                  <p className="text-xs text-[#7e7e8a]">{task.source}</p>
+                </div>
+                <Badge variant="outline" className="text-xs border-[#C4972A]/30 text-[#C4972A]">
+                  {task.status}
+                </Badge>
+              </div>
+            ))}
+            {(!stats?.recent_tasks || stats.recent_tasks.length === 0) && (
+              <p className="text-sm text-[#7e7e8a] text-center py-4">Henuz gorev yok</p>
+            )}
           </div>
         </div>
       </div>
     </div>
   );
-};
-
-export default Dashboard;
+}
