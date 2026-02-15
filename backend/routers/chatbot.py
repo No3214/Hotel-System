@@ -14,8 +14,11 @@ router = APIRouter(tags=["chatbot"])
 
 
 @router.post("/chatbot")
-async def chatbot(data: ChatRequest):
+async def chatbot(data: ChatRequest, request: Request):
     from gemini_service import get_chat_response
+
+    # Rate limit kontrolu
+    rate_limit_or_raise(request, "chatbot", data.session_id)
     
     # 1. Akıllı chatbot engine ile işle
     engine_result = await process_chatbot_message(
@@ -66,12 +69,17 @@ async def chatbot(data: ChatRequest):
         events = await db.events.find({"is_active": True}, {"_id": 0}).to_list(20)
         context = f"Aktif etkinlikler: {events}" if events else "Su anda aktif etkinlik bulunmuyor."
 
-    response = await get_chat_response(
+    raw_response = await get_chat_response(
         message=data.message,
         session_id=data.session_id,
         system_prompt=GEMINI_SYSTEM_PROMPT,
         context=context,
     )
+
+    # Anti-halucinasyon kontrolu
+    sanitized = sanitize_response(raw_response, intent)
+    response = sanitized["text"]
+    confidence = sanitized["confidence"]
 
     msg_record = {
         "id": new_id(),
@@ -81,6 +89,9 @@ async def chatbot(data: ChatRequest):
         "intent": intent,
         "agent": agent.value,
         "source": "gemini",
+        "confidence": confidence["confidence"],
+        "hallucination_issues": confidence["issue_count"],
+        "modified_by_filter": sanitized["modified"],
         "created_at": utcnow(),
     }
     await db.chat_messages.insert_one(msg_record)
@@ -90,6 +101,7 @@ async def chatbot(data: ChatRequest):
         "session_id": data.session_id,
         "intent": intent,
         "agent": agent.value,
+        "confidence": confidence["confidence"],
     }
 
 
