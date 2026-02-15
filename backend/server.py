@@ -11,6 +11,7 @@ from hotel_data import ROOMS
 
 # Import all routers
 from routers.hotel import router as hotel_router
+from routers.auth import router as auth_router
 from routers.rooms import router as rooms_router
 from routers.guests import router as guests_router
 from routers.reservations import router as reservations_router
@@ -79,6 +80,7 @@ async def seed_database():
 # ==================== INCLUDE ROUTERS ====================
 
 api.include_router(hotel_router)
+api.include_router(auth_router)
 api.include_router(rooms_router)
 api.include_router(guests_router)
 api.include_router(reservations_router)
