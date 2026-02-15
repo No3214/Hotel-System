@@ -91,20 +91,20 @@ export default function PublicMenuPage() {
 
   if (loading) {
     return (
-      <div style={{ background: '#515249', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
+      <div style={{ background: '#7A8B6F', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-          style={{ width: 36, height: 36, border: '2.5px solid #8FAA8640', borderTopColor: '#8FAA86', borderRadius: '50%' }}
+          style={{ width: 36, height: 36, border: '2.5px solid #9AAD8F40', borderTopColor: '#FFFFFF', borderRadius: '50%' }}
         />
-        <span style={{ color: '#D8D1C5', fontSize: 13, letterSpacing: '0.1em' }}>MENU YUKLENIYOR</span>
+        <span style={{ color: '#E8E4DC', fontSize: 13, letterSpacing: '0.1em' }}>MENU YUKLENIYOR</span>
       </div>
     );
   }
 
   if (!data) {
     return (
-      <div style={{ background: '#515249', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F8F5EF' }}>
+      <div style={{ background: '#7A8B6F', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFFFFF' }}>
         <p>Menu yuklenemedi</p>
       </div>
     );
