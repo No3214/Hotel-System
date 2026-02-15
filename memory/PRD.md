@@ -6,7 +6,7 @@ GitHub repo: https://github.com/No3214/BillionDollar
 
 ## Tech Stack
 - **Frontend:** React 19, TailwindCSS, Shadcn UI, Framer Motion
-- **Backend:** FastAPI, Motor (async MongoDB), 23 modular routers
+- **Backend:** FastAPI, Motor (async MongoDB), 24 modular routers
 - **Database:** MongoDB (persistent)
 - **AI:** Google Gemini 2.5 Flash (emergentintegrations)
 - **Auth:** JWT + bcrypt, role-based (admin/reception/kitchen/staff)
@@ -61,59 +61,6 @@ GitHub repo: https://github.com/No3214/BillionDollar
 
 ### Tests: Backend 15/15 (%100), Frontend %100 - Iteration 6
 
-## Architecture
-```
-backend/
-├── server.py          (thin orchestrator)
-├── database.py        (MongoDB connection)
-├── helpers.py         (utcnow, new_id, clean_doc)
-├── config.py          (env vars)
-├── models.py          (Pydantic models)
-├── hotel_data.py      (static hotel data)
-├── menu_seed_data.py  (NEW: Updated menu data - 100 items, 16 cats)
-├── gemini_service.py  (Gemini AI)
-└── routers/
-    ├── auth.py, hotel.py, rooms.py, guests.py
-    ├── reservations.py, tasks.py, events.py
-    ├── housekeeping.py, staff.py, knowledge.py
-    ├── chatbot.py, messages.py, campaigns.py
-    ├── reviews.py, settings.py, pricing.py
-    ├── table_reservations.py, lifecycle.py
-    ├── automation.py
-    ├── public_menu.py    (Public QR menu)
-    ├── menu_admin.py     (Admin menu CRUD)
-    └── social_media.py   (NEW: Social media publisher)
-
-frontend/
-├── public/
-│   ├── logo.jpeg
-│   ├── fonts/Alifira.ttf
-│   └── brand/KOZBEYLI_BEYAZ_LOGO.png
-└── src/
-    ├── pages/
-    │   ├── PublicMenuPage.js  (Premium QR menu with animations)
-    │   ├── MenuPage.js        (Admin menu CRUD + theme editor)
-    │   ├── SocialMediaPage.js (NEW: Social media publisher)
-    │   └── ... (20+ pages)
-    └── App.js
-```
-
-## 22 Frontend Pages (+1 Public)
-Dashboard, Rooms, Guests, Reservations, Chatbot, Messages,
-Campaigns, Reviews, Tasks, Events, Housekeeping, Staff,
-Knowledge, QR Menu (admin), Social Media, Foca Guide, Settings, Login,
-Pricing, TableReservations, Lifecycle, Automation,
-+ PublicMenuPage (public, /menu)
-
-## Testing History
-- Iteration 1-4: Base app, reviews, refactoring
-- Iteration 5: Initial QR Menu + Logo
-- Iteration 6: QR Menu overhaul (100 items) + Social Media Publisher - %100
-
-## Bug Fixes (Feb 2026)
-- **Login "undefined" Hatasi Duzeltildi:** Setup butonu sistem kuruluyken undefined gosteriyordu. Frontend'de setup response handling duzeltildi.
-- **Login Bilgileri:** admin / admin123
-
 ### Faz 9: Sosyal Medya Gelistirmeleri (TAMAMLANDI - Feb 2026)
 - TikTok ve LinkedIn platformlari eklendi (toplam 6 platform)
 - Gorsel: Dosya yukleme yerine Google Drive linki destegi
@@ -131,7 +78,85 @@ Pricing, TableReservations, Lifecycle, Automation,
 - Cakisma kontrolu (ayni masa ayni saatte iki rezervasyon olmaz)
 - Ic/dis mekan ayrimi
 
-### Tests: Backend 16/16 (%100), Frontend %100 - Iteration 7
+### Faz 11: AI Bilgi Zenginlestirmesi + Mutfak Dashboard (TAMAMLANDI - Feb 2026)
+
+**AI Asistani Bilgi Zenginlestirmesi:**
+- Guncel oda fiyatlari entegre edildi (3.000-6.000 TL araliginda)
+- Ozel gun fiyatlari (14 Subat, Yilbasi, Bayramlar) tanimlandi
+- Detayli otel bilgi rehberi eklendi (16 oda, giris/cikis kurallari, olanaklar)
+- WhatsApp mesaj sablonlari olusturuldu (fiyat bildirimi, rezervasyon onay, hatirlama)
+- Banka hesap bilgileri guncellendi (Ziraat + Yapi Kredi)
+- Fix Menu sablonlari ve fiyatlari eklendi
+- GEMINI_SYSTEM_PROMPT zenginlestirildi (tum guncel bilgilerle)
+
+**Mutfak Dashboard:**
+- Yeni sayfa: KitchenPage.js
+- Siparis olusturma (oda servisi, restoran, etkinlik, paket)
+- Siparis durumu takibi (Bekliyor -> Hazirlaniyor -> Hazir -> Servis Edildi)
+- Oncelik sistemi (dusuk, normal, yuksek, acil)
+- Otomatik yenileme (30 saniye)
+- Bildirimler (acil siparisler, 15+ dakika bekleyen siparisler)
+- Gunluk ozet istatistikleri
+- API: /api/kitchen/orders, /api/kitchen/summary, /api/kitchen/notifications
+
+### Tests: Backend 17/17 (%100), Frontend %100
+
+## Architecture
+```
+backend/
+├── server.py          (thin orchestrator)
+├── database.py        (MongoDB connection)
+├── helpers.py         (utcnow, new_id, clean_doc)
+├── config.py          (env vars)
+├── models.py          (Pydantic models)
+├── hotel_data.py      (static hotel data - UPDATED)
+├── knowledge_seed_data.py  (NEW: Message templates, knowledge base)
+├── menu_seed_data.py  (Updated menu data - 100 items, 16 cats)
+├── gemini_service.py  (Gemini AI)
+└── routers/
+    ├── auth.py, hotel.py, rooms.py, guests.py
+    ├── reservations.py, tasks.py, events.py
+    ├── housekeeping.py, staff.py, knowledge.py
+    ├── chatbot.py, messages.py, campaigns.py
+    ├── reviews.py, settings.py, pricing.py
+    ├── table_reservations.py, lifecycle.py
+    ├── automation.py
+    ├── public_menu.py    (Public QR menu)
+    ├── menu_admin.py     (Admin menu CRUD)
+    ├── social_media.py   (Social media publisher)
+    └── kitchen.py        (NEW: Kitchen dashboard)
+
+frontend/
+├── public/
+│   ├── logo.jpeg
+│   ├── fonts/Alifira.ttf
+│   └── brand/KOZBEYLI_BEYAZ_LOGO.png
+└── src/
+    ├── pages/
+    │   ├── PublicMenuPage.js  (Premium QR menu with animations)
+    │   ├── MenuPage.js        (Admin menu CRUD + theme editor)
+    │   ├── SocialMediaPage.js (Social media publisher)
+    │   ├── KitchenPage.js     (NEW: Kitchen dashboard)
+    │   └── ... (21+ pages)
+    └── App.js
+```
+
+## 23 Frontend Pages (+1 Public)
+Dashboard, Rooms, Guests, Reservations, Chatbot, Messages,
+Campaigns, Reviews, Tasks, Events, Housekeeping, Staff,
+Knowledge, QR Menu (admin), Social Media, Foca Guide, Settings, Login,
+Pricing, TableReservations, Lifecycle, Automation, Kitchen,
++ PublicMenuPage (public, /menu)
+
+## Testing History
+- Iteration 1-4: Base app, reviews, refactoring
+- Iteration 5: Initial QR Menu + Logo
+- Iteration 6: QR Menu overhaul (100 items) + Social Media Publisher - %100
+- Iteration 7: Table reservations update - %100
+
+## Bug Fixes (Feb 2026)
+- **Login "undefined" Hatasi Duzeltildi:** Setup butonu sistem kuruluyken undefined gosteriyordu. Frontend'de setup response handling duzeltildi.
+- **Login Bilgileri:** admin / admin123
 
 ## Mocked Features
 - Email campaign sending
@@ -143,10 +168,24 @@ Pricing, TableReservations, Lifecycle, Automation,
 ## Credentials
 - Admin: admin / admin123
 
+## Guncel Oda Fiyatlari (Nakit/Havale - TL, Serpme Kahvalti Dahil)
+| Oda Tipi | Fiyat |
+|----------|-------|
+| Tek Kisilik | 3.000 TL |
+| Cift Kisilik | 3.500 TL |
+| Uc Kisilik | 5.000 TL |
+| Superior | 5.500 TL |
+| Aile Odasi | 6.000 TL |
+
 ## Upcoming Tasks
-- P1: HotelRunner API entegrasyonu
+- P1: WhatsApp Entegrasyonu (Twilio) - Otomatik hatirlama/tesekkur mesajlari
+- P1: HotelRunner API entegrasyonu (API bilgileri bekleniyor)
 - P2: Anti-halucinasyon modulu (chatbot)
 - P2: Rate limiter (AI endpoint'leri)
-- P2: WhatsApp OTP Login
 - P2: Gercek zamanli resepsiyon uyarilari
-- P2: Mutfak tedarik tahmini
+- P3: Railway deployment rehberligi
+
+## Future Tasks (Backlog)
+- POS entegrasyonu
+- Mobil personel uygulamasi
+- WhatsApp OTP Login
