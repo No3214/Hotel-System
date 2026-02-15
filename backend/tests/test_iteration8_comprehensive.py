@@ -311,7 +311,9 @@ class TestAutomation:
         data = response.json()
         assert data["success"] == True
         assert data["type"] == "checkout_cleaning"
-        print(f"Cleaning notification: {data.get('notification', {}).get('message', 'triggered')}")
+        # notification can be None if no checkouts today
+        notif = data.get('notification') or {}
+        print(f"Cleaning notification: {notif.get('message', 'no checkouts today')}")
     
     def test_group_notifications_list(self, auth_token):
         """GET /api/automation/group-notifications returns sent notifications"""
