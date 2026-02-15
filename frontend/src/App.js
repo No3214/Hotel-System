@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, BedDouble, Users, MessageCircle, CheckSquare,
-  Calendar, Sparkles, BookOpen, UtensilsCrossed, Menu, X, ChevronLeft
+  Calendar, Sparkles, BookOpen, UtensilsCrossed, Menu, ChevronLeft,
+  CalendarCheck, UserCog, Mail, MapPin, Settings
 } from 'lucide-react';
 
 import Dashboard from './pages/Dashboard';
@@ -15,18 +16,53 @@ import HousekeepingPage from './pages/HousekeepingPage';
 import KnowledgePage from './pages/KnowledgeBasePage';
 import MenuPage from './pages/MenuPage';
 import MessagesPage from './pages/MessagesPage';
+import ReservationsPage from './pages/ReservationsPage';
+import StaffPage from './pages/StaffPage';
+import CampaignsPage from './pages/CampaignsPage';
+import FocaGuidePage from './pages/FocaGuidePage';
+import SettingsPage from './pages/SettingsPage';
 
-const NAV_ITEMS = [
-  { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
-  { id: 'rooms', name: 'Odalar', icon: BedDouble },
-  { id: 'guests', name: 'Misafirler', icon: Users },
-  { id: 'chatbot', name: 'AI Asistan', icon: Sparkles },
-  { id: 'messages', name: 'Mesajlar', icon: MessageCircle },
-  { id: 'tasks', name: 'Gorevler', icon: CheckSquare },
-  { id: 'events', name: 'Etkinlikler', icon: Calendar },
-  { id: 'housekeeping', name: 'Kat Hizmetleri', icon: BedDouble },
-  { id: 'knowledge', name: 'Bilgi Bankasi', icon: BookOpen },
-  { id: 'menu', name: 'Restoran Menu', icon: UtensilsCrossed },
+const NAV_SECTIONS = [
+  {
+    label: 'Genel',
+    items: [
+      { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
+      { id: 'reservations', name: 'Rezervasyonlar', icon: CalendarCheck },
+      { id: 'rooms', name: 'Odalar', icon: BedDouble },
+      { id: 'guests', name: 'Misafirler', icon: Users },
+    ],
+  },
+  {
+    label: 'Iletisim',
+    items: [
+      { id: 'chatbot', name: 'AI Asistan', icon: Sparkles },
+      { id: 'messages', name: 'Mesajlar', icon: MessageCircle },
+      { id: 'campaigns', name: 'Kampanyalar', icon: Mail },
+    ],
+  },
+  {
+    label: 'Operasyon',
+    items: [
+      { id: 'tasks', name: 'Gorevler', icon: CheckSquare },
+      { id: 'events', name: 'Etkinlikler', icon: Calendar },
+      { id: 'housekeeping', name: 'Kat Hizmetleri', icon: BedDouble },
+      { id: 'staff', name: 'Personel', icon: UserCog },
+    ],
+  },
+  {
+    label: 'Bilgi',
+    items: [
+      { id: 'knowledge', name: 'Bilgi Bankasi', icon: BookOpen },
+      { id: 'menu', name: 'Restoran Menu', icon: UtensilsCrossed },
+      { id: 'guide', name: 'Foca Rehberi', icon: MapPin },
+    ],
+  },
+  {
+    label: 'Sistem',
+    items: [
+      { id: 'settings', name: 'Ayarlar', icon: Settings },
+    ],
+  },
 ];
 
 const PAGES = {
@@ -40,6 +76,11 @@ const PAGES = {
   housekeeping: HousekeepingPage,
   knowledge: KnowledgePage,
   menu: MenuPage,
+  reservations: ReservationsPage,
+  staff: StaffPage,
+  campaigns: CampaignsPage,
+  guide: FocaGuidePage,
+  settings: SettingsPage,
 };
 
 export default function App() {
@@ -53,7 +94,7 @@ export default function App() {
       {/* Sidebar */}
       <motion.aside
         animate={{ width: sidebarOpen ? 260 : 72 }}
-        className="bg-[#0f0f14] border-r border-[#C4972A]/10 flex flex-col relative z-20"
+        className="bg-[#0f0f14] border-r border-[#C4972A]/10 flex flex-col relative z-20 overflow-hidden"
         data-testid="sidebar"
       >
         {/* Logo */}
@@ -64,9 +105,7 @@ export default function App() {
             </div>
             <AnimatePresence>
               {sidebarOpen && (
-                <motion.div
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                >
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                   <h1 className="text-base font-bold text-[#C4972A]" style={{fontFamily: 'var(--font-heading)'}}>
                     Kozbeyli Konagi
                   </h1>
@@ -78,35 +117,47 @@ export default function App() {
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          {NAV_ITEMS.map((item) => {
-            const Icon = item.icon;
-            const active = page === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setPage(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
-                  active
-                    ? 'bg-[#C4972A]/15 text-[#C4972A] gold-glow'
-                    : 'text-[#a9a9b2] hover:bg-white/5 hover:text-[#e5e5e8]'
-                }`}
-                data-testid={`nav-${item.id}`}
-              >
-                <Icon className="w-5 h-5 flex-shrink-0" />
-                <AnimatePresence>
-                  {sidebarOpen && (
-                    <motion.span
-                      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                      className="text-sm font-medium truncate"
+        <nav className="flex-1 p-3 overflow-y-auto space-y-4">
+          {NAV_SECTIONS.map((section) => (
+            <div key={section.label}>
+              <AnimatePresence>
+                {sidebarOpen && (
+                  <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    className="text-[10px] uppercase tracking-wider text-[#7e7e8a]/60 px-3 mb-1.5">
+                    {section.label}
+                  </motion.p>
+                )}
+              </AnimatePresence>
+              <div className="space-y-0.5">
+                {section.items.map((item) => {
+                  const Icon = item.icon;
+                  const active = page === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setPage(item.id)}
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${
+                        active
+                          ? 'bg-[#C4972A]/15 text-[#C4972A] gold-glow'
+                          : 'text-[#a9a9b2] hover:bg-white/5 hover:text-[#e5e5e8]'
+                      }`}
+                      data-testid={`nav-${item.id}`}
                     >
-                      {item.name}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </button>
-            );
-          })}
+                      <Icon className="w-4.5 h-4.5 flex-shrink-0" style={{ width: 18, height: 18 }} />
+                      <AnimatePresence>
+                        {sidebarOpen && (
+                          <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            className="text-sm truncate">
+                            {item.name}
+                          </motion.span>
+                        )}
+                      </AnimatePresence>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
         {/* Toggle */}
