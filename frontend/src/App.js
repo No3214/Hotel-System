@@ -1,94 +1,95 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import '@/App.css';
-import '@/index.css';
-import { LayoutDashboard, Upload, BookOpen, CheckSquare, MessageSquare, Menu, X } from 'lucide-react';
+import {
+  LayoutDashboard, BedDouble, Users, MessageCircle, CheckSquare,
+  Calendar, Sparkles, BookOpen, UtensilsCrossed, Menu, X, ChevronLeft
+} from 'lucide-react';
 
-// Pages
 import Dashboard from './pages/Dashboard';
-import UploadPage from './pages/UploadPage';
-import KnowledgeBasePage from './pages/KnowledgeBasePage';
+import RoomsPage from './pages/RoomsPage';
+import GuestsPage from './pages/GuestsPage';
+import ChatbotPage from './pages/ChatbotPage';
 import TasksPage from './pages/TasksPage';
-import WhatsAppPage from './pages/WhatsAppPage';
+import EventsPage from './pages/EventsPage';
+import HousekeepingPage from './pages/HousekeepingPage';
+import KnowledgePage from './pages/KnowledgePage';
+import MenuPage from './pages/MenuPage';
+import MessagesPage from './pages/MessagesPage';
 
-const App = () => {
-  const [currentPage, setCurrentPage] = useState('dashboard');
+const NAV_ITEMS = [
+  { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
+  { id: 'rooms', name: 'Odalar', icon: BedDouble },
+  { id: 'guests', name: 'Misafirler', icon: Users },
+  { id: 'chatbot', name: 'AI Asistan', icon: Sparkles },
+  { id: 'messages', name: 'Mesajlar', icon: MessageCircle },
+  { id: 'tasks', name: 'Gorevler', icon: CheckSquare },
+  { id: 'events', name: 'Etkinlikler', icon: Calendar },
+  { id: 'housekeeping', name: 'Kat Hizmetleri', icon: BedDouble },
+  { id: 'knowledge', name: 'Bilgi Bankasi', icon: BookOpen },
+  { id: 'menu', name: 'Restoran Menu', icon: UtensilsCrossed },
+];
+
+const PAGES = {
+  dashboard: Dashboard,
+  rooms: RoomsPage,
+  guests: GuestsPage,
+  chatbot: ChatbotPage,
+  messages: MessagesPage,
+  tasks: TasksPage,
+  events: EventsPage,
+  housekeeping: HousekeepingPage,
+  knowledge: KnowledgePage,
+  menu: MenuPage,
+};
+
+export default function App() {
+  const [page, setPage] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  const navigation = [
-    { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
-    { id: 'upload', name: 'Doküman Yükle', icon: Upload },
-    { id: 'whatsapp', name: 'WhatsApp', icon: MessageSquare },
-    { id: 'knowledge', name: 'Bilgi Tabanı', icon: BookOpen },
-    { id: 'tasks', name: 'Görevler', icon: CheckSquare },
-  ];
-
-  const renderPage = () => {
-    switch (currentPage) {
-      case 'dashboard':
-        return <Dashboard onNavigate={setCurrentPage} />;
-      case 'upload':
-        return <UploadPage />;
-      case 'whatsapp':
-        return <WhatsAppPage />;
-      case 'knowledge':
-        return <KnowledgeBasePage />;
-      case 'tasks':
-        return <TasksPage />;
-      default:
-        return <Dashboard onNavigate={setCurrentPage} />;
-    }
-  };
+  const PageComponent = PAGES[page] || Dashboard;
 
   return (
-    <div className="flex h-screen bg-bg-primary" data-testid="app-root">
+    <div className="flex h-screen bg-[#0a0a0f]" data-testid="app-root">
       {/* Sidebar */}
       <motion.aside
-        initial={false}
-        animate={{ width: sidebarOpen ? 280 : 80 }}
-        className="bg-bg-surface border-r border-white/5 flex flex-col relative"
+        animate={{ width: sidebarOpen ? 260 : 72 }}
+        className="bg-[#0f0f14] border-r border-[#C4972A]/10 flex flex-col relative z-20"
+        data-testid="sidebar"
       >
         {/* Logo */}
-        <div className="p-6 border-b border-white/5">
-          <motion.div
-            className="flex items-center space-x-3"
-            animate={{ justifyContent: sidebarOpen ? 'flex-start' : 'center' }}
-          >
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center flex-shrink-0">
-              <span className="text-xl">📄</span>
+        <div className="p-4 border-b border-[#C4972A]/10">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#C4972A] to-[#8a5f1a] flex items-center justify-center flex-shrink-0 animate-pulse-gold">
+              <span className="text-white font-bold text-lg" style={{fontFamily: 'var(--font-heading)'}}>K</span>
             </div>
             <AnimatePresence>
               {sidebarOpen && (
                 <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex flex-col"
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 >
-                  <span className="text-xl font-heading font-bold">VeriÇevir</span>
-                  <span className="text-xs text-gray-500">Otel Yönetim AI</span>
+                  <h1 className="text-base font-bold text-[#C4972A]" style={{fontFamily: 'var(--font-heading)'}}>
+                    Kozbeyli Konagi
+                  </h1>
+                  <p className="text-xs text-[#7e7e8a]">Otel Yonetim Sistemi</p>
                 </motion.div>
               )}
             </AnimatePresence>
-          </motion.div>
+          </div>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-2">
-          {navigation.map((item) => {
+        {/* Nav */}
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+          {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
-            const isActive = currentPage === item.id;
-            
+            const active = page === item.id;
             return (
-              <motion.button
+              <button
                 key={item.id}
-                onClick={() => setCurrentPage(item.id)}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${
-                  isActive
-                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg'
-                    : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                onClick={() => setPage(item.id)}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
+                  active
+                    ? 'bg-[#C4972A]/15 text-[#C4972A] gold-glow'
+                    : 'text-[#a9a9b2] hover:bg-white/5 hover:text-[#e5e5e8]'
                 }`}
                 data-testid={`nav-${item.id}`}
               >
@@ -96,52 +97,45 @@ const App = () => {
                 <AnimatePresence>
                   {sidebarOpen && (
                     <motion.span
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="font-medium"
+                      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                      className="text-sm font-medium truncate"
                     >
                       {item.name}
                     </motion.span>
                   )}
                 </AnimatePresence>
-              </motion.button>
+              </button>
             );
           })}
         </nav>
 
-        {/* Toggle Button */}
-        <div className="p-4 border-t border-white/5">
+        {/* Toggle */}
+        <div className="p-3 border-t border-[#C4972A]/10">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="w-full flex items-center justify-center p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all"
-            data-testid="btn-toggle-sidebar"
+            className="w-full flex items-center justify-center p-2.5 rounded-lg bg-white/5 hover:bg-[#C4972A]/10 transition-all text-[#a9a9b2] hover:text-[#C4972A]"
+            data-testid="sidebar-toggle"
           >
-            {sidebarOpen ? (
-              <X className="w-5 h-5" />
-            ) : (
-              <Menu className="w-5 h-5" />
-            )}
+            {sidebarOpen ? <ChevronLeft className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </motion.aside>
 
-      {/* Main Content */}
+      {/* Main */}
       <main className="flex-1 overflow-y-auto">
         <AnimatePresence mode="wait">
           <motion.div
-            key={currentPage}
-            initial={{ opacity: 0, y: 20 }}
+            key={page}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.2 }}
+            className="h-full"
           >
-            {renderPage()}
+            <PageComponent onNavigate={setPage} />
           </motion.div>
         </AnimatePresence>
       </main>
     </div>
   );
-};
-
-export default App;
+}
