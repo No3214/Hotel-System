@@ -67,17 +67,19 @@ export default function SocialMediaPage() {
     setView('create');
   };
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const [imageLink, setImageLink] = useState('');
+
+  const handleImageLink = async () => {
+    if (!imageLink.trim()) return;
     
     setUploading(true);
     try {
-      const res = await uploadSocialImage(file);
+      const res = await convertImageLink(imageLink);
       setEditPost({ ...editPost, image_url: res.data.image_url });
+      setImageLink('');
     } catch (err) {
-      console.error('Gorsel yuklenemedi:', err);
-      alert('Gorsel yuklenemedi. Lutfen tekrar deneyin.');
+      console.error('Gorsel linki cevirilmedi:', err);
+      alert('Gorsel linki gecersiz. Lutfen Google Drive paylasim linkini kontrol edin.');
     }
     setUploading(false);
   };
