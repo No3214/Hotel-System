@@ -296,9 +296,9 @@ export default function PublicMenuPage() {
                 style={{
                   flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5,
                   padding: '7px 14px', borderRadius: 24,
-                  border: isActive ? `1.5px solid ${colors.primary}` : `1px solid transparent`,
-                  background: isActive ? `${colors.primary}18` : 'transparent',
-                  color: isActive ? colors.primary : `${colors.muted}99`,
+                  border: isActive ? `1.5px solid ${colors.text}` : `1px solid transparent`,
+                  background: isActive ? `${colors.text}18` : 'transparent',
+                  color: isActive ? colors.text : `${colors.muted}99`,
                   fontSize: 12, fontWeight: isActive ? 600 : 400, cursor: 'pointer',
                   whiteSpace: 'nowrap', letterSpacing: '0.02em',
                   transition: 'all 0.25s ease',
