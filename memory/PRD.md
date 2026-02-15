@@ -120,6 +120,17 @@ Pricing, TableReservations, Lifecycle, Automation,
 - Frame preview'da gorsel destegi
 - QR Menu renkleri: Altin/sari tonlari kaldirildi, sadece beyaz/bej/yesil
 
+### Faz 10: Masa Rezervasyon Sistemi Yenileme (TAMAMLANDI - Feb 2026)
+- 19 masa tanimli: 13 adet 2-3 kisilik, 6 adet 4 kisilik
+- Ogun bazli sure ayarlari:
+  - Kahvalti: 2 saat (08:00-10:30)
+  - Oglen: 2 saat (12:00-14:00)
+  - Aksam: 4 saat (18:00-20:30)
+- Akilli masa atama (kisi sayisina gore en uygun masa)
+- Gunluk goruntuleme modu (tum masalarin durumu)
+- Cakisma kontrolu (ayni masa ayni saatte iki rezervasyon olmaz)
+- Ic/dis mekan ayrimi
+
 ### Tests: Backend 16/16 (%100), Frontend %100 - Iteration 7
 
 ## Mocked Features
