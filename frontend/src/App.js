@@ -3,10 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, BedDouble, Users, MessageCircle, CheckSquare,
   Calendar, Sparkles, BookOpen, UtensilsCrossed, Menu, ChevronLeft,
-  CalendarCheck, UserCog, Mail, MapPin, Settings, Star, TrendingUp, Heart, LogOut, QrCode, Share2
+  CalendarCheck, UserCog, Mail, MapPin, Settings, Star, TrendingUp, Heart, LogOut, QrCode, Share2,
+  Globe
 } from 'lucide-react';
 
 import { setAuthToken, getMe } from './api';
+import { LanguageProvider, useLanguage } from './hooks/useLanguage';
 import LoginPage from './pages/LoginPage';
 import PublicMenuPage from './pages/PublicMenuPage';
 import Dashboard from './pages/Dashboard';
@@ -33,53 +35,53 @@ import SocialMediaPage from './pages/SocialMediaPage';
 import KitchenPage from './pages/KitchenPage';
 import WhatsAppPage from './pages/WhatsAppPage';
 
-const NAV_SECTIONS = [
+const NAV_CONFIG = [
   {
-    label: 'Genel',
+    labelKey: 'general',
     items: [
-      { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
-      { id: 'reservations', name: 'Rezervasyonlar', icon: CalendarCheck },
-      { id: 'rooms', name: 'Odalar', icon: BedDouble },
-      { id: 'guests', name: 'Misafirler', icon: Users },
-      { id: 'pricing', name: 'Fiyatlama', icon: TrendingUp },
+      { id: 'dashboard', nameKey: 'dashboard', icon: LayoutDashboard },
+      { id: 'reservations', nameKey: 'reservations', icon: CalendarCheck },
+      { id: 'rooms', nameKey: 'rooms', icon: BedDouble },
+      { id: 'guests', nameKey: 'guests', icon: Users },
+      { id: 'pricing', nameKey: 'pricing', icon: TrendingUp },
     ],
   },
   {
-    label: 'Iletisim',
+    labelKey: 'communication',
     items: [
-      { id: 'chatbot', name: 'AI Asistan', icon: Sparkles },
-      { id: 'messages', name: 'Mesajlar', icon: MessageCircle },
-      { id: 'whatsapp', name: 'WhatsApp', icon: MessageCircle },
-      { id: 'campaigns', name: 'Kampanyalar', icon: Mail },
-      { id: 'reviews', name: 'Google Yorumlari', icon: Star },
-      { id: 'lifecycle', name: 'Misafir Dongusu', icon: Heart },
-      { id: 'social', name: 'Sosyal Medya', icon: Share2 },
+      { id: 'chatbot', nameKey: 'chatbot', icon: Sparkles },
+      { id: 'messages', nameKey: 'messages', icon: MessageCircle },
+      { id: 'whatsapp', nameKey: 'whatsapp', icon: MessageCircle },
+      { id: 'campaigns', nameKey: 'campaigns', icon: Mail },
+      { id: 'reviews', nameKey: 'reviews', icon: Star },
+      { id: 'lifecycle', nameKey: 'lifecycle', icon: Heart },
+      { id: 'social', nameKey: 'social', icon: Share2 },
     ],
   },
   {
-    label: 'Operasyon',
+    labelKey: 'operations',
     items: [
-      { id: 'tasks', name: 'Gorevler', icon: CheckSquare },
-      { id: 'events', name: 'Etkinlikler', icon: Calendar },
-      { id: 'housekeeping', name: 'Kat Hizmetleri', icon: BedDouble },
-      { id: 'staff', name: 'Personel', icon: UserCog },
-      { id: 'table_reservations', name: 'Masa Rez.', icon: UtensilsCrossed },
-      { id: 'kitchen', name: 'Mutfak', icon: UtensilsCrossed },
+      { id: 'tasks', nameKey: 'tasks', icon: CheckSquare },
+      { id: 'events', nameKey: 'events', icon: Calendar },
+      { id: 'housekeeping', nameKey: 'housekeeping', icon: BedDouble },
+      { id: 'staff', nameKey: 'staff', icon: UserCog },
+      { id: 'table_reservations', nameKey: 'table_reservations', icon: UtensilsCrossed },
+      { id: 'kitchen', nameKey: 'kitchen', icon: UtensilsCrossed },
     ],
   },
   {
-    label: 'Bilgi',
+    labelKey: 'information',
     items: [
-      { id: 'knowledge', name: 'Bilgi Bankasi', icon: BookOpen },
-      { id: 'menu', name: 'QR Menu', icon: QrCode },
-      { id: 'guide', name: 'Foca Rehberi', icon: MapPin },
+      { id: 'knowledge', nameKey: 'knowledge', icon: BookOpen },
+      { id: 'menu', nameKey: 'menu', icon: QrCode },
+      { id: 'guide', nameKey: 'guide', icon: MapPin },
     ],
   },
   {
-    label: 'Sistem',
+    labelKey: 'system',
     items: [
-      { id: 'automation', name: 'Otomasyon', icon: Settings },
-      { id: 'settings', name: 'Ayarlar', icon: Settings },
+      { id: 'automation', nameKey: 'automation', icon: Settings },
+      { id: 'settings', nameKey: 'settings', icon: Settings },
     ],
   },
 ];
@@ -111,12 +113,57 @@ const PAGES = {
 };
 
 export default function App() {
-  // Public menu route - accessible without auth
   if (window.location.pathname === '/menu') {
     return <PublicMenuPage />;
   }
+  return (
+    <LanguageProvider>
+      <AdminApp />
+    </LanguageProvider>
+  );
+}
 
-  return <AdminApp />;
+const FLAG_MAP = { TR: 'TR', GB: 'GB', DE: 'DE', FR: 'FR', RU: 'RU' };
+
+function LanguageSelector({ compact }) {
+  const { lang, setLang, languages } = useLanguage();
+  const [open, setOpen] = useState(false);
+
+  const current = languages.find(l => l.code === lang) || { code: 'tr', name: 'Turkce', flag: 'TR' };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-[#C4972A]/10 transition-all text-[#a9a9b2] hover:text-[#C4972A] w-full"
+        data-testid="language-selector"
+      >
+        <Globe className="w-4 h-4 flex-shrink-0" />
+        {!compact && <span className="text-xs">{current.name}</span>}
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute bottom-full left-0 mb-1 bg-[#1a1a22] border border-[#C4972A]/15 rounded-lg shadow-xl z-50 min-w-[140px] overflow-hidden"
+            data-testid="language-dropdown">
+            {languages.map(l => (
+              <button
+                key={l.code}
+                onClick={() => { setLang(l.code); setOpen(false); }}
+                className={`w-full text-left px-3 py-2 text-xs hover:bg-[#C4972A]/10 transition-colors flex items-center gap-2 ${
+                  lang === l.code ? 'text-[#C4972A] bg-[#C4972A]/5' : 'text-[#a9a9b2]'
+                }`}
+                data-testid={`lang-option-${l.code}`}
+              >
+                <span className="text-[10px] font-bold w-5">{l.flag}</span>
+                <span>{l.name}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
 }
 
 function AdminApp() {
@@ -124,6 +171,7 @@ function AdminApp() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const { t } = useLanguage();
 
   useEffect(() => {
     const saved = localStorage.getItem('kozbeyli_user');
@@ -142,14 +190,8 @@ function AdminApp() {
     setAuthLoading(false);
   }, []);
 
-  const handleLogin = (userData) => {
-    setUser(userData);
-  };
-
-  const handleLogout = () => {
-    setAuthToken(null);
-    setUser(null);
-  };
+  const handleLogin = (userData) => setUser(userData);
+  const handleLogout = () => { setAuthToken(null); setUser(null); };
 
   if (authLoading) return <div className="min-h-screen bg-[#0a0a0f]" />;
   if (!user) return <LoginPage onLogin={handleLogin} />;
@@ -161,7 +203,7 @@ function AdminApp() {
     return perms.includes('*') || perms.includes(pageId);
   };
 
-  const filteredSections = NAV_SECTIONS.map(section => ({
+  const filteredSections = NAV_CONFIG.map(section => ({
     ...section,
     items: section.items.filter(item => hasPermission(item.id)),
   })).filter(section => section.items.length > 0);
@@ -170,7 +212,6 @@ function AdminApp() {
 
   return (
     <div className="flex h-screen bg-[#0a0a0f]" data-testid="app-root">
-      {/* Sidebar */}
       <motion.aside
         animate={{ width: sidebarOpen ? 260 : 72 }}
         className="bg-[#0f0f14] border-r border-[#C4972A]/10 flex flex-col relative z-20 overflow-hidden"
@@ -179,19 +220,15 @@ function AdminApp() {
         {/* Logo */}
         <div className="p-4 border-b border-[#C4972A]/10">
           <div className="flex items-center gap-3">
-            <img
-              src="/logo.jpeg"
-              alt="Kozbeyli Konagi"
-              className="w-10 h-10 rounded-lg flex-shrink-0 object-cover"
-              data-testid="sidebar-logo"
-            />
+            <img src="/logo.jpeg" alt="Kozbeyli Konagi"
+              className="w-10 h-10 rounded-lg flex-shrink-0 object-cover" data-testid="sidebar-logo" />
             <AnimatePresence>
               {sidebarOpen && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                  <h1 className="text-base font-bold text-[#C4972A]" style={{fontFamily: 'var(--font-heading)'}}>
+                  <h1 className="text-base font-bold text-[#C4972A]" style={{ fontFamily: 'var(--font-heading)' }}>
                     Kozbeyli Konagi
                   </h1>
-                  <p className="text-xs text-[#7e7e8a]">Otel Yonetim Sistemi</p>
+                  <p className="text-xs text-[#7e7e8a]">{t('hotel_management')}</p>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -201,12 +238,12 @@ function AdminApp() {
         {/* Nav */}
         <nav className="flex-1 p-3 overflow-y-auto space-y-4">
           {filteredSections.map((section) => (
-            <div key={section.label}>
+            <div key={section.labelKey}>
               <AnimatePresence>
                 {sidebarOpen && (
                   <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                     className="text-[10px] uppercase tracking-wider text-[#7e7e8a]/60 px-3 mb-1.5">
-                    {section.label}
+                    {t(section.labelKey)}
                   </motion.p>
                 )}
               </AnimatePresence>
@@ -230,7 +267,7 @@ function AdminApp() {
                         {sidebarOpen && (
                           <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                             className="text-sm truncate">
-                            {item.name}
+                            {t(item.nameKey)}
                           </motion.span>
                         )}
                       </AnimatePresence>
@@ -242,13 +279,18 @@ function AdminApp() {
           ))}
         </nav>
 
-        {/* User & Toggle */}
+        {/* Footer */}
         <div className="p-3 border-t border-[#C4972A]/10 space-y-2">
+          {/* Language Selector */}
+          <LanguageSelector compact={!sidebarOpen} />
+
           {sidebarOpen && user && (
             <div className="flex items-center justify-between px-2 py-1">
               <div>
                 <p className="text-xs font-medium text-[#e5e5e8] truncate">{user.name}</p>
-                <p className="text-[10px] text-[#C4972A]">{user.role === 'admin' ? 'Admin' : user.role === 'reception' ? 'Resepsiyon' : user.role === 'kitchen' ? 'Mutfak' : 'Personel'}</p>
+                <p className="text-[10px] text-[#C4972A]">
+                  {user.role === 'admin' ? t('admin') : user.role === 'reception' ? t('reception') : user.role}
+                </p>
               </div>
               <button onClick={handleLogout} className="text-[#7e7e8a] hover:text-red-400 transition-colors" data-testid="logout-btn">
                 <LogOut className="w-4 h-4" />
@@ -265,7 +307,6 @@ function AdminApp() {
         </div>
       </motion.aside>
 
-      {/* Main */}
       <main className="flex-1 overflow-y-auto">
         <AnimatePresence mode="wait">
           <motion.div
