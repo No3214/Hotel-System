@@ -207,6 +207,7 @@ async def automation_summary():
     breakfast_preps = await db.automation_logs.count_documents({"type": "breakfast_prep"})
     cleaning_notifications = await db.automation_logs.count_documents({"type": "checkout_cleaning"})
     morning_reminders = await db.automation_logs.count_documents({"type": {"$in": ["morning_toilet_reminder", "morning_checkin_reminder"]}})
+    evening_checks = await db.automation_logs.count_documents({"type": "evening_room_check"})
     return {
         "total_logs": total_logs,
         "payment_reminders": payment_reminders,
@@ -214,6 +215,7 @@ async def automation_summary():
         "breakfast_preps": breakfast_preps,
         "cleaning_notifications": cleaning_notifications,
         "morning_reminders": morning_reminders,
+        "evening_checks": evening_checks,
     }
 
 
