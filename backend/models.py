@@ -166,3 +166,16 @@ class ReservationUpdate(BaseModel):
     notes: Optional[str] = None
     total_price: Optional[float] = None
     guests_count: Optional[int] = None
+
+
+class ReviewCreate(BaseModel):
+    reviewer_name: str
+    rating: int = Field(ge=1, le=5)
+    review_text: str
+    platform: str = "google"
+    review_date: Optional[str] = None
+
+
+class ReviewGenerateRequest(BaseModel):
+    review_id: str
+    tone: str = "professional"
