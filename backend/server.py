@@ -16,6 +16,7 @@ from models import (
     EventCreate, HousekeepingCreate, HousekeepingStatus,
     KnowledgeCreate, StaffCreate, WhatsAppMessage,
     CampaignCreate, CampaignStatus, ShiftCreate,
+    ReviewCreate, ReviewGenerateRequest,
 )
 from hotel_data import (
     HOTEL_INFO, ROOMS, RESTAURANT_MENU, HOTEL_AWARDS, HOTEL_RATINGS,
