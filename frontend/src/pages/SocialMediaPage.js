@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getSocialPosts, createSocialPost, updateSocialPost, deleteSocialPost, publishSocialPost, getSocialTemplates, getSocialStats } from '../api';
+import { getSocialPosts, createSocialPost, updateSocialPost, deleteSocialPost, publishSocialPost, getSocialTemplates, getSocialStats, uploadSocialImage } from '../api';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { Plus, Trash2, Edit2, Save, X, Send, Copy, Instagram, Facebook, Twitter, MessageCircle, Eye, BarChart3, FileText, Sparkles, Clock, Linkedin, Video } from 'lucide-react';
+import { Plus, Trash2, Edit2, Save, X, Send, Copy, Instagram, Facebook, Twitter, MessageCircle, Eye, BarChart3, FileText, Sparkles, Clock, Linkedin, Video, Image, Upload, Loader2 } from 'lucide-react';
 
 const PLATFORMS = [
   { id: 'instagram', name: 'Instagram', icon: Instagram, color: '#E1306C' },
