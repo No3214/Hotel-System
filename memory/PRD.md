@@ -63,6 +63,33 @@ Kozbeyli Konagi (Izmir/Foca) butik tas otel icin kapsamli dijital yonetim ekosis
 
 ### Tests: Backend 19/19 (%100), Frontend %100 - Iteration 9
 
+### Faz 15: Aksam Oda Kontrolu + Dinamik Dashboard + Coklu Dil (TAMAMLANDI - 15 Feb 2026)
+
+**18:00 Aksam Oda Kontrolu (scheduler.py):**
+- Check-out yapan misafirlerin odalarinda klima/isik kontrolu hatirlatmasi
+- CronTrigger(hour=18, minute=0) ile zamanlanmis
+- Manuel tetikleme: POST /api/automation/evening-room-check
+- Otomasyon ozet sayfasinda evening_checks sayaci
+
+**Dinamik Gercek Zamanli Dashboard (Dashboard.js):**
+- 4 KPI karti: Doluluk, Bugunun Giris/Cikislari, Aylik Gelir
+- Haftalik doluluk trendi bar grafikler (son 7 gun)
+- Oda durum gridi (renk kodlu: musait/dolu/bakim/temizlik)
+- Platform puanlari (Booking, Tripadvisor, vb.)
+- Son aktiviteler feed'i
+- 30 saniye otomatik yenileme + CANLI gostergesi
+- Manuel yenileme butonu
+
+**Coklu Dil Destegi (5 dil):**
+- Turkce, English, Deutsch, Francais, Russkiy
+- LanguageProvider context (hooks/useLanguage.js)
+- Sidebar dil secici (Globe ikonu)
+- localStorage'da tercih kaydi
+- 67 anahtar/dil cevirileri
+- Sidebar navigasyon, dashboard, genel UI etiketleri
+
+### Tests: Backend 20/20 (%100), Frontend %100 - Iteration 10
+
 ## Architecture
 ```
 backend/
@@ -98,9 +125,8 @@ frontend/src/
 - Otomasyon bildirimleri (grup bildirim mock)
 
 ## Upcoming Tasks
-- P1: WhatsApp Business API canli entegrasyonu (Meta Developer Portal bilgileri bekleniyor)
-- P1: HotelRunner API entegrasyonu (API bilgileri bekleniyor)
-- P1: Gelir/Gider Takibi & Finansal Raporlama (kullanicinin paylastigi referans belgeden)
-- P1: Gercek Zamanli Dashboard (doluluk/gelir anlik takip)
-- P2: Coklu dil destegi (uluslararasi misafir)
+- P0: WhatsApp Business API canli entegrasyonu (Meta Developer Portal bilgileri bekleniyor)
+- P0: HotelRunner API entegrasyonu (API bilgileri bekleniyor)
+- P0: Gelir/Gider Takibi & Finansal Raporlama (kullanicinin paylastigi referans belgeden)
 - P3: POS entegrasyonu, Mobil personel uygulamasi
+- P3: Online odeme entegrasyonu (Stripe/Iyzico)
