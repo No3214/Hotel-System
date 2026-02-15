@@ -313,7 +313,7 @@ async def dashboard_stats():
         })
 
     # Room status breakdown
-    rooms_list = await db.rooms.find({}, {"_id": 0, "id": 1, "name": 1, "status": 1, "type": 1}).to_list(50)
+    rooms_list = await db.rooms.find({}, {"_id": 0, "room_id": 1, "name_tr": 1, "status": 1}).to_list(50)
     room_status_counts = {}
     for rm in rooms_list:
         st = rm.get("status", "available")
