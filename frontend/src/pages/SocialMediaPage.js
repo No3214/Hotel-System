@@ -455,6 +455,8 @@ const FramePreview = React.forwardRef(({ post, frameStyles }, ref) => {
     { id: 'festive', bg: '#3F403A', text: '#F8F5EF', accent: '#D4A847' },
   ]).find(s => s.id === post.frame_style) || { bg: '#515249', text: '#F8F5EF', accent: '#B07A2A' };
 
+  const hasImage = post.image_url;
+
   return (
     <div
       ref={ref}
@@ -464,59 +466,101 @@ const FramePreview = React.forwardRef(({ post, frameStyles }, ref) => {
         aspectRatio: '1/1',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'center',
+        justifyContent: hasImage ? 'flex-end' : 'center',
         alignItems: 'center',
-        padding: 32,
+        padding: hasImage ? 0 : 32,
         position: 'relative',
       }}
       data-testid="frame-preview"
     >
-      {/* Corner decorations */}
-      <div style={{ position: 'absolute', top: 16, left: 16, width: 24, height: 24, borderTop: `2px solid ${styles.accent}40`, borderLeft: `2px solid ${styles.accent}40` }} />
-      <div style={{ position: 'absolute', top: 16, right: 16, width: 24, height: 24, borderTop: `2px solid ${styles.accent}40`, borderRight: `2px solid ${styles.accent}40` }} />
-      <div style={{ position: 'absolute', bottom: 16, left: 16, width: 24, height: 24, borderBottom: `2px solid ${styles.accent}40`, borderLeft: `2px solid ${styles.accent}40` }} />
-      <div style={{ position: 'absolute', bottom: 16, right: 16, width: 24, height: 24, borderBottom: `2px solid ${styles.accent}40`, borderRight: `2px solid ${styles.accent}40` }} />
+      {/* Background Image */}
+      {hasImage && (
+        <img
+          src={post.image_url}
+          alt="Post"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+          }}
+        />
+      )}
 
-      {/* Logo */}
+      {/* Overlay for image */}
+      {hasImage && (
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 50%)',
+        }} />
+      )}
+
+      {/* Corner decorations */}
+      <div style={{ position: 'absolute', top: 16, left: 16, width: 24, height: 24, borderTop: `2px solid ${hasImage ? '#fff' : styles.accent}40`, borderLeft: `2px solid ${hasImage ? '#fff' : styles.accent}40` }} />
+      <div style={{ position: 'absolute', top: 16, right: 16, width: 24, height: 24, borderTop: `2px solid ${hasImage ? '#fff' : styles.accent}40`, borderRight: `2px solid ${hasImage ? '#fff' : styles.accent}40` }} />
+      <div style={{ position: 'absolute', bottom: 16, left: 16, width: 24, height: 24, borderBottom: `2px solid ${hasImage ? '#fff' : styles.accent}40`, borderLeft: `2px solid ${hasImage ? '#fff' : styles.accent}40` }} />
+      <div style={{ position: 'absolute', bottom: 16, right: 16, width: 24, height: 24, borderBottom: `2px solid ${hasImage ? '#fff' : styles.accent}40`, borderRight: `2px solid ${hasImage ? '#fff' : styles.accent}40` }} />
+
+      {/* Logo (top when image, center otherwise) */}
       <img
         src="/brand/KOZBEYLI_BEYAZ_LOGO.png"
         alt="Logo"
-        style={{ width: 60, height: 'auto', marginBottom: 16, filter: styles.bg === '#F3EEE4' ? 'invert(1)' : 'none' }}
+        style={{
+          width: hasImage ? 40 : 60,
+          height: 'auto',
+          marginBottom: hasImage ? 8 : 16,
+          filter: (!hasImage && styles.bg === '#F3EEE4') ? 'invert(1)' : 'none',
+          position: hasImage ? 'absolute' : 'relative',
+          top: hasImage ? 20 : 'auto',
+          zIndex: 1,
+        }}
         onError={(e) => { e.target.style.display = 'none'; }}
       />
 
-      {/* Title */}
-      <h2 style={{
-        color: styles.accent,
-        fontSize: 11,
-        letterSpacing: '0.15em',
-        textTransform: 'uppercase',
-        fontWeight: 600,
-        marginBottom: 8,
-        fontFamily: "'Alifira', serif",
-      }}>
-        {post.title || 'Baslik'}
-      </h2>
-
-      {/* Content */}
-      <p style={{
-        color: styles.text,
-        fontSize: 13,
+      {/* Content container */}
+      <div style={{
+        position: 'relative',
+        zIndex: 1,
+        padding: hasImage ? '24px 32px 32px' : 0,
         textAlign: 'center',
-        lineHeight: 1.6,
-        maxWidth: '85%',
-        opacity: 0.9,
       }}>
-        {post.content?.substring(0, 150) || 'Gonderi icerigi...'}
-      </p>
+        {/* Title */}
+        <h2 style={{
+          color: hasImage ? '#fff' : styles.accent,
+          fontSize: 11,
+          letterSpacing: '0.15em',
+          textTransform: 'uppercase',
+          fontWeight: 600,
+          marginBottom: 8,
+          fontFamily: "'Alifira', serif",
+        }}>
+          {post.title || 'Baslik'}
+        </h2>
+
+        {/* Content */}
+        <p style={{
+          color: hasImage ? '#fff' : styles.text,
+          fontSize: 13,
+          textAlign: 'center',
+          lineHeight: 1.6,
+          maxWidth: '85%',
+          margin: '0 auto',
+          opacity: hasImage ? 1 : 0.9,
+        }}>
+          {post.content?.substring(0, 100) || 'Gonderi icerigi...'}
+        </p>
+      </div>
 
       {/* Brand */}
       <div style={{
         position: 'absolute', bottom: 24,
-        color: `${styles.text}60`,
+        color: hasImage ? 'rgba(255,255,255,0.6)' : `${styles.text}60`,
         fontSize: 9,
         letterSpacing: '0.15em',
         textTransform: 'uppercase',
+        zIndex: 1,
       }}>
         KOZBEYLI KONAGI
       </div>
