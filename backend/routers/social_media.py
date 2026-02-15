@@ -1,21 +1,28 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from typing import Optional
 from database import db
 from helpers import utcnow, new_id, clean_doc
+import os
+import base64
 
 router = APIRouter(tags=["social-media"])
+
+# Upload directory for social media images
+UPLOAD_DIR = "/app/frontend/public/uploads/social"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
 class PostCreate(BaseModel):
     title: str
     content: str
-    platforms: list = []  # instagram, facebook, twitter, whatsapp
+    platforms: list = []  # instagram, facebook, twitter, tiktok, linkedin, whatsapp
     post_type: str = "text"  # text, promo, event, menu_highlight, announcement
     scheduled_at: Optional[str] = None
     frame_style: str = "default"  # default, elegant, bold, minimal, festive
     hashtags: list = []
     status: str = "draft"  # draft, scheduled, published
+    image_url: Optional[str] = None
 
 
 class PostUpdate(BaseModel):
@@ -27,6 +34,7 @@ class PostUpdate(BaseModel):
     frame_style: Optional[str] = None
     hashtags: Optional[list] = None
     status: Optional[str] = None
+    image_url: Optional[str] = None
 
 
 # Templates for different post types
