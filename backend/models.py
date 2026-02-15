@@ -133,3 +133,36 @@ class WhatsAppMessage(BaseModel):
     message: str
     sender_name: Optional[str] = None
     timestamp: Optional[str] = None
+
+
+class CampaignStatus(str, Enum):
+    DRAFT = "draft"
+    SCHEDULED = "scheduled"
+    SENT = "sent"
+    CANCELLED = "cancelled"
+
+
+class CampaignCreate(BaseModel):
+    title: str
+    subject: str
+    content: str
+    target_segment: str = "all"
+    channel: str = "email"
+    scheduled_at: Optional[str] = None
+
+
+class ShiftCreate(BaseModel):
+    staff_id: str
+    staff_name: str
+    date: str
+    start_time: str
+    end_time: str
+    department: str = "general"
+    notes: Optional[str] = None
+
+
+class ReservationUpdate(BaseModel):
+    status: Optional[str] = None
+    notes: Optional[str] = None
+    total_price: Optional[float] = None
+    guests_count: Optional[int] = None
