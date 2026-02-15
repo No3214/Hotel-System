@@ -3,6 +3,7 @@ import {
   runPaymentReminder, runCancellationCheck, getKitchenForecast,
   getAutomationLogs, getAutomationSummary,
   runBreakfastNotification, runMorningReminders, runCleaningNotification,
+  runEveningRoomCheck,
   getScheduledJobs, getGroupNotifications
 } from '../api';
 import { Button } from '../components/ui/button';
