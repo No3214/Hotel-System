@@ -88,11 +88,14 @@ MEAL_TIME_SLOTS = {
 RESTAURANT_CONFIG = {
     "name": "Antakya Sofrasi",
     "total_tables": len(TABLES),
-    "small_tables": len([t for t in TABLES if t["type"] == "small"]),
-    "medium_tables": len([t for t in TABLES if t["type"] == "medium"]),
+    "small_tables_2": len([t for t in TABLES if t["capacity"] == 2]),
+    "small_tables_3": len([t for t in TABLES if t["capacity"] == 3]),
+    "medium_tables_4": len([t for t in TABLES if t["capacity"] == 4]),
     "indoor_tables": len([t for t in TABLES if t["location"] == "indoor"]),
     "outdoor_tables": len([t for t in TABLES if t["location"] == "outdoor"]),
+    "max_party_size": 12,  # Masa birleştirme ile
     "tables": TABLES,
+    "combinable_tables": COMBINABLE_TABLES,
     "meal_durations": {k.value: v for k, v in MEAL_DURATIONS.items()},
     "meal_time_slots": {k.value: v for k, v in MEAL_TIME_SLOTS.items()},
 }
