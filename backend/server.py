@@ -12,9 +12,10 @@ from typing import Optional
 from config import MONGO_URL, DB_NAME, CORS_ORIGINS
 from models import (
     ChatRequest, TaskCreate, TaskUpdate, TaskStatus, TaskPriority,
-    GuestCreate, ReservationCreate, ReservationStatus, RoomStatus,
+    GuestCreate, ReservationCreate, ReservationUpdate, ReservationStatus, RoomStatus,
     EventCreate, HousekeepingCreate, HousekeepingStatus,
     KnowledgeCreate, StaffCreate, WhatsAppMessage,
+    CampaignCreate, CampaignStatus, ShiftCreate,
 )
 from hotel_data import (
     HOTEL_INFO, ROOMS, RESTAURANT_MENU, HOTEL_AWARDS, HOTEL_RATINGS,
