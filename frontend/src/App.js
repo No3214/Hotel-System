@@ -175,7 +175,7 @@ export default function App() {
 
         {/* Nav */}
         <nav className="flex-1 p-3 overflow-y-auto space-y-4">
-          {NAV_SECTIONS.map((section) => (
+          {filteredSections.map((section) => (
             <div key={section.label}>
               <AnimatePresence>
                 {sidebarOpen && (
