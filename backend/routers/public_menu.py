@@ -1,7 +1,8 @@
 from fastapi import APIRouter
 from database import db
-from helpers import clean_docs
-from hotel_data import RESTAURANT_MENU, HOTEL_INFO
+from helpers import clean_docs, new_id, utcnow
+from hotel_data import HOTEL_INFO
+from menu_seed_data import UPDATED_MENU_CATEGORIES, UPDATED_MENU_ITEMS
 
 router = APIRouter(tags=["public-menu"])
 
@@ -53,41 +54,35 @@ DEFAULT_THEME = {
     },
 }
 
-DEFAULT_CATEGORIES = [
-    {"key": "kahvalti", "name_tr": "Kahvalti", "name_en": "Breakfast", "icon": "utensils", "sort_order": 0, "is_active": True},
-    {"key": "baslangic", "name_tr": "Baslangiclar", "name_en": "Starters", "icon": "salad", "sort_order": 1, "is_active": True},
-    {"key": "meze", "name_tr": "Mezeler", "name_en": "Appetizers", "icon": "leaf", "sort_order": 2, "is_active": True},
-    {"key": "ana_yemek", "name_tr": "Ana Yemekler", "name_en": "Main Courses", "icon": "flame", "sort_order": 3, "is_active": True},
-    {"key": "pizza_sandvic", "name_tr": "Pizza & Sandvic", "name_en": "Pizza & Sandwich", "icon": "pizza", "sort_order": 4, "is_active": True},
-    {"key": "tatli", "name_tr": "Tatlilar", "name_en": "Desserts", "icon": "cake", "sort_order": 5, "is_active": True},
-    {"key": "sicak_icecekler", "name_tr": "Sicak Icecekler", "name_en": "Hot Drinks", "icon": "coffee", "sort_order": 6, "is_active": True},
-    {"key": "soguk_icecekler", "name_tr": "Soguk Icecekler", "name_en": "Cold Drinks", "icon": "glass-water", "sort_order": 7, "is_active": True},
-    {"key": "sarap", "name_tr": "Saraplar", "name_en": "Wines", "icon": "wine", "sort_order": 8, "is_active": True},
-    {"key": "bira", "name_tr": "Biralar", "name_en": "Beers", "icon": "beer", "sort_order": 9, "is_active": True},
-    {"key": "raki", "name_tr": "Raki", "name_en": "Raki", "icon": "glass", "sort_order": 10, "is_active": True},
-    {"key": "viski", "name_tr": "Viskiler", "name_en": "Whiskies", "icon": "whiskey", "sort_order": 11, "is_active": True},
-    {"key": "kokteyl", "name_tr": "Kokteyller", "name_en": "Cocktails", "icon": "cocktail", "sort_order": 12, "is_active": True},
-]
-
 
 async def ensure_menu_seeded():
-    """Seed menu data to MongoDB if not present"""
-    count = await db.menu_items.count_documents({})
-    if count > 0:
+    """Seed or reseed menu data to MongoDB"""
+    # Check version marker
+    version = await db.theme_settings.find_one({"type": "qr_menu_version"}, {"_id": 0})
+    current_version = "v3_full_menu"
+
+    if version and version.get("version") == current_version:
         return
 
-    from helpers import new_id, utcnow
+    # Clear and reseed
+    await db.menu_items.delete_many({})
+    await db.menu_categories.delete_many({})
 
     # Seed categories
-    for cat in DEFAULT_CATEGORIES:
+    for cat in UPDATED_MENU_CATEGORIES:
         await db.menu_categories.insert_one({
-            **cat,
             "id": new_id(),
+            "key": cat["key"],
+            "name_tr": cat["name_tr"],
+            "name_en": cat["name_en"],
+            "icon": cat["icon"],
+            "sort_order": cat["sort_order"],
+            "is_active": True,
             "created_at": utcnow(),
         })
 
-    # Seed items from RESTAURANT_MENU
-    for cat_key, items in RESTAURANT_MENU.items():
+    # Seed items
+    for cat_key, items in UPDATED_MENU_ITEMS.items():
         for i, item in enumerate(items):
             await db.menu_items.insert_one({
                 "id": new_id(),
@@ -101,10 +96,15 @@ async def ensure_menu_seeded():
                 "updated_at": utcnow(),
             })
 
-    # Seed theme
+    # Seed theme if not exists
+    existing_theme = await db.theme_settings.find_one({"type": "qr_menu"})
+    if not existing_theme:
+        await db.theme_settings.insert_one({**DEFAULT_THEME, "updated_at": utcnow()})
+
+    # Update version marker
     await db.theme_settings.update_one(
-        {"type": "qr_menu"},
-        {"$set": {**DEFAULT_THEME, "updated_at": utcnow()}},
+        {"type": "qr_menu_version"},
+        {"$set": {"type": "qr_menu_version", "version": current_version, "updated_at": utcnow()}},
         upsert=True,
     )
 
@@ -126,7 +126,6 @@ async def get_public_menu():
         {"is_available": True}, {"_id": 0}
     ).sort("sort_order", 1).to_list(500)
 
-    # Group items by category
     menu = {}
     for cat in categories:
         cat_items = [it for it in items if it["category"] == cat["key"]]
@@ -148,6 +147,5 @@ async def get_public_menu():
 
 @router.get("/public/theme")
 async def get_public_theme():
-    """Public endpoint for theme only"""
     theme = await db.theme_settings.find_one({"type": "qr_menu"}, {"_id": 0})
     return theme or DEFAULT_THEME
