@@ -53,6 +53,8 @@ export default function AutomationPage() {
         res = await runMorningReminders();
       } else if (botId === 'cleaning') {
         res = await runCleaningNotification();
+      } else if (botId === 'evening') {
+        res = await runEveningRoomCheck();
       } else if (botId === 'payment') {
         res = await runPaymentReminder();
       } else if (botId === 'cancellation') {
