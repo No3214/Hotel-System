@@ -1,208 +1,105 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Search, Filter, FileText, CheckSquare, Shield, Package, BookOpen } from 'lucide-react';
-import { listKnowledgeItems, semanticSearch } from '../api';
+import { getKnowledge, createKnowledge, deleteKnowledge } from '../api';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Badge } from '../components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
+import { BookOpen, Plus, Trash2, Search } from 'lucide-react';
 
-const KnowledgeBasePage = () => {
+export default function KnowledgePage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState('all');
-  const [searchMode, setSearchMode] = useState('text'); // text or semantic
+  const [search, setSearch] = useState('');
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({ title: '', content: '', category: 'general', tags: '' });
 
-  useEffect(() => {
-    fetchItems();
-  }, [filterType]);
+  const load = () => {
+    getKnowledge({ search: search || undefined })
+      .then(r => setItems(r.data.items))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  };
+  useEffect(() => { load(); }, [search]);
 
-  const fetchItems = async () => {
-    try {
-      setLoading(true);
-      const params = filterType !== 'all' ? { item_type: filterType } : {};
-      const data = await listKnowledgeItems(params);
-      setItems(data.items || []);
-    } catch (error) {
-      console.error('Error fetching knowledge items:', error);
-    } finally {
-      setLoading(false);
-    }
+  const handleCreate = async () => {
+    if (!form.title || !form.content) return;
+    await createKnowledge({
+      ...form,
+      tags: form.tags ? form.tags.split(',').map(t => t.trim()) : [],
+    });
+    setForm({ title: '', content: '', category: 'general', tags: '' });
+    setOpen(false);
+    load();
   };
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) {
-      fetchItems();
-      return;
-    }
-
-    try {
-      setLoading(true);
-      if (searchMode === 'semantic') {
-        const data = await semanticSearch(searchQuery);
-        setItems(data.results || []);
-      } else {
-        const data = await listKnowledgeItems({ search: searchQuery });
-        setItems(data.items || []);
-      }
-    } catch (error) {
-      console.error('Search error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getTypeIcon = (type) => {
-    switch (type) {
-      case 'sop': return <FileText className="w-5 h-5 text-green-400" />;
-      case 'checklist': return <CheckSquare className="w-5 h-5 text-blue-400" />;
-      case 'policy': return <Shield className="w-5 h-5 text-purple-400" />;
-      case 'inventory': return <Package className="w-5 h-5 text-amber-400" />;
-      default: return <BookOpen className="w-5 h-5 text-gray-400" />;
-    }
-  };
-
-  const getTypeLabel = (type) => {
-    const labels = {
-      sop: 'SOP',
-      checklist: 'Checklist',
-      standard: 'Standart',
-      policy: 'Politika',
-      inventory: 'Envanter',
-      task: 'Görev'
-    };
-    return labels[type] || type;
+  const CATEGORIES = {
+    policy: 'Politika',
+    service: 'Hizmet',
+    sop: 'SOP',
+    general: 'Genel',
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto" data-testid="knowledge-page">
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
-      >
-        <h1 className="text-4xl font-heading font-bold mb-2">Bilgi Tabanı</h1>
-        <p className="text-gray-400">Dokümanlardan çıkarılmış SOP'ler, checklist'ler ve standartlar</p>
-      </motion.div>
-
-      {/* Search and Filters */}
-      <div className="bg-bg-surface border border-white/5 rounded-xl p-6 mb-6">
-        <div className="flex flex-col md:flex-row gap-4 mb-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Bilgi tabanında ara... (örn: 'kahvaltı hazırlık prosedürü')"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              className="w-full pl-10 pr-4 py-3 bg-bg-primary border border-white/10 rounded-lg focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
-              data-testid="search-input"
-            />
-          </div>
-          <button
-            onClick={handleSearch}
-            className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-lg font-medium transition-all hover:scale-[1.02]"
-            data-testid="btn-search"
-          >
-            Ara
-          </button>
+    <div className="p-6 lg:p-8 space-y-6 max-w-[1400px]" data-testid="knowledge-page">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl lg:text-3xl font-bold text-[#C4972A]">Bilgi Bankasi</h1>
+          <p className="text-[#7e7e8a] text-sm mt-1">{items.length} bilgi ogesi</p>
         </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center space-x-2">
-            <Filter className="w-4 h-4 text-gray-400" />
-            <span className="text-sm text-gray-400">Filtre:</span>
-          </div>
-          {['all', 'sop', 'checklist', 'policy', 'inventory', 'standard'].map(type => (
-            <button
-              key={type}
-              onClick={() => setFilterType(type)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                filterType === type
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-white/5 text-gray-400 hover:bg-white/10'
-              }`}
-              data-testid={`filter-${type}`}
-            >
-              {type === 'all' ? 'Tümü' : getTypeLabel(type)}
-            </button>
-          ))}
-
-          <div className="ml-auto flex items-center space-x-2">
-            <span className="text-sm text-gray-400">Arama Modu:</span>
-            <button
-              onClick={() => setSearchMode(searchMode === 'text' ? 'semantic' : 'text')}
-              className="px-3 py-1.5 rounded-lg text-sm font-medium bg-white/5 hover:bg-white/10 transition-all"
-              data-testid="toggle-search-mode"
-            >
-              {searchMode === 'text' ? 'Metin' : 'Semantik'} 🧪
-            </button>
-          </div>
-        </div>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-[#C4972A] hover:bg-[#a87a1f] text-white" data-testid="add-knowledge-btn">
+              <Plus className="w-4 h-4 mr-2" /> Bilgi Ekle
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="bg-[#1a1a22] border-[#C4972A]/20">
+            <DialogHeader><DialogTitle className="text-[#C4972A]">Yeni Bilgi</DialogTitle></DialogHeader>
+            <div className="space-y-3">
+              <Input placeholder="Baslik *" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })}
+                className="bg-white/5 border-white/10" data-testid="knowledge-title-input" />
+              <textarea placeholder="Icerik *" value={form.content} onChange={e => setForm({ ...form, content: e.target.value })}
+                className="w-full min-h-[100px] p-3 rounded-md bg-white/5 border border-white/10 text-sm resize-none focus:border-[#C4972A]/50 focus:outline-none" />
+              <Input placeholder="Etiketler (virgul ile)" value={form.tags} onChange={e => setForm({ ...form, tags: e.target.value })}
+                className="bg-white/5 border-white/10" />
+              <Button onClick={handleCreate} className="w-full bg-[#C4972A] hover:bg-[#a87a1f]" data-testid="save-knowledge-btn">Kaydet</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      {/* Items Grid */}
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
-        </div>
-      ) : items.length === 0 ? (
-        <div className="bg-bg-surface border border-white/5 rounded-xl p-12 text-center">
-          <BookOpen className="w-16 h-16 mx-auto mb-4 text-gray-600" />
-          <h3 className="text-xl font-semibold mb-2">Bilgi öğesi bulunamadı</h3>
-          <p className="text-gray-400">Henüz hiç doküman işlenmedi veya arama sonuç bulunamadı.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {items.map((item, index) => (
-            <motion.div
-              key={item.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-              className="bg-bg-surface border border-white/5 rounded-xl p-6 card-hover"
-              data-testid="knowledge-item"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center space-x-3">
-                  {getTypeIcon(item.item_type)}
-                  <div>
-                    <span className="text-xs font-medium text-gray-500 uppercase">
-                      {getTypeLabel(item.item_type)}
-                    </span>
-                    <h3 className="text-lg font-semibold">{item.title}</h3>
-                  </div>
-                </div>
-                {item.similarity && (
-                  <div className="text-xs text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded">
-                    {(item.similarity * 100).toFixed(0)}% eşleşme
-                  </div>
-                )}
-              </div>
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7e7e8a]" />
+        <Input placeholder="Bilgi ara..." value={search} onChange={e => setSearch(e.target.value)}
+          className="pl-10 bg-white/5 border-white/10" data-testid="knowledge-search" />
+      </div>
 
-              <p className="text-gray-400 text-sm mb-4 line-clamp-3">{item.content}</p>
-
-              {item.applicable_to && item.applicable_to.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {item.applicable_to.map((area, i) => (
-                    <span
-                      key={i}
-                      className="px-2 py-1 bg-indigo-500/10 text-indigo-400 text-xs rounded-full"
-                    >
-                      {area}
-                    </span>
+      <div className="space-y-3">
+        {items.map(item => (
+          <div key={item.id} className="glass rounded-xl p-5 hover:gold-glow transition-all" data-testid={`knowledge-${item.id}`}>
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <h3 className="font-semibold text-[#e5e5e8]">{item.title}</h3>
+                <p className="text-sm text-[#a9a9b2] mt-2 whitespace-pre-wrap">{item.content}</p>
+                <div className="flex items-center gap-2 mt-3">
+                  <Badge className="bg-[#C4972A]/20 text-[#C4972A] text-xs">{CATEGORIES[item.category] || item.category}</Badge>
+                  {(item.tags || []).map((tag, i) => (
+                    <span key={i} className="text-xs px-2 py-0.5 rounded-full bg-white/5 text-[#7e7e8a]">{tag}</span>
                   ))}
                 </div>
-              )}
-
-              <div className="flex items-center justify-between text-xs text-gray-500">
-                <span>Öncelik: {item.priority}/10</span>
-                <span>{new Date(item.created_at).toLocaleDateString('tr-TR')}</span>
               </div>
-            </motion.div>
-          ))}
-        </div>
-      )}
+              <button onClick={() => { deleteKnowledge(item.id).then(load); }} className="text-[#7e7e8a] hover:text-red-400 ml-3">
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        ))}
+        {items.length === 0 && !loading && (
+          <div className="text-center py-12 text-[#7e7e8a]">
+            <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-30" />
+            <p>Bilgi bulunamadi</p>
+          </div>
+        )}
+      </div>
     </div>
   );
-};
-
-export default KnowledgeBasePage;
+}
