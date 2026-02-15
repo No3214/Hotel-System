@@ -4,6 +4,12 @@ from database import db
 from helpers import utcnow, new_id
 from datetime import datetime, timedelta, timezone
 from hotel_data import HOTEL_POLICIES
+from scheduler import (
+    breakfast_prep_job,
+    morning_reminders_job,
+    checkout_cleaning_job,
+    get_scheduled_jobs,
+)
 
 router = APIRouter(tags=["automation"])
 
