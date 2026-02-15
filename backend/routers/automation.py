@@ -8,6 +8,7 @@ from scheduler import (
     breakfast_prep_job,
     morning_reminders_job,
     checkout_cleaning_job,
+    evening_room_check_job,
     get_scheduled_jobs,
 )
 
