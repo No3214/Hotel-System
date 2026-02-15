@@ -360,7 +360,7 @@ export default function PublicMenuPage() {
                 >
                   {activeCat.name_tr}
                 </h2>
-                <div style={{ width: 32, height: 2, background: colors.accent, margin: '8px auto 0', borderRadius: 2 }} />
+                <div style={{ width: 32, height: 2, background: `${colors.text}60`, margin: '8px auto 0', borderRadius: 2 }} />
               </motion.div>
 
               {/* Items */}
