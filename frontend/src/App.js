@@ -65,7 +65,7 @@ const NAV_SECTIONS = [
     label: 'Bilgi',
     items: [
       { id: 'knowledge', name: 'Bilgi Bankasi', icon: BookOpen },
-      { id: 'menu', name: 'Restoran Menu', icon: UtensilsCrossed },
+      { id: 'menu', name: 'QR Menu', icon: QrCode },
       { id: 'guide', name: 'Foca Rehberi', icon: MapPin },
     ],
   },
