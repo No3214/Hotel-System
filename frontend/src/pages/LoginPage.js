@@ -41,9 +41,12 @@ export default function LoginPage({ onLogin }) {
       <div className="w-full max-w-sm space-y-6">
         {/* Logo */}
         <div className="text-center">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-[#C4972A] to-[#8a5f1a] flex items-center justify-center mb-4">
-            <span className="text-2xl font-bold text-white">K</span>
-          </div>
+          <img
+            src="/logo.jpeg"
+            alt="Kozbeyli Konagi"
+            className="w-20 h-20 mx-auto rounded-2xl object-cover mb-4"
+            data-testid="login-logo"
+          />
           <h1 className="text-2xl font-bold text-[#C4972A]">Kozbeyli Konagi</h1>
           <p className="text-[#7e7e8a] text-sm mt-1">Otel Yonetim Sistemi</p>
         </div>
