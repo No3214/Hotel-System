@@ -170,9 +170,12 @@ function AdminApp() {
         {/* Logo */}
         <div className="p-4 border-b border-[#C4972A]/10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#C4972A] to-[#8a5f1a] flex items-center justify-center flex-shrink-0 animate-pulse-gold">
-              <span className="text-white font-bold text-lg" style={{fontFamily: 'var(--font-heading)'}}>K</span>
-            </div>
+            <img
+              src="/logo.jpeg"
+              alt="Kozbeyli Konagi"
+              className="w-10 h-10 rounded-lg flex-shrink-0 object-cover"
+              data-testid="sidebar-logo"
+            />
             <AnimatePresence>
               {sidebarOpen && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
