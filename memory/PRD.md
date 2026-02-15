@@ -116,9 +116,9 @@ Pricing, TableReservations, Lifecycle, Automation,
 
 ### Faz 9: Sosyal Medya Gelistirmeleri (TAMAMLANDI - Feb 2026)
 - TikTok ve LinkedIn platformlari eklendi (toplam 6 platform)
-- Gorsel yukleme ozelligi eklendi (max 5MB, JPEG/PNG/WEBP/GIF)
+- Gorsel: Dosya yukleme yerine Google Drive linki destegi
 - Frame preview'da gorsel destegi
-- QR Menu renkleri daha acik ve canli yapildi (#515249 -> #7A8B6F)
+- QR Menu renkleri: Altin/sari tonlari kaldirildi, sadece beyaz/bej/yesil
 
 ### Tests: Backend 16/16 (%100), Frontend %100 - Iteration 7
 
