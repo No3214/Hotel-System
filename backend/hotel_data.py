@@ -216,6 +216,7 @@ HOTEL_POLICIES = {
         "account_holder": "Varol Oruk",
         "bank": "Yapi Kredi",
         "iban": "TR72 0006 7010 0000 0025 0736 77",
+        "note": "Havale/EFT sonrasi dekont gonderilmesi gerekmektedir.",
     },
     "children": "0-4 yas arasi ucretsiz. Ucretsiz bebek yatagi.",
     "pets": "Evcil hayvanlar kabul edilir. Ekstra mama kaplari saglanir.",
