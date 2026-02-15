@@ -99,6 +99,7 @@ const PAGES = {
   table_reservations: TableReservationsPage,
   lifecycle: LifecyclePage,
   automation: AutomationPage,
+  social: SocialMediaPage,
   guide: FocaGuidePage,
   settings: SettingsPage,
 };
