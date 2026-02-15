@@ -50,6 +50,7 @@ const NAV_SECTIONS = [
       { id: 'campaigns', name: 'Kampanyalar', icon: Mail },
       { id: 'reviews', name: 'Google Yorumlari', icon: Star },
       { id: 'lifecycle', name: 'Misafir Dongusu', icon: Heart },
+      { id: 'social', name: 'Sosyal Medya', icon: Share2 },
     ],
   },
   {
