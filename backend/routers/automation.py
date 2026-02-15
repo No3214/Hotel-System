@@ -250,6 +250,16 @@ async def run_cleaning_notification():
     return {"success": True, "type": "checkout_cleaning", "notification": last_log}
 
 
+@router.post("/automation/evening-room-check")
+async def run_evening_room_check():
+    """Aksam oda kontrolu bildirimini manuel tetikle"""
+    await evening_room_check_job()
+    last_log = await db.automation_logs.find_one(
+        {"type": "evening_room_check"}, {"_id": 0}, sort=[("created_at", -1)]
+    )
+    return {"success": True, "type": "evening_room_check", "notification": last_log}
+
+
 @router.get("/automation/scheduled-jobs")
 async def list_scheduled_jobs():
     """Zamanli gorevlerin durumunu getir"""
