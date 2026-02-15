@@ -110,6 +110,10 @@ Pricing, TableReservations, Lifecycle, Automation,
 - Iteration 5: Initial QR Menu + Logo
 - Iteration 6: QR Menu overhaul (100 items) + Social Media Publisher - %100
 
+## Bug Fixes (Feb 2026)
+- **Login "undefined" Hatasi Duzeltildi:** Setup butonu sistem kuruluyken undefined gosteriyordu. Frontend'de setup response handling duzeltildi.
+- **Login Bilgileri:** Varsayilan admin sifresi `kozbeyli2026` (admin123 degil)
+
 ## Mocked Features
 - Email campaign sending
 - WhatsApp/Instagram webhooks
