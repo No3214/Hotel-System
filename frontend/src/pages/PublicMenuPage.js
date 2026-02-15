@@ -375,10 +375,108 @@ export default function PublicMenuPage() {
         )}
       </main>
 
-      {/* ═══ FOOTER ═══ */}
-      <footer style={{ padding: '20px 16px 32px', textAlign: 'center', borderTop: `1px solid ${colors.border}20` }}>
-        <p style={{ color: colors.muted, fontSize: 11, opacity: 0.5, margin: 0, letterSpacing: '0.05em' }}>
-          {theme.brand_name || 'Kozbeyli Konagi'}
+      {/* ═══ FOOTER - WiFi, Sosyal Medya, Yorum ═══ */}
+      <footer style={{ padding: '24px 16px 40px', borderTop: `1px solid ${colors.border}20` }}>
+        
+        {/* WiFi Box */}
+        <div style={{
+          background: `${colors.card}20`,
+          borderRadius: 16,
+          padding: '16px 20px',
+          marginBottom: 20,
+          border: `1px solid ${colors.border}30`,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{
+              width: 40, height: 40, borderRadius: 12,
+              background: `${colors.text}15`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke={colors.text} strokeWidth="1.5" style={{ width: 20, height: 20 }}>
+                <path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0M12 20h.01"/>
+              </svg>
+            </div>
+            <div>
+              <p style={{ color: colors.muted, fontSize: 10, margin: 0, letterSpacing: '0.08em', textTransform: 'uppercase' }}>WiFi Sifresi</p>
+              <p style={{ color: colors.text, fontSize: 15, fontWeight: 600, margin: '2px 0 0' }}>KozbeyliKonagi2024</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Social Media & Review Links */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+          {/* Instagram */}
+          <a href="https://instagram.com/kozbeylikonagi" target="_blank" rel="noopener noreferrer" style={{
+            width: 44, height: 44, borderRadius: 12,
+            background: `${colors.text}12`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            textDecoration: 'none',
+          }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke={colors.text} strokeWidth="1.5" style={{ width: 20, height: 20 }}>
+              <rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="18" cy="6" r="1.5" fill={colors.text}/>
+            </svg>
+          </a>
+          {/* Facebook */}
+          <a href="https://facebook.com/kozbeylikonagi" target="_blank" rel="noopener noreferrer" style={{
+            width: 44, height: 44, borderRadius: 12,
+            background: `${colors.text}12`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            textDecoration: 'none',
+          }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke={colors.text} strokeWidth="1.5" style={{ width: 20, height: 20 }}>
+              <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3V2z"/>
+            </svg>
+          </a>
+          {/* Google Maps */}
+          <a href="https://maps.google.com/?q=Kozbeyli+Konagi+Foca" target="_blank" rel="noopener noreferrer" style={{
+            width: 44, height: 44, borderRadius: 12,
+            background: `${colors.text}12`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            textDecoration: 'none',
+          }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke={colors.text} strokeWidth="1.5" style={{ width: 20, height: 20 }}>
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
+            </svg>
+          </a>
+          {/* Phone */}
+          <a href="tel:+902328261112" style={{
+            width: 44, height: 44, borderRadius: 12,
+            background: `${colors.text}12`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            textDecoration: 'none',
+          }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke={colors.text} strokeWidth="1.5" style={{ width: 20, height: 20 }}>
+              <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
+            </svg>
+          </a>
+        </div>
+
+        {/* Review Button */}
+        <a
+          href="https://g.page/kozbeylikonagi/review"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            padding: '12px 24px',
+            background: `${colors.text}15`,
+            borderRadius: 12,
+            textDecoration: 'none',
+            marginBottom: 20,
+          }}
+        >
+          <svg viewBox="0 0 24 24" fill={colors.text} style={{ width: 18, height: 18 }}>
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+          <span style={{ color: colors.text, fontSize: 13, fontWeight: 500 }}>Bizi Degerlendirin</span>
+        </a>
+
+        {/* Brand */}
+        <p style={{ color: colors.muted, fontSize: 11, opacity: 0.5, margin: 0, letterSpacing: '0.05em', textAlign: 'center' }}>
+          {theme.brand_name || 'Kozbeyli Konagi'} - Antakya Sofrasi
         </p>
       </footer>
     </div>
