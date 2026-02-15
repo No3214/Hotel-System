@@ -34,7 +34,7 @@
 }
 
 @layer base {
-  * { @apply border-border; }
+  * { border-color: rgba(196, 151, 42, 0.1); }
   body {
     @apply bg-[#0a0a0f] text-[#e5e5e8];
     font-family: var(--font-body);
