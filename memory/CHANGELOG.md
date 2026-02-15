@@ -1,5 +1,28 @@
 # Kozbeyli Konagi - Degisiklik Gunlugu
 
+## [2026-02-15] - QR Menu Footer Guncellemesi
+
+### Eklendi
+- WiFi sifresi gosterimi (KozbeyliKonagi2024)
+- Sosyal medya linkleri: Instagram, Facebook
+- Google Maps konum linki
+- Telefon linki (tek tikla ara)
+- "Bizi Degerlendirin" butonu (Google Reviews)
+
+---
+
+## [2026-02-15] - Oda Yapilandirmasi Guncellemesi
+
+### Degistirildi
+- 16 oda yeni yapilandirma:
+  - 4 adet 4 kisilik oda
+  - 2 adet Superior oda  
+  - 2 adet 3 kisilik oda
+  - 4 adet Standart (Deniz Manzarali)
+  - 4 adet Standart (Kara Manzarali)
+
+---
+
 ## [2026-02-15] - Masa Rezervasyon Sistemi v2
 
 ### Eklendi
