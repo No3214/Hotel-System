@@ -138,4 +138,31 @@ export const previewLifecycleMessage = (templateKey, reservationId) => api.post(
 export const sendLifecycleMessage = (templateKey, reservationId, channel) => api.post(`/lifecycle/send?template_key=${templateKey}&reservation_id=${reservationId}&channel=${channel}`);
 export const getLifecycleHistory = (params) => api.get('/lifecycle/history', { params });
 
+// Auth
+export const login = (data) => api.post('/auth/login', data);
+export const getMe = () => api.get('/auth/me');
+export const setupAdmin = () => api.post('/auth/setup');
+export const registerUser = (data) => api.post('/auth/register', data);
+export const listUsers = () => api.get('/auth/users');
+export const deleteUser = (id) => api.delete(`/auth/users/${id}`);
+export const getRoles = () => api.get('/auth/roles');
+
+// Set auth token
+export const setAuthToken = (token) => {
+  if (token) {
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    localStorage.setItem('kozbeyli_token', token);
+  } else {
+    delete api.defaults.headers.common['Authorization'];
+    localStorage.removeItem('kozbeyli_token');
+    localStorage.removeItem('kozbeyli_user');
+  }
+};
+
+// Load token on init
+const savedToken = localStorage.getItem('kozbeyli_token');
+if (savedToken) {
+  api.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
+}
+
 export default api;
