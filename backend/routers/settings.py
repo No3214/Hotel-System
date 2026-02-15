@@ -169,6 +169,65 @@ async def dashboard_stats():
 
     recent = await db.tasks.find({}, {"_id": 0}).sort("created_at", -1).limit(5).to_list(5)
 
+    # Today's data
+    from datetime import datetime, timedelta, timezone
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    todays_checkins = await db.reservations.count_documents({
+        "check_in": today,
+        "status": {"$in": ["pending", "confirmed", "checked_in"]},
+    })
+    todays_checkouts = await db.reservations.count_documents({
+        "check_out": today,
+        "status": {"$in": ["confirmed", "checked_in"]},
+    })
+
+    # Revenue from reservations
+    all_res = await db.reservations.find(
+        {"status": {"$in": ["confirmed", "checked_in", "checked_out"]}},
+        {"_id": 0, "total_price": 1, "check_in": 1, "status": 1}
+    ).to_list(1000)
+    total_revenue = sum(r.get("total_price", 0) or 0 for r in all_res)
+    monthly_revenue = sum(
+        r.get("total_price", 0) or 0 for r in all_res
+        if r.get("check_in", "").startswith(today[:7])
+    )
+
+    # Weekly occupancy trend (last 7 days)
+    now = datetime.now()
+    weekly_trend = []
+    day_names_tr = ["Pzt", "Sal", "Car", "Per", "Cum", "Cmt", "Paz"]
+    for i in range(6, -1, -1):
+        d = now - timedelta(days=i)
+        date_str = d.strftime("%Y-%m-%d")
+        day_occupied = await db.reservations.count_documents({
+            "status": {"$in": ["confirmed", "checked_in"]},
+            "check_in": {"$lte": date_str},
+            "check_out": {"$gte": date_str},
+        })
+        weekly_trend.append({
+            "date": date_str,
+            "day": day_names_tr[d.weekday()],
+            "occupied": day_occupied,
+            "rate": round((day_occupied / total_rooms) * 100) if total_rooms else 0,
+        })
+
+    # Room status breakdown
+    rooms_list = await db.rooms.find({}, {"_id": 0, "id": 1, "name": 1, "status": 1, "type": 1}).to_list(50)
+    room_status_counts = {}
+    for rm in rooms_list:
+        st = rm.get("status", "available")
+        room_status_counts[st] = room_status_counts.get(st, 0) + 1
+
+    # Recent activity feed (last 10 actions from automation_logs + group_notifications)
+    recent_activity = await db.automation_logs.find(
+        {}, {"_id": 0, "type": 1, "message": 1, "created_at": 1, "status": 1}
+    ).sort("created_at", -1).limit(5).to_list(5)
+
+    recent_reservations = await db.reservations.find(
+        {}, {"_id": 0, "id": 1, "guest_name": 1, "room_id": 1, "status": 1, "check_in": 1, "check_out": 1, "created_at": 1}
+    ).sort("created_at", -1).limit(5).to_list(5)
+
     return {
         "total_rooms": total_rooms,
         "occupied_rooms": occupied,
@@ -182,6 +241,15 @@ async def dashboard_stats():
         "housekeeping_pending": housekeeping_pending,
         "ratings": HOTEL_RATINGS,
         "recent_tasks": recent,
+        "todays_checkins": todays_checkins,
+        "todays_checkouts": todays_checkouts,
+        "total_revenue": total_revenue,
+        "monthly_revenue": monthly_revenue,
+        "weekly_trend": weekly_trend,
+        "room_status_counts": room_status_counts,
+        "recent_activity": recent_activity,
+        "recent_reservations": recent_reservations,
+        "rooms_list": rooms_list,
     }
 
 
