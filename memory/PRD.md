@@ -9,7 +9,7 @@ Kozbeyli Konagi (Izmir/Foca) butik tas otel icin kapsamli dijital yonetim ekosis
 - **Database:** MongoDB (persistent)
 - **AI:** Google Gemini 2.5 Flash (emergentintegrations)
 - **Auth:** JWT + bcrypt, role-based (admin/reception/kitchen/staff)
-- **Scheduler:** APScheduler (3 zamanli gorev)
+- **Scheduler:** APScheduler (4 zamanli gorev)
 - **Security:** Anti-Hallucination Module, Rate Limiter
 
 ## Implementation Status
