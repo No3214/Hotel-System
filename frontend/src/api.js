@@ -265,5 +265,18 @@ export const subscribePush = (subscription, userId) => api.post('/notifications/
 export const unsubscribePush = (endpoint) => api.post('/notifications/unsubscribe', { endpoint });
 export const getTodayNotifications = () => api.get('/notifications/today');
 export const sendTestNotification = () => api.post('/notifications/send-test');
+export const getVapidKey = () => api.get('/notifications/vapid-key');
+export const sendPushNotification = (title, body, tag) => api.post('/notifications/send-push', { title, body, tag });
+export const getSubscriberCount = () => api.get('/notifications/subscribers');
+
+// Financials
+export const getFinancialCategories = () => api.get('/financials/categories');
+export const addIncome = (data) => api.post('/financials/income', data);
+export const addExpense = (data) => api.post('/financials/expense', data);
+export const getIncomeList = (params) => api.get('/financials/income', { params });
+export const getExpenseList = (params) => api.get('/financials/expense', { params });
+export const deleteFinancialRecord = (id) => api.delete(`/financials/${id}`);
+export const getDailySummary = (dateStr) => api.get(`/financials/daily/${dateStr}`);
+export const getMonthlySummary = (year, month) => api.get('/financials/monthly', { params: { year, month } });
 
 export default api;
