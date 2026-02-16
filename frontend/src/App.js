@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, BedDouble, Users, MessageCircle, CheckSquare,
   Calendar, Sparkles, BookOpen, UtensilsCrossed, Menu, ChevronLeft,
   CalendarCheck, UserCog, Mail, MapPin, Settings, Star, TrendingUp, Heart, LogOut, QrCode, Share2,
-  Globe
+  Globe, Bell
 } from 'lucide-react';
 
 import { setAuthToken, getMe } from './api';
@@ -12,32 +12,34 @@ import { LanguageProvider, useLanguage } from './hooks/useLanguage';
 import LoginPage from './pages/LoginPage';
 import PublicMenuPage from './pages/PublicMenuPage';
 import Dashboard from './pages/Dashboard';
-import RoomsPage from './pages/RoomsPage';
-import GuestsPage from './pages/GuestsPage';
-import ChatbotPage from './pages/ChatbotPage';
-import TasksPage from './pages/TasksPage';
-import EventsPage from './pages/EventsPage';
-import HousekeepingPage from './pages/HousekeepingPage';
-import KnowledgePage from './pages/KnowledgeBasePage';
-import MenuPage from './pages/MenuPage';
-import MessagesPage from './pages/MessagesPage';
-import ReservationsPage from './pages/ReservationsPage';
-import StaffPage from './pages/StaffPage';
-import CampaignsPage from './pages/CampaignsPage';
-import FocaGuidePage from './pages/FocaGuidePage';
-import SettingsPage from './pages/SettingsPage';
-import ReviewsPage from './pages/ReviewsPage';
-import PricingPage from './pages/PricingPage';
-import TableReservationsPage from './pages/TableReservationsPage';
-import LifecyclePage from './pages/LifecyclePage';
-import AutomationPage from './pages/AutomationPage';
-import SocialMediaPage from './pages/SocialMediaPage';
-import KitchenPage from './pages/KitchenPage';
-import WhatsAppPage from './pages/WhatsAppPage';
-import RevenueManagementPage from './pages/RevenueManagementPage';
-import AnalyticsPage from './pages/AnalyticsPage';
-import AuditSecurityPage from './pages/AuditSecurityPage';
-import HotelRunnerPage from './pages/HotelRunnerPage';
+
+// Lazy load all non-critical pages
+const RoomsPage = lazy(() => import('./pages/RoomsPage'));
+const GuestsPage = lazy(() => import('./pages/GuestsPage'));
+const ChatbotPage = lazy(() => import('./pages/ChatbotPage'));
+const TasksPage = lazy(() => import('./pages/TasksPage'));
+const EventsPage = lazy(() => import('./pages/EventsPage'));
+const HousekeepingPage = lazy(() => import('./pages/HousekeepingPage'));
+const KnowledgePage = lazy(() => import('./pages/KnowledgeBasePage'));
+const MenuPage = lazy(() => import('./pages/MenuPage'));
+const MessagesPage = lazy(() => import('./pages/MessagesPage'));
+const ReservationsPage = lazy(() => import('./pages/ReservationsPage'));
+const StaffPage = lazy(() => import('./pages/StaffPage'));
+const CampaignsPage = lazy(() => import('./pages/CampaignsPage'));
+const FocaGuidePage = lazy(() => import('./pages/FocaGuidePage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const ReviewsPage = lazy(() => import('./pages/ReviewsPage'));
+const PricingPage = lazy(() => import('./pages/PricingPage'));
+const TableReservationsPage = lazy(() => import('./pages/TableReservationsPage'));
+const LifecyclePage = lazy(() => import('./pages/LifecyclePage'));
+const AutomationPage = lazy(() => import('./pages/AutomationPage'));
+const SocialMediaPage = lazy(() => import('./pages/SocialMediaPage'));
+const KitchenPage = lazy(() => import('./pages/KitchenPage'));
+const WhatsAppPage = lazy(() => import('./pages/WhatsAppPage'));
+const RevenueManagementPage = lazy(() => import('./pages/RevenueManagementPage'));
+const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
+const AuditSecurityPage = lazy(() => import('./pages/AuditSecurityPage'));
+const HotelRunnerPage = lazy(() => import('./pages/HotelRunnerPage'));
 
 const NAV_CONFIG = [
   {
