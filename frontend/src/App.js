@@ -342,7 +342,9 @@ function AdminApp() {
             transition={{ duration: 0.2 }}
             className="h-full"
           >
-            <PageComponent onNavigate={setPage} />
+            <Suspense fallback={LazyFallback}>
+              <PageComponent onNavigate={setPage} />
+            </Suspense>
           </motion.div>
         </AnimatePresence>
       </main>
