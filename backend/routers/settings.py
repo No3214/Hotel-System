@@ -41,8 +41,9 @@ TRANSLATIONS = {
         "confirmed": "Onaylandi", "checked_in": "Giris Yapti", "checked_out": "Cikis Yapti",
         "cancelled": "Iptal Edildi", "cleaning": "Temizlik",
         "today": "Bugun", "this_month": "Bu Ay",
+        "analytics": "Analitik", "audit": "Guvenlik", "hotelrunner": "HotelRunner",
+        "integrations": "Entegrasyonlar",
     },
-    "en": {
         "dashboard": "Dashboard", "rooms": "Rooms", "guests": "Guests",
         "chatbot": "AI Assistant", "messages": "Messages", "tasks": "Tasks",
         "events": "Events", "housekeeping": "Housekeeping",
@@ -73,8 +74,9 @@ TRANSLATIONS = {
         "confirmed": "Confirmed", "checked_in": "Checked In", "checked_out": "Checked Out",
         "cancelled": "Cancelled", "cleaning": "Cleaning",
         "today": "Today", "this_month": "This Month",
+        "analytics": "Analytics", "audit": "Security", "hotelrunner": "HotelRunner",
+        "integrations": "Integrations",
     },
-    "de": {
         "dashboard": "Dashboard", "rooms": "Zimmer", "guests": "Gaste",
         "chatbot": "KI-Assistent", "messages": "Nachrichten", "tasks": "Aufgaben",
         "events": "Veranstaltungen", "housekeeping": "Housekeeping",
@@ -105,8 +107,9 @@ TRANSLATIONS = {
         "confirmed": "Bestatigt", "checked_in": "Eingecheckt", "checked_out": "Ausgecheckt",
         "cancelled": "Storniert", "cleaning": "Reinigung",
         "today": "Heute", "this_month": "Dieser Monat",
+        "analytics": "Analytik", "audit": "Sicherheit", "hotelrunner": "HotelRunner",
+        "integrations": "Integrationen",
     },
-    "fr": {
         "dashboard": "Tableau de Bord", "rooms": "Chambres", "guests": "Clients",
         "chatbot": "Assistant IA", "messages": "Messages", "tasks": "Taches",
         "events": "Evenements", "housekeeping": "Menage",
