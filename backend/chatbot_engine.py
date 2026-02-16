@@ -76,6 +76,11 @@ INTENT_KEYWORDS = {
         "etkinlik", "dugun", "nisan", "toplanti", "organizasyon",
         "event", "wedding", "meeting", "parti", "kutlama", "dogum gunu"
     ],
+    # Ek Hizmetler
+    "extra_services": [
+        "camasir", "laundry", "transfer", "ulasim", "taksi", "otopark",
+        "ek hizmet", "bebek yatagi", "ekstra", "extra"
+    ],
     # Check-in/out
     "checkin": [
         "giris", "cikis", "check-in", "check-out", "erken giris",
