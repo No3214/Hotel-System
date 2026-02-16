@@ -124,9 +124,27 @@ frontend/src/
 - Email kampanya gonderimi
 - Otomasyon bildirimleri (grup bildirim mock)
 
+### Faz 16: P2 Optimizasyonlar - Database Indexing + PWA (TAMAMLANDI - 16 Feb 2026)
+
+**Database Indexing Optimizasyonu:**
+- MongoDB koleksiyonlarina performans indeksleri eklendi
+- 13 koleksiyon: reservations, guests, rooms, audit_logs, tasks, events, housekeeping, table_reservations, messages, campaigns, staff, loyalty, dynamic_pricing_rules
+- Backend startup'inda otomatik uygulama (services/database_optimizer.py)
+
+**PWA (Progressive Web App):**
+- manifest.json: Ad, ikon, tema rengi, standalone gorunum
+- service-worker.js: Network-first cache stratejisi, offline destek
+- Ana ekrana ekleme ozelligi
+- Sayfa basligi: "Kozbeyli Konagi"
+
+### Tests: Backend 21/22 (%95 - 1 test script hatasi), Frontend %100 - Iteration 12
+
 ## Upcoming Tasks
 - P0: WhatsApp Business API canli entegrasyonu (Meta Developer Portal bilgileri bekleniyor)
 - P0: HotelRunner API entegrasyonu (API bilgileri bekleniyor)
 - P0: Gelir/Gider Takibi & Finansal Raporlama (kullanicinin paylastigi referans belgeden)
+- P2: Redis Caching Layer
+- P2: CDN ile Gorsel Optimizasyonu
+- P2: Lazy Loading implementasyonu
 - P3: POS entegrasyonu, Mobil personel uygulamasi
 - P3: Online odeme entegrasyonu (Stripe/Iyzico)

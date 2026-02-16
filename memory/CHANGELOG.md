@@ -1,5 +1,26 @@
 # Kozbeyli Konagi - Degisiklik Gunlugu
 
+## [2026-02-16] - P2 Optimizasyonlar: Database Indexing + PWA
+
+### Eklendi
+- **Database Indexing Optimizasyonu:**
+  - 13 koleksiyona performans indeksleri
+  - Backend startup'inda otomatik uygulama (services/database_optimizer.py)
+  - Indeksler: reservations, guests, rooms, audit_logs, tasks, events, housekeeping, table_reservations, messages, campaigns, staff, loyalty, dynamic_pricing_rules
+- **PWA (Progressive Web App):**
+  - manifest.json: "Kozbeyli Konagi Yonetim Sistemi", standalone gorunum, tema rengi #1a1a2e
+  - service-worker.js: Network-first cache stratejisi, offline fallback
+  - Service worker kaydı frontend/src/index.js'te
+  - index.html'de manifest linki ve apple-touch-icon
+  - Sayfa basligi "Kozbeyli Konagi" olarak guncellendi
+
+### Test Sonuclari
+- Backend: 21/22 (%95 - 1 test script hatasi, uygulama hatasi degil)
+- Frontend: Tum ozellikler calisir durumda (%100)
+- Regresyon: Tum mevcut ozellikler saglikli (login, dashboard, rooms, reservations, revenue, analytics, audit, hotelrunner)
+
+---
+
 ## [2026-02-15] - Aksam Oda Kontrolu + Dinamik Dashboard + Coklu Dil
 
 ### Eklendi
