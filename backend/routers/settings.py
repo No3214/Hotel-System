@@ -140,8 +140,9 @@ TRANSLATIONS = {
         "confirmed": "Confirme", "checked_in": "Arrive", "checked_out": "Parti",
         "cancelled": "Annule", "cleaning": "Nettoyage",
         "today": "Aujourd'hui", "this_month": "Ce Mois",
+        "analytics": "Analytique", "audit": "Securite", "hotelrunner": "HotelRunner",
+        "integrations": "Integrations",
     },
-    "ru": {
         "dashboard": "Panel Upravleniya", "rooms": "Nomera", "guests": "Gosti",
         "chatbot": "AI Assistent", "messages": "Soobsheniya", "tasks": "Zadachi",
         "events": "Meropriyatiya", "housekeeping": "Uborka",
@@ -172,6 +173,8 @@ TRANSLATIONS = {
         "confirmed": "Podtverzhdeno", "checked_in": "Zaekhal", "checked_out": "Vyekhal",
         "cancelled": "Otmeneno", "cleaning": "Uborka",
         "today": "Segodnya", "this_month": "Etot Mesyats",
+        "analytics": "Analitika", "audit": "Bezopasnost", "hotelrunner": "HotelRunner",
+        "integrations": "Integratsii",
     },
 }
 
