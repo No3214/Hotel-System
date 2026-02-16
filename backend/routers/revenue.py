@@ -322,6 +322,11 @@ async def get_revenue_kpi(
     if not date_to:
         date_to = date.today()
 
+    cache_key = f"revenue:kpi:{date_from}:{date_to}"
+    cached = cache_get(cache_key, "short")
+    if cached is not None:
+        return cached
+
     date_from_str = date_from.isoformat()
     date_to_str = date_to.isoformat()
 
@@ -347,7 +352,6 @@ async def get_revenue_kpi(
     revpar = round(total_revenue / total_room_nights) if total_room_nights > 0 else 0
     occupancy = round(total_nights / total_room_nights * 100, 1) if total_room_nights > 0 else 0
 
-    # Previous period comparison
     prev_days = total_days
     prev_from = (date_from - timedelta(days=prev_days)).isoformat()
     prev_to = (date_from - timedelta(days=1)).isoformat()
@@ -359,7 +363,7 @@ async def get_revenue_kpi(
     prev_revenue = sum(r.get("total_price", 0) or 0 for r in prev_reservations)
     revenue_change = round((total_revenue - prev_revenue) / prev_revenue * 100, 1) if prev_revenue > 0 else 0
 
-    return {
+    result = {
         "period": {"from": date_from_str, "to": date_to_str},
         "total_revenue": total_revenue,
         "total_nights": total_nights,
@@ -370,6 +374,8 @@ async def get_revenue_kpi(
         "revenue_change_percent": revenue_change,
         "base_rates": BASE_RATES,
     }
+    cache_set(cache_key, result, "short")
+    return result
 
 
 @router.get("/revenue/room-types")
