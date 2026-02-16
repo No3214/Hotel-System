@@ -131,6 +131,7 @@ const PAGES = {
   analytics: AnalyticsPage,
   audit: AuditSecurityPage,
   hotelrunner: HotelRunnerPage,
+  financials: FinancialsPage,
 };
 
 export default function App() {
