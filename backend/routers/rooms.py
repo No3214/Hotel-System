@@ -2,16 +2,20 @@ from fastapi import APIRouter, HTTPException
 from database import db
 from helpers import utcnow
 from hotel_data import ROOMS
+from services.cache_service import cache_get, cache_set, cache_invalidate
 
 router = APIRouter(tags=["rooms"])
 
 
 @router.get("/rooms")
 async def list_rooms():
+    cached = cache_get("rooms:list", "medium")
+    if cached is not None:
+        return cached
     db_rooms = await db.rooms.find({}, {"_id": 0}).to_list(100)
-    if not db_rooms:
-        return {"rooms": ROOMS}
-    return {"rooms": db_rooms}
+    result = {"rooms": db_rooms} if db_rooms else {"rooms": ROOMS}
+    cache_set("rooms:list", result, "medium")
+    return result
 
 
 @router.get("/rooms/{room_id}")
