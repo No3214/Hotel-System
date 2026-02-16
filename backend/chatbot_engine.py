@@ -396,6 +396,13 @@ async def get_auto_reply(message: str, language: str = "tr") -> Optional[Dict[st
             "message": "Iptal Politikasi:\n\n72 saat (3 gun) oncesine kadar: Ucretsiz iptal\n72 saatten az kala: %100 ceza uygulanir\nOzel gunlerde (bayram, 14 Subat, yilbasi): Her durumda %100 on odeme zorunlu, iade yapilmaz\nGelmeyen misafirden (no-show) %100 ucret tahsil edilir.\n\nIptal/degisiklik icin: +90 532 234 26 86"
         }
 
+    if intent == "extra_services":
+        return {
+            "matched": True,
+            "intent": intent,
+            "message": "Ek Hizmetlerimiz:\n\nCamasir Servisi: Ucretli, ayni gun teslimat\nTransfer: Resepsiyon araciligyla havaalani/sehir merkezi transferi ayarlanabilir\nOtopark: Ucretsiz acik otopark mevcuttur\nBebek Yatagi: Ucretsiz saglanir (ek yatak konulmaz)\nOrganizasyon: Dugun, nisan, toplanti - 100 kisilik kapasite\n\nDetayli bilgi icin: +90 232 826 11 12"
+        }
+
     # Masa rezervasyonu intent'i - Flow başlat
     if intent == "table_reservation":
         return {
