@@ -140,6 +140,10 @@ async def startup():
             await db.rooms.insert_one({**room, "created_at": utcnow()})
         logger.info("Rooms seeded successfully")
 
+    # Database indexing
+    from services.database_optimizer import apply_indexes
+    await apply_indexes()
+
     # Scheduler baslat
     from scheduler import start_scheduler
     start_scheduler()
