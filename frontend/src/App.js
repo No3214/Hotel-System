@@ -123,6 +123,10 @@ const PAGES = {
   whatsapp: WhatsAppPage,
   guide: FocaGuidePage,
   settings: SettingsPage,
+  revenue: RevenueManagementPage,
+  analytics: AnalyticsPage,
+  audit: AuditSecurityPage,
+  hotelrunner: HotelRunnerPage,
 };
 
 export default function App() {
