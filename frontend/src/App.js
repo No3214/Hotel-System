@@ -53,6 +53,7 @@ const NAV_CONFIG = [
       { id: 'pricing', nameKey: 'pricing', icon: TrendingUp },
       { id: 'revenue', nameKey: 'revenue', icon: TrendingUp },
       { id: 'analytics', nameKey: 'analytics', icon: LayoutDashboard },
+      { id: 'financials', nameKey: 'financials', icon: DollarSign },
     ],
   },
   {
