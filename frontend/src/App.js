@@ -357,6 +357,9 @@ function AdminApp() {
 
         {/* Footer */}
         <div className="p-3 border-t border-[#C4972A]/10 space-y-2">
+          {/* Notification Bell */}
+          <NotificationBell compact={!sidebarOpen} />
+
           {/* Language Selector */}
           <LanguageSelector compact={!sidebarOpen} />
 
