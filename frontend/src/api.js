@@ -223,4 +223,37 @@ if (savedToken) {
   api.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
 }
 
+// Revenue Management
+export const getRevenueRoomTypes = () => api.get('/revenue/room-types');
+export const calculateDynamicPrice = (roomType, targetDate, basePrice) => api.get('/revenue/pricing/calculate', { params: { room_type: roomType, target_date: targetDate, base_price: basePrice } });
+export const getPricingCalendar = (roomType, dateFrom, dateTo) => api.get('/revenue/pricing/calendar', { params: { room_type: roomType, date_from: dateFrom, date_to: dateTo } });
+export const updateAllPrices = (daysAhead) => api.post(`/revenue/pricing/update-all?days_ahead=${daysAhead || 90}`);
+export const getRevenueForecast = (dateFrom, dateTo) => api.get('/revenue/forecast', { params: { date_from: dateFrom, date_to: dateTo } });
+export const getRevenueKPI = (dateFrom, dateTo) => api.get('/revenue/kpi', { params: { date_from: dateFrom, date_to: dateTo } });
+export const getPricingRules = () => api.get('/revenue/pricing/rules');
+
+// Analytics
+export const getAnalyticsKPI = (dateFrom, dateTo) => api.get('/analytics/dashboard/kpi', { params: { date_from: dateFrom, date_to: dateTo } });
+export const getRevenueTrend = (period) => api.get(`/analytics/revenue/trend?period=${period || '30d'}`);
+export const getBookingSources = (dateFrom, dateTo) => api.get('/analytics/bookings/sources', { params: { date_from: dateFrom, date_to: dateTo } });
+export const getOccupancyHeatmap = (year) => api.get('/analytics/occupancy/heatmap', { params: { year } });
+export const getRoomPerformance = (dateFrom, dateTo) => api.get('/analytics/rooms/performance', { params: { date_from: dateFrom, date_to: dateTo } });
+export const getGuestSatisfaction = (period) => api.get(`/analytics/guests/satisfaction?period=${period || '30d'}`);
+
+// Audit & Security
+export const getAuditLogs = (params) => api.get('/audit/logs', { params });
+export const getAuditStats = (dateFrom, dateTo) => api.get('/audit/stats', { params: { date_from: dateFrom, date_to: dateTo } });
+export const getSecurityAlerts = (params) => api.get('/audit/alerts', { params });
+export const resolveSecurityAlert = (id) => api.post(`/audit/alerts/${id}/resolve`);
+export const runSecurityCheck = () => api.post('/audit/check-security');
+
+// HotelRunner
+export const getHotelRunnerStatus = () => api.get('/hotelrunner/status');
+export const syncHotelRunnerReservations = () => api.post('/hotelrunner/sync/reservations');
+export const syncHotelRunnerAvailability = () => api.post('/hotelrunner/sync/availability');
+export const syncHotelRunnerRates = () => api.post('/hotelrunner/sync/rates');
+export const syncHotelRunnerFull = () => api.post('/hotelrunner/sync/full');
+export const getHotelRunnerSyncLogs = (params) => api.get('/hotelrunner/sync-logs', { params });
+export const getHotelRunnerConfig = () => api.get('/hotelrunner/config');
+
 export default api;
