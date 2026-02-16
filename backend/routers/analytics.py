@@ -107,7 +107,7 @@ async def get_kpi_metrics(
     prev_occupancy = await calc_occupancy(prev_from, prev_to)
     occ_change = round((occupancy_rate - prev_occupancy) * 100, 1)
 
-    return {
+    result = {
         "period": {"from": df_str, "to": dt_str},
         "daily_revenue": {
             "value": round(daily_revenue, 2),
@@ -133,6 +133,8 @@ async def get_kpi_metrics(
             "trend": "up",
         },
     }
+    cache_set(cache_key, result, "short")
+    return result
 
 
 # ==================== REVENUE TREND ====================
