@@ -301,69 +301,105 @@ def route_to_agent(message: str) -> AgentType:
 # ==============================================
 
 async def get_auto_reply(message: str, language: str = "tr") -> Optional[Dict[str, Any]]:
-    """Kural tabanlı otomatik yanıt"""
+    """Kural tabanlı otomatik yanıt - yasaklı konu ve eskalasyon kontrollü"""
+
+    # 1. Forbidden topic check
+    forbidden = detect_forbidden_topic(message)
+    if forbidden:
+        return {
+            "matched": True,
+            "intent": "forbidden",
+            "category": forbidden,
+            "message": FORBIDDEN_RESPONSES.get(forbidden, "Bu konuda yardimci olamiyorum. Baska bir konuda yardimci olabilir miyim?"),
+        }
+
+    # 2. Escalation check
+    escalation = detect_escalation(message)
+    if escalation:
+        return {
+            "matched": True,
+            "intent": "escalation",
+            "category": escalation,
+            "message": ESCALATION_RESPONSES.get(escalation, ""),
+        }
+
+    # 3. Normal intent detection
     intent = detect_intent(message)
-    
+
     if intent == "greeting":
         return {
             "matched": True,
             "intent": intent,
-            "message": "Merhaba! 🏨 Kozbeyli Konağı'na hoş geldiniz. Size nasıl yardımcı olabilirim?\n\n• Masa rezervasyonu\n• Oda rezervasyonu\n• Menü bilgisi\n• Konum ve ulaşım" if language == "tr" else 
-                      "Hello! 🏨 Welcome to Kozbeyli Konağı. How can I help you?\n\n• Table reservation\n• Room reservation\n• Menu information\n• Location and directions"
+            "message": "Merhaba! Kozbeyli Konagi'na hos geldiniz. Size nasil yardimci olabilirim?\n\n- Oda rezervasyonu ve fiyat bilgisi\n- Masa rezervasyonu\n- Menu ve restoran bilgisi\n- Konum ve ulasim\n- Cevre aktiviteleri" if language == "tr" else
+                      "Hello! Welcome to Kozbeyli Konagi. How can I help you?\n\n- Room reservation and pricing\n- Table reservation\n- Menu and restaurant info\n- Location and directions\n- Nearby activities"
         }
-    
+
     if intent == "thanks":
         return {
             "matched": True,
             "intent": intent,
-            "message": "Rica ederim! Başka bir konuda yardımcı olabilir miyim? 😊" if language == "tr" else
-                      "You're welcome! Is there anything else I can help you with? 😊"
+            "message": "Rica ederim! Baska bir konuda yardimci olabilir miyim?" if language == "tr" else
+                      "You're welcome! Is there anything else I can help you with?"
         }
-    
+
     if intent == "wifi":
         return {
             "matched": True,
             "intent": intent,
-            "message": "📶 WiFi Bilgileri:\n\nAğ Adı: Kozbeyli_Konagi_Guest\nŞifre: konak1234\n\nTesis genelinde ücretsiz internet erişimi mevcuttur."
+            "message": "WiFi Bilgileri:\n\nAg Adi: Kozbeyli_Konagi_Guest\nSifre: konak1234\n\nTesis genelinde ucretsiz internet erisimi mevcuttur."
         }
-    
+
     if intent == "location":
         return {
             "matched": True,
             "intent": intent,
-            "message": "📍 Kozbeyli Konağı\n\nAdres: Kozbeyli Köyü Küme Evleri No:188, Foça, İzmir\n\n🗺️ Konum: https://maps.app.goo.gl/kozbeyli\n\n🚗 Foça merkezden 10 dakika\n✈️ İzmir Havalimanı'ndan 60 dakika"
+            "message": "Kozbeyli Konagi\n\nAdres: Kozbeyli Koyu Kume Evleri No:188, Foca, Izmir\n\nKonum: https://maps.app.goo.gl/kozbeyli\n\nFoca merkezden 10 dakika\nIzmir Havalimani'ndan 60 dakika\n\nUlasim icin resepsiyondan transfer ayarlanabilir: +90 232 826 11 12"
         }
-    
+
     if intent == "contact":
         return {
             "matched": True,
             "intent": intent,
-            "message": "📞 İletişim Bilgileri:\n\nTelefon: +90 232 826 11 12\nWhatsApp: +90 532 234 26 86\nE-posta: info@kozbeylikonagi.com\n\n🌐 www.kozbeylikonagi.com\n📸 @kozbeylikonagi"
+            "message": "Iletisim Bilgileri:\n\nTelefon: +90 232 826 11 12\nRezervason: +90 532 234 26 86\nWhatsApp: +90 532 234 26 86\nE-posta: info@kozbeylikonagi.com\n\nWeb: www.kozbeylikonagi.com\nInstagram: @kozbeylikonagi"
         }
-    
+
     if intent == "checkin":
         return {
             "matched": True,
             "intent": intent,
-            "message": "🕐 Giriş/Çıkış Saatleri:\n\n✅ Giriş (Check-in): 14:00\n✅ Çıkış (Check-out): 12:00\n\n⏰ Erken giriş ve geç çıkış müsaitliğe bağlı olarak ek ücret karşılığında mümkündür.\n\n🚪 Otel kapısı güvenlik nedeniyle 23:00'da kapanır."
+            "message": "Giris/Cikis Saatleri:\n\nGiris (Check-in): 14:00 - Kimlik belgesi gereklidir\nCikis (Check-out): 12:00\n\nErken giris ve gec cikis musaitlige bagli olarak ek ucret karsiliginda mumkundur.\n\nOtel kapisi guvenlik nedeniyle 23:00'da kapanir. Gec gelenler oda anahtarindaki numarayi arayabilir.\n\nDetayli bilgi: +90 232 826 11 12"
         }
-    
+
     if intent == "pets":
         return {
             "matched": True,
             "intent": intent,
-            "message": "🐾 Evcil Hayvan Politikası:\n\n✅ Küçük ırk evcil hayvanlar ücretsiz kabul edilir\n✅ Büyük ırklar için balkonlu oda ayarlanabilir\n⚠️ Restoran kapalı alanına evcil hayvan giremez\n\nLütfen rezervasyon sırasında bilgi veriniz."
+            "message": "Evcil Hayvan Politikasi:\n\nKucuk irk evcil hayvanlar ucretsiz kabul edilir.\nBuyuk irklar icin balkonlu oda ayarlanabilir.\nRestoran kapali alanina evcil hayvan giremez.\n\nLutfen rezervasyon sirasinda bilgi veriniz: +90 532 234 26 86"
         }
-    
+
+    if intent == "price":
+        return {
+            "matched": True,
+            "intent": intent,
+            "message": "Guncel Oda Fiyatlari (Gecelik, Kahvalti Dahil):\n\nTek Kisilik: 3.000 TL\nCift Kisilik: 3.500 TL\nUc Kisilik: 5.000 TL\nSuperior: 5.500 TL\nAile Odasi: 6.000 TL\n\nOzel gun fiyatlari (14 Subat, Yilbasi, Bayramlar) farkli olabilir.\n\nRezervason icin: +90 532 234 26 86"
+        }
+
+    if intent == "cancellation":
+        return {
+            "matched": True,
+            "intent": intent,
+            "message": "Iptal Politikasi:\n\n72 saat (3 gun) oncesine kadar: Ucretsiz iptal\n72 saatten az kala: %100 ceza uygulanir\nOzel gunlerde (bayram, 14 Subat, yilbasi): Her durumda %100 on odeme zorunlu, iade yapilmaz\nGelmeyen misafirden (no-show) %100 ucret tahsil edilir.\n\nIptal/degisiklik icin: +90 532 234 26 86"
+        }
+
     # Masa rezervasyonu intent'i - Flow başlat
     if intent == "table_reservation":
         return {
             "matched": True,
             "intent": intent,
             "start_flow": "table",
-            "message": "🍽️ Masa rezervasyonu için memnuniyetle yardımcı olacağım!\n\n📅 Hangi tarih için rezervasyon yapmak istiyorsunuz?\n\n(Örnek: 15 Şubat, yarın, bu cumartesi)"
+            "message": "Masa rezervasyonu icin memnuniyetle yardimci olacagim!\n\nHangi tarih icin rezervasyon yapmak istiyorsunuz?\n\n(Ornek: 15 Subat, yarin, bu cumartesi)"
         }
-    
+
     return None
 
 
