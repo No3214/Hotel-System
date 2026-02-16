@@ -40,6 +40,7 @@ const RevenueManagementPage = lazy(() => import('./pages/RevenueManagementPage')
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
 const AuditSecurityPage = lazy(() => import('./pages/AuditSecurityPage'));
 const HotelRunnerPage = lazy(() => import('./pages/HotelRunnerPage'));
+const FinancialsPage = lazy(() => import('./pages/FinancialsPage'));
 
 const NAV_CONFIG = [
   {
