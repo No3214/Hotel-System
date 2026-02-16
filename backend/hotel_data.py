@@ -54,8 +54,24 @@ HOTEL_INFO = {
     ],
     "coordinates": {"lat": 38.7333, "lng": 26.7667},
     "license": "T.C. Kultur ve Turizm Bakanligi Tesis Izin Belgesi No: 2025-35-1824",
-    "room_amenities": ["Mini buzdolabi", "Klima", "Televizyon", "Ozel banyo", "WiFi"],
+    "room_amenities": [
+        "Mini buzdolabi", "Klima", "LCD Televizyon", "Ozel banyo",
+        "WiFi", "Sac kurutma makinesi",
+        "Sivi sabun", "Sampuan", "Dus jeli", "Terlik",
+    ],
     "room_welcome": "2-4 adet su, sallama cay, nescafe, bambu karistirma cubugu, cikolatali mini berliner",
+    "guest_tips": [
+        "Sessiz ve manzarali oda icin ust kat tercih edin",
+        "Kozbeyli Koyu cevresinde dogayla ic ice yuruyus parkurlari mevcut",
+        "Transfer/ulasim icin resepsiyondan yardim alin",
+        "Erken check-in/gec check-out icin onceden bilgi verin",
+    ],
+    "extra_services": {
+        "laundry": {"available": True, "note": "Ucretli, ayni gun teslimat"},
+        "transfer": {"available": True, "note": "Resepsiyon araciligyla ayarlanir"},
+        "event": {"available": True, "note": "100 kisilik kapasite, 30+ kisi icin ozel fiyat"},
+        "baby_cot": {"available": True, "note": "Ucretsiz, ekstra yatak konulmaz"},
+    },
 }
 
 ROOMS = [
