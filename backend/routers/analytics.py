@@ -3,6 +3,7 @@ from typing import Optional
 from datetime import date, datetime, timedelta, timezone
 from database import db
 from helpers import utcnow
+from services.cache_service import cache_get, cache_set
 
 router = APIRouter(tags=["analytics"])
 
