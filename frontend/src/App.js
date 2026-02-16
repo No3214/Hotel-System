@@ -135,9 +135,14 @@ const PAGES = {
 };
 
 export default function App() {
-  if (window.location.pathname === '/menu') {
+  const path = window.location.pathname;
+
+  // Public menu: / veya /menu
+  if (path === '/' || path === '/menu') {
     return <PublicMenuPage />;
   }
+
+  // Admin panel: /admin ve altı
   return (
     <LanguageProvider>
       <AdminApp />
