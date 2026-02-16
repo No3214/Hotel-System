@@ -381,11 +381,11 @@ async def get_auto_reply(message: str, language: str = "tr") -> Optional[Dict[st
             "message": "Evcil Hayvan Politikasi:\n\nKucuk irk evcil hayvanlar ucretsiz kabul edilir.\nBuyuk irklar icin balkonlu oda ayarlanabilir.\nRestoran kapali alanina evcil hayvan giremez.\n\nLutfen rezervasyon sirasinda bilgi veriniz: +90 532 234 26 86"
         }
 
-    if intent == "price":
+    if intent == "price" or intent == "room_reservation":
         return {
             "matched": True,
             "intent": intent,
-            "message": "Guncel Oda Fiyatlari (Gecelik, Kahvalti Dahil):\n\nTek Kisilik: 3.000 TL\nCift Kisilik: 3.500 TL\nUc Kisilik: 5.000 TL\nSuperior: 5.500 TL\nAile Odasi: 6.000 TL\n\nOzel gun fiyatlari (14 Subat, Yilbasi, Bayramlar) farkli olabilir.\n\nRezervason icin: +90 532 234 26 86"
+            "message": "Guncel Oda Fiyatlari (Gecelik, Kahvalti Dahil):\n\nTek Kisilik (25m2): 3.000 TL\nCift Kisilik (25m2): 3.500 TL\nUc Kisilik (30m2): 5.000 TL\nSuperior (35m2): 5.500 TL\nAile Odasi (50m2): 6.000 TL\n\nTum odalarda: Klima, TV, WiFi, mini buzdolabi, ozel banyo.\nHos geldin ikrami: Su, cay, Nescafe, cikolatali Berliner.\n\nOzel gun fiyatlari (14 Subat, Yilbasi, Bayramlar) farkli olabilir.\n\nRezervason icin: +90 532 234 26 86"
         }
 
     if intent == "cancellation":
