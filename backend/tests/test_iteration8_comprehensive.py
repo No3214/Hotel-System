@@ -14,7 +14,7 @@ import requests
 import os
 import time
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://hotelrunner-sync.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://hotel-manage-tr.preview.emergentagent.com').rstrip('/')
 
 class TestHealthCheck:
     """Health check tests"""
