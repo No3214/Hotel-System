@@ -34,6 +34,8 @@ const FALLBACK_TR = {
   confirmed: "Onaylandi", checked_in: "Giris Yapti", checked_out: "Cikis Yapti",
   cancelled: "Iptal Edildi", cleaning: "Temizlik",
   today: "Bugun", this_month: "Bu Ay",
+  revenue: "Gelir Yonetimi", analytics: "Analitik", audit: "Guvenlik",
+  hotelrunner: "HotelRunner", integrations: "Entegrasyonlar",
 };
 
 export function LanguageProvider({ children }) {
