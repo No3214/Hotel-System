@@ -119,6 +119,98 @@ AGENT_KEYWORDS = {
 
 
 # ==============================================
+# YASAKLI KONU TESPITI
+# ==============================================
+
+FORBIDDEN_KEYWORDS = {
+    "politics": [
+        "siyaset", "parti", "secim", "oy", "politika", "hukumet", "muhalefet",
+        "akp", "chp", "mhp", "hdp", "iyi parti", "erdogan", "kilicdaroglu",
+        "politics", "election", "government", "vote"
+    ],
+    "religion": [
+        "din", "allah", "namaz", "cami", "kilise", "ibadet", "helal", "haram",
+        "religion", "mosque", "church", "prayer", "quran", "bible",
+        "muslumanlik", "hristiyanlik"
+    ],
+    "controversial": [
+        "kurtaj", "lgb", "irkcilik", "teror", "savas", "darbe", "iddia",
+        "abortion", "racism", "terror", "war", "coup"
+    ],
+    "medical_legal": [
+        "doktor tavsiye", "ilac tavsiye", "hukuki", "avukat", "dava",
+        "hastalik tedavi", "medical advice", "legal advice", "prescription"
+    ],
+    "competitors": [
+        "x oteli daha", "baska otel", "rakip", "competitor", "daha ucuz otel",
+        "baska yer onerisi", "alternative hotel"
+    ],
+    "inappropriate": [
+        "cinsel", "seks", "sexual", "porn", "xxx", "fuhs", "eskor"
+    ],
+}
+
+
+def detect_forbidden_topic(message: str) -> Optional[str]:
+    """Check if message contains a forbidden topic. Returns category or None."""
+    lower = message.lower()
+    for category, keywords in FORBIDDEN_KEYWORDS.items():
+        if any(kw in lower for kw in keywords):
+            return category
+    return None
+
+
+FORBIDDEN_RESPONSES = {
+    "politics": "Bu konuda yardimci olamiyorum. Otel veya bolgemizdeki aktiviteler hakkinda sorulariniz varsa memnuniyetle yardimci olurum!",
+    "religion": "Bu konuda yardimci olamiyorum. Baska bir konuda yardimci olabilir miyim?",
+    "controversial": "Bu konuda yardimci olamiyorum. Size otellimiz ve hizmetlerimiz hakkinda bilgi vermekten mutluluk duyarim.",
+    "medical_legal": "Tibbi veya hukuki konularda tavsiye veremiyorum. Lutfen ilgili uzmanlara danismanizi oneririm. Otel hizmetlerimizle ilgili bir sorunuz varsa yardimci olabilirim.",
+    "competitors": "Diger tesisler hakkinda yorum yapamam. Ancak Kozbeyli Konagi'nin sundugu ozel deneyimleri size anlatmaktan mutluluk duyarim!",
+    "inappropriate": "Bu tur konularda yardimci olamiyorum. Lutfen uygun bir konuda sorunuzu iletiniz.",
+}
+
+
+ESCALATION_KEYWORDS = [
+    "sikayet", "mutsuz", "berbat", "rezalet", "memnuniyetsiz", "complaint",
+    "30 kisi", "40 kisi", "50 kisi", "60 kisi", "buyuk grup", "large group",
+    "acil", "emergency", "ambulans", "yangin", "hirsiz", "polis",
+    "fiyat yuksek", "pahali", "indirim yap", "fiyat anlasmasi",
+]
+
+
+def detect_escalation(message: str) -> Optional[str]:
+    """Check if message requires escalation to manager."""
+    lower = message.lower()
+
+    # Large group check
+    import re
+    group_match = re.search(r'(\d+)\s*(kisi|kisilik|kişi|kişilik|people|person)', lower)
+    if group_match:
+        count = int(group_match.group(1))
+        if count >= 30:
+            return "large_group"
+
+    if any(kw in lower for kw in ["acil", "emergency", "ambulans", "yangin", "hirsiz", "polis"]):
+        return "emergency"
+
+    if any(kw in lower for kw in ["sikayet", "complaint", "mutsuz", "berbat", "rezalet", "memnuniyetsiz"]):
+        return "complaint"
+
+    if any(kw in lower for kw in ["fiyat yuksek", "pahali", "indirim yap", "fiyat anlasmasi"]):
+        return "price_dispute"
+
+    return None
+
+
+ESCALATION_RESPONSES = {
+    "large_group": "30 kisiyi asan organizasyonlar icin ozel fiyat gorusmesi gerekiyor. Sizi yoneticimize yonlendireyim: +90 532 234 26 86",
+    "emergency": "Acil durumlar icin lutfen hemen resepsiyonu arayin: +90 232 826 11 12 veya 112'yi arayin!",
+    "complaint": "Gorusinuzu ciddiye aliyoruz. En iyi sekilde cozum bulabilmemiz icin sizi yoneticimizle gorusturmek istiyorum: +90 532 234 26 86",
+    "price_dispute": "Fiyatlarimiz donemsel olarak degisiklik gosterebilir. Detayli bilgi ve ozel teklifler icin sizi yoneticimizle gorusturmek istiyorum: +90 532 234 26 86",
+}
+
+
+# ==============================================
 # CONVERSATION FLOW MANAGER
 # ==============================================
 
