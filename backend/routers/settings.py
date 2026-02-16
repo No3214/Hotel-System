@@ -76,7 +76,7 @@ TRANSLATIONS = {
         "cancelled": "Cancelled", "cleaning": "Cleaning",
         "today": "Today", "this_month": "This Month",
         "analytics": "Analytics", "audit": "Security", "hotelrunner": "HotelRunner",
-        "integrations": "Integrations",
+        "integrations": "Integrations", "financials": "Financials",
     },
     "de": {
         "dashboard": "Dashboard", "rooms": "Zimmer", "guests": "Gaste",
