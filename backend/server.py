@@ -115,6 +115,10 @@ api.include_router(social_media_router)
 api.include_router(kitchen_router)
 api.include_router(whatsapp_router)
 api.include_router(loyalty_router)
+api.include_router(revenue_router)
+api.include_router(analytics_router)
+api.include_router(audit_router)
+api.include_router(hotelrunner_router)
 
 app.include_router(api)
 
