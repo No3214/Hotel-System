@@ -178,7 +178,7 @@ TRANSLATIONS = {
         "cancelled": "Otmeneno", "cleaning": "Uborka",
         "today": "Segodnya", "this_month": "Etot Mesyats",
         "analytics": "Analitika", "audit": "Bezopasnost", "hotelrunner": "HotelRunner",
-        "integrations": "Integratsii",
+        "integrations": "Integratsii", "financials": "Finansy",
     },
 }
 
