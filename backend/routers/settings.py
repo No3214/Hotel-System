@@ -42,7 +42,7 @@ TRANSLATIONS = {
         "cancelled": "Iptal Edildi", "cleaning": "Temizlik",
         "today": "Bugun", "this_month": "Bu Ay",
         "analytics": "Analitik", "audit": "Guvenlik", "hotelrunner": "HotelRunner",
-        "integrations": "Entegrasyonlar",
+        "integrations": "Entegrasyonlar", "financials": "Finansal",
     },
     "en": {
         "dashboard": "Dashboard", "rooms": "Rooms", "guests": "Guests",
