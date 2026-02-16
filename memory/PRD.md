@@ -189,7 +189,33 @@ frontend/src/
 - Senkronizasyon log sistemi
 - POST /api/hotelrunner/sync/full ile toplu senkronizasyon (mock mod)
 
-### Tests: Backend 29/29 (%100), Frontend %100 - Iteration 14
+### Faz 19: Domain Hazirligi + SEO + QR + Chatbot Iyilestirme (TAMAMLANDI - 16 Feb 2026)
+
+**Domain Routing:**
+- / (root URL) → PublicMenuPage (kozbeylikonagi.com.tr acilinca menu gelecek)
+- /menu → Ayni menu sayfasi (geriye uyumluluk)
+- /admin → Yonetim paneli (login sayfasi)
+
+**SEO Optimizasyonu:**
+- Title: "Kozbeyli Konagi | Butik Tas Otel - Foca, Izmir"
+- Open Graph: og:title, og:description, og:image, og:url
+- Twitter Card meta tags
+- JSON-LD: Hotel schema (adres, koordinat, amenities, fiyat araligi)
+
+**QR Kod Sistemi:**
+- GET /api/qr/menu → PNG formatinda QR kod (boyut ayarlanabilir: 100-1000px)
+- Altin renk (#C4972A) koyu arka plan (#0a0a0f) - masalara yerlestirmek icin
+- Hedef URL: https://kozbeylikonagi.com.tr
+
+**Chatbot Guncellemesi:**
+- Yasakli konu tespiti: siyaset, din, tartismali konular, tibbi/hukuki, rakipler, uygunsuz icerik
+- Eskalasyon protokolu: 30+ kisi grup, acil durum, sikayet, fiyat anlasmzligi
+- Yeni auto-reply: ek hizmetler (camasir, transfer, otopark, bebek yatagi)
+- Fiyat/oda bilgisi: Oda detaylari zenginlestirildi (amenity, hos geldin ikrami)
+- False positive duzeltme: "iptal politikasi" artik siyaset olarak algilanmiyor
+- Profesyonel ton: Emoji kullanimi azaltildi
+
+### Tests: Backend 14/14 (%100), Frontend %100 - Iteration 16
 
 ## Upcoming Tasks
 - P0: WhatsApp Business API canli entegrasyonu (Meta Developer Portal bilgileri bekleniyor)

@@ -1,5 +1,22 @@
 # Kozbeyli Konagi - Degisiklik Gunlugu
 
+## [2026-02-16] - Domain Hazirligi + SEO + QR + Chatbot Iyilestirme
+
+### Eklendi
+- **Domain Routing:** / → Menu, /admin → Yonetim paneli, /menu geriye uyumlu
+- **SEO:** Title, Open Graph, Twitter Card, JSON-LD Hotel schema
+- **QR Kod:** GET /api/qr/menu (altin renkli PNG), GET /api/qr/menu-info
+- **Chatbot:**
+  - Yasakli konu tespiti (siyaset, din, rakipler, uygunsuz)
+  - Eskalasyon protokolu (30+ kisi, acil, sikayet)
+  - Yeni auto-reply: ek hizmetler, fiyat/oda (zenginlestirildi)
+  - False positive fix: "iptal politikasi" artik engellenmez
+  - GEMINI_SYSTEM_PROMPT tamamen yeniden yazildi (belge uyumu)
+
+### Test: Backend 14/14 (%100), Frontend %100 - Iteration 16
+
+---
+
 ## [2026-02-16] - Redis + VAPID Push + Finansal Modul + HotelRunner Iyilestirme
 
 ### Eklendi
