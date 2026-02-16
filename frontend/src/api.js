@@ -256,4 +256,14 @@ export const syncHotelRunnerFull = () => api.post('/hotelrunner/sync/full');
 export const getHotelRunnerSyncLogs = (params) => api.get('/hotelrunner/sync-logs', { params });
 export const getHotelRunnerConfig = () => api.get('/hotelrunner/config');
 
+// Cache
+export const getCacheStats = () => api.get('/cache/stats');
+export const clearCache = () => api.post('/cache/clear');
+
+// Notifications
+export const subscribePush = (subscription, userId) => api.post('/notifications/subscribe', { subscription, user_id: userId });
+export const unsubscribePush = (endpoint) => api.post('/notifications/unsubscribe', { endpoint });
+export const getTodayNotifications = () => api.get('/notifications/today');
+export const sendTestNotification = () => api.post('/notifications/send-test');
+
 export default api;
