@@ -1,5 +1,28 @@
 # Kozbeyli Konagi - Degisiklik Gunlugu
 
+## [2026-02-16] - Caching + Lazy Loading + Push Notifications
+
+### Eklendi
+- **In-Memory Caching Layer:**
+  - TTLCache: short (30s), medium (5dk), long (30dk)
+  - Rooms, Analytics KPI, Revenue KPI endpointleri onbelleklendi
+  - GET /api/cache/stats (istatistikler), POST /api/cache/clear (temizle)
+- **Lazy Loading:**
+  - React.lazy() ile 25+ sayfanin tembel yuklenmesi
+  - Suspense fallback spinner animasyonu
+  - Dashboard ve Login hemen yuklenir, diger sayfalar talep uzerine
+- **PWA Push Notifications:**
+  - Service Worker push + notificationclick event handlers
+  - Sidebar bildirim zili butonu (data-testid="notification-bell")
+  - GET /api/notifications/today (bugunun bildirimleri)
+  - POST /api/notifications/subscribe, /send-test
+
+### Test Sonuclari
+- Backend: 22/22 (%100) - Iteration 13
+- Frontend: Tum ozellikler calisir durumda (%100)
+
+---
+
 ## [2026-02-16] - P2 Optimizasyonlar: Database Indexing + PWA
 
 ### Eklendi

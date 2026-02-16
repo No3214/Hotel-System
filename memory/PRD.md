@@ -133,18 +133,35 @@ frontend/src/
 
 **PWA (Progressive Web App):**
 - manifest.json: Ad, ikon, tema rengi, standalone gorunum
-- service-worker.js: Network-first cache stratejisi, offline destek
+- service-worker.js: Network-first cache stratejisi, offline destek, push notification handler
 - Ana ekrana ekleme ozelligi
 - Sayfa basligi: "Kozbeyli Konagi"
 
-### Tests: Backend 21/22 (%95 - 1 test script hatasi), Frontend %100 - Iteration 12
+### Faz 17: Caching + Lazy Loading + Push Notifications (TAMAMLANDI - 16 Feb 2026)
+
+**In-Memory Caching Layer (services/cache_service.py):**
+- TTLCache: short (30s), medium (5dk), long (30dk) sureler
+- Onbelleklenen endpointler: rooms (medium), analytics KPI (short), revenue KPI (short)
+- Cache istatistikleri: GET /api/cache/stats (hit rate, sizes)
+- Cache temizleme: POST /api/cache/clear
+- Dekorator tabanlı kullanım: @cached(key_prefix, duration)
+
+**Lazy Loading + Gorsel Optimizasyonu:**
+- React.lazy() ile tum sayfa bilesenlerinin tembel yuklenmesi (25+ sayfa)
+- Suspense fallback: Altın renkli spinner animasyonu
+- Dashboard ve Login direkt yuklenir, diger sayfalar ihtiyac durumunda yuklenir
+
+**PWA Push Notifications:**
+- Service Worker push event handler
+- Sidebar bildirim zili butonu (Bildirimleri Ac/Aktif)
+- Bugunun check-in/check-out bildirimleri: GET /api/notifications/today
+- Bildirim aboneligi: POST /api/notifications/subscribe
+- Test bildirimi: POST /api/notifications/send-test
+
+### Tests: Backend 22/22 (%100), Frontend %100 - Iteration 13
 
 ## Upcoming Tasks
 - P0: WhatsApp Business API canli entegrasyonu (Meta Developer Portal bilgileri bekleniyor)
 - P0: HotelRunner API entegrasyonu (API bilgileri bekleniyor)
-- P0: Gelir/Gider Takibi & Finansal Raporlama (kullanicinin paylastigi referans belgeden)
-- P2: Redis Caching Layer
-- P2: CDN ile Gorsel Optimizasyonu
-- P2: Lazy Loading implementasyonu
 - P3: POS entegrasyonu, Mobil personel uygulamasi
 - P3: Online odeme entegrasyonu (Stripe/Iyzico)
