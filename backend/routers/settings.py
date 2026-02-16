@@ -110,7 +110,7 @@ TRANSLATIONS = {
         "cancelled": "Storniert", "cleaning": "Reinigung",
         "today": "Heute", "this_month": "Dieser Monat",
         "analytics": "Analytik", "audit": "Sicherheit", "hotelrunner": "HotelRunner",
-        "integrations": "Integrationen",
+        "integrations": "Integrationen", "financials": "Finanzen",
     },
     "fr": {
         "dashboard": "Tableau de Bord", "rooms": "Chambres", "guests": "Clients",
