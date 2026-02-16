@@ -229,6 +229,12 @@ function AdminApp() {
 
   const PageComponent = PAGES[page] || Dashboard;
 
+  const LazyFallback = (
+    <div className="flex items-center justify-center h-full">
+      <div className="w-8 h-8 border-2 border-[#C4972A] border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+
   return (
     <div className="flex h-screen bg-[#0a0a0f]" data-testid="app-root">
       <motion.aside
