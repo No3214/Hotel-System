@@ -158,10 +158,56 @@ frontend/src/
 - Bildirim aboneligi: POST /api/notifications/subscribe
 - Test bildirimi: POST /api/notifications/send-test
 
-### Tests: Backend 22/22 (%100), Frontend %100 - Iteration 13
+### Faz 18: Redis + VAPID Push + Finansal Modul + HotelRunner Iyilestirme (TAMAMLANDI - 16 Feb 2026)
+
+**Redis Caching Layer:**
+- In-memory TTLCache yerine Redis'e gecis
+- Redis baglanti ve otomatik fallback (Redis cokerse in-memory devam eder)
+- Cache backend: redis (GET /api/cache/stats ile dogrulanabilir)
+
+**VAPID Push Notification:**
+- pywebpush ile server-side push notification
+- VAPID anahtar cifti olusturuldu ve .env'e eklendi
+- GET /api/notifications/vapid-key ile frontend'e public key saglanir
+- POST /api/notifications/send-push ile tum abonelere bildirim gonderilebilir
+- Suresi gecen abonelikler otomatik temizlenir (410 Gone)
+
+**Gelir/Gider Takip Modulu:**
+- 7 gelir kategorisi: Oda, Restoran, Bar, Etkinlik, Minibar, Ekstra Hizmet, Diger
+- 17 gider kategorisi: Gida, Icecek, Temizlik, Enerji, Maas, Sigorta, Bakim, Pazarlama, Komisyon, Vergi, Kira, Ekipman, Camasir, Bahce, Eglence, Yazilim, Diger
+- OTA komisyon hesaplama (brut, komisyon tutari, net tutar)
+- Gunluk/Aylik rapor: Kategori bazli dagilim, kanal bazli gelir, KPI'lar
+- KPI'lar: Doluluk orani, ADR, RevPAR
+- Gunluk trend grafigi (gelir/gider bar chart)
+- Frontend sayfasi: 3 tab (Genel Bakis, Gelir, Gider) + CRUD
+
+**HotelRunner Iyilestirme:**
+- Iptal politikasi motoru: Ozel gun (%100 ceza), normal gun (3 gun kurali)
+- Ozel gunler: Hafta sonu, resmi bayramlar, 14 Subat, Yilbasi
+- Webhook isleme: reservation.created/cancelled/modified
+- OTA kanal yonetimi: 5 kanal (Booking %15, Expedia %18, Airbnb %3, Google %12, Trivago %10)
+- Senkronizasyon log sistemi
+- POST /api/hotelrunner/sync/full ile toplu senkronizasyon (mock mod)
+
+### Tests: Backend 29/29 (%100), Frontend %100 - Iteration 14
 
 ## Upcoming Tasks
 - P0: WhatsApp Business API canli entegrasyonu (Meta Developer Portal bilgileri bekleniyor)
-- P0: HotelRunner API entegrasyonu (API bilgileri bekleniyor)
+- P0: HotelRunner API canli entegrasyonu (API anahtarlari bekleniyor - mock altyapi hazir)
 - P3: POS entegrasyonu, Mobil personel uygulamasi
 - P3: Online odeme entegrasyonu (Stripe/Iyzico)
+
+## Tamamlanan (Eski Planlananlar)
+- Musteri sadakat programi (4 seviye: Bronz→Platin)
+- Ozel gun takibi (dogum gunu/yil donumu)
+- Coklu dil destegi (5 dil: TR, EN, DE, FR, RU)
+- Database indeksleme optimizasyonu (16+ koleksiyon)
+- PWA + offline erisim
+- Push notifications (VAPID server-side)
+- Redis Caching Layer
+- Lazy loading (25+ sayfa)
+- Anti-halussinasyon modulu
+- Rate limiter
+- Dinamik gercek zamanli dashboard
+- Gelir/Gider takip modulu
+- HotelRunner iptal politikasi + webhook + kanal yonetimi

@@ -1,5 +1,36 @@
 # Kozbeyli Konagi - Degisiklik Gunlugu
 
+## [2026-02-16] - Redis + VAPID Push + Finansal Modul + HotelRunner Iyilestirme
+
+### Eklendi
+- **Redis Caching Layer:**
+  - In-memory cache Redis'e taşindi (otomatik fallback mevcut)
+  - Cache backend: redis (GET /api/cache/stats ile gorulur)
+- **VAPID Push Notification:**
+  - pywebpush ile server-side push, VAPID anahtar cifti
+  - GET /api/notifications/vapid-key, POST /api/notifications/send-push
+- **Gelir/Gider Takip Modulu (FinancialsPage):**
+  - 7 gelir + 17 gider kategorisi, OTA komisyon hesaplama
+  - Gunluk/aylik rapor, KPI (Doluluk, ADR, RevPAR)
+  - Gunluk trend grafigi, kanal bazli gelir analizi
+  - CRUD: POST /api/financials/income, /expense, DELETE /api/financials/{id}
+  - Frontend: 3 tab (Genel Bakis, Gelir, Gider)
+- **HotelRunner Iyilestirme:**
+  - Iptal politikasi motoru (ozel gun + 3 gun kurali)
+  - Webhook isleme (reservation.created/cancelled/modified)
+  - 5 OTA kanalı (Booking, Expedia, Airbnb, Google, Trivago)
+  - Senkronizasyon log sistemi
+
+### Diger
+- Database indekslerine financials, push_subscriptions, sync_logs eklendi
+- 5 dilde "Finansal" ceviri eklendi (TR, EN, DE, FR, RU)
+
+### Test Sonuclari
+- Backend: 29/29 (%100) - Iteration 14
+- Frontend: Tum ozellikler calisir durumda (%100)
+
+---
+
 ## [2026-02-16] - Caching + Lazy Loading + Push Notifications
 
 ### Eklendi
