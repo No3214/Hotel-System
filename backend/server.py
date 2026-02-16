@@ -41,6 +41,7 @@ from routers.audit import router as audit_router
 from routers.hotelrunner import router as hotelrunner_router
 from routers.cache import router as cache_router
 from routers.notifications import router as notifications_router
+from routers.financials import router as financials_router
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -123,6 +124,7 @@ api.include_router(audit_router)
 api.include_router(hotelrunner_router)
 api.include_router(cache_router)
 api.include_router(notifications_router)
+api.include_router(financials_router)
 
 app.include_router(api)
 
