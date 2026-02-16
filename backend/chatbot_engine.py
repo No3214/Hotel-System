@@ -273,7 +273,7 @@ def detect_intent(message: str) -> str:
     # Öncelik sırasına göre kontrol
     priority_order = [
         "table_reservation", "room_reservation", "cancellation", 
-        "menu", "location", "wifi", "events", "checkin", 
+        "menu", "location", "wifi", "events", "extra_services", "checkin", 
         "pets", "contact", "price", "greeting", "thanks"
     ]
     
