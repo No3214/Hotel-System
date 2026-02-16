@@ -585,7 +585,8 @@ class TestRegression:
         response = api_session.get(f"{BASE_URL}/api/dashboard/stats")
         assert response.status_code == 200
         data = response.json()
-        assert "revenue" in data or "today_revenue" in data or "rooms" in data
+        # Dashboard has keys like monthly_revenue, available_rooms, etc
+        assert "monthly_revenue" in data or "available_rooms" in data
         print(f"Dashboard stats: OK")
     
     def test_rooms_endpoint(self, api_session):
