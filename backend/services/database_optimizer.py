@@ -60,6 +60,19 @@ async def apply_indexes():
         await db.dynamic_pricing_rules.create_index("start_date")
         await db.dynamic_pricing_rules.create_index("end_date")
 
+        # Financials
+        await db.financials.create_index("type")
+        await db.financials.create_index("date")
+        await db.financials.create_index([("type", 1), ("date", -1)])
+        await db.financials.create_index("category")
+
+        # Push subscriptions
+        await db.push_subscriptions.create_index("endpoint")
+
+        # Sync logs
+        await db.sync_logs.create_index("timestamp")
+        await db.sync_logs.create_index("sync_type")
+
         logger.info("Database indexes applied successfully")
     except Exception as e:
         logger.error(f"Error applying database indexes: {e}")
