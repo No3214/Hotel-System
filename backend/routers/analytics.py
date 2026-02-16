@@ -80,6 +80,11 @@ async def get_kpi_metrics(
     if not date_to:
         date_to = date.today()
 
+    cache_key = f"analytics:kpi:{date_from}:{date_to}"
+    cached = cache_get(cache_key, "short")
+    if cached is not None:
+        return cached
+
     df_str = date_from.isoformat()
     dt_str = date_to.isoformat()
 
