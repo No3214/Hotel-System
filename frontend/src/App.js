@@ -185,6 +185,57 @@ function LanguageSelector({ compact }) {
   );
 }
 
+function NotificationBell({ compact }) {
+  const [permission, setPermission] = useState(Notification?.permission || 'default');
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (typeof Notification !== 'undefined') {
+      setPermission(Notification.permission);
+    }
+    // Fetch today's notifications count
+    import('./api').then(({ getTodayNotifications }) => {
+      getTodayNotifications().then(r => setCount(r.data?.total || 0)).catch(() => {});
+    });
+  }, []);
+
+  const requestPermission = async () => {
+    if (typeof Notification === 'undefined') return;
+    const result = await Notification.requestPermission();
+    setPermission(result);
+    if (result === 'granted') {
+      new Notification('Kozbeyli Konagi', {
+        body: 'Bildirimler aktif edildi!',
+        icon: '/logo.jpeg',
+      });
+    }
+  };
+
+  return (
+    <button
+      onClick={requestPermission}
+      className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg transition-all w-full ${
+        permission === 'granted'
+          ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'
+          : 'bg-white/5 hover:bg-[#C4972A]/10 text-[#a9a9b2] hover:text-[#C4972A]'
+      }`}
+      data-testid="notification-bell"
+    >
+      <Bell className="w-4 h-4 flex-shrink-0" />
+      {!compact && (
+        <span className="text-xs flex-1 text-left">
+          {permission === 'granted' ? 'Bildirimler Aktif' : 'Bildirimleri Ac'}
+        </span>
+      )}
+      {count > 0 && (
+        <span className="bg-[#C4972A] text-[#0a0a0f] text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+          {count}
+        </span>
+      )}
+    </button>
+  );
+}
+
 function AdminApp() {
   const [page, setPage] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
