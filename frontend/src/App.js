@@ -34,6 +34,10 @@ import AutomationPage from './pages/AutomationPage';
 import SocialMediaPage from './pages/SocialMediaPage';
 import KitchenPage from './pages/KitchenPage';
 import WhatsAppPage from './pages/WhatsAppPage';
+import RevenueManagementPage from './pages/RevenueManagementPage';
+import AnalyticsPage from './pages/AnalyticsPage';
+import AuditSecurityPage from './pages/AuditSecurityPage';
+import HotelRunnerPage from './pages/HotelRunnerPage';
 
 const NAV_CONFIG = [
   {
@@ -44,6 +48,8 @@ const NAV_CONFIG = [
       { id: 'rooms', nameKey: 'rooms', icon: BedDouble },
       { id: 'guests', nameKey: 'guests', icon: Users },
       { id: 'pricing', nameKey: 'pricing', icon: TrendingUp },
+      { id: 'revenue', nameKey: 'revenue', icon: TrendingUp },
+      { id: 'analytics', nameKey: 'analytics', icon: LayoutDashboard },
     ],
   },
   {
@@ -70,6 +76,12 @@ const NAV_CONFIG = [
     ],
   },
   {
+    labelKey: 'integrations',
+    items: [
+      { id: 'hotelrunner', nameKey: 'hotelrunner', icon: Globe },
+    ],
+  },
+  {
     labelKey: 'information',
     items: [
       { id: 'knowledge', nameKey: 'knowledge', icon: BookOpen },
@@ -81,6 +93,7 @@ const NAV_CONFIG = [
     labelKey: 'system',
     items: [
       { id: 'automation', nameKey: 'automation', icon: Settings },
+      { id: 'audit', nameKey: 'audit', icon: Settings },
       { id: 'settings', nameKey: 'settings', icon: Settings },
     ],
   },
