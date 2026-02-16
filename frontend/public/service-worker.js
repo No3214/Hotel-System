@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kozbeyli-v1';
+const CACHE_NAME = 'kozbeyli-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -32,7 +32,6 @@ self.addEventListener('activate', (event) => {
 
 // Fetch - network first, fallback to cache
 self.addEventListener('fetch', (event) => {
-  // Skip non-GET and API requests
   if (event.request.method !== 'GET' || event.request.url.includes('/api/')) {
     return;
   }
@@ -40,7 +39,6 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // Cache successful responses
         if (response.status === 200) {
           const responseClone = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -50,16 +48,55 @@ self.addEventListener('fetch', (event) => {
         return response;
       })
       .catch(() => {
-        // Fallback to cache when offline
         return caches.match(event.request).then((cachedResponse) => {
           if (cachedResponse) {
             return cachedResponse;
           }
-          // Return cached index.html for navigation requests
           if (event.request.mode === 'navigate') {
             return caches.match('/index.html');
           }
         });
       })
+  );
+});
+
+// Push Notification handler
+self.addEventListener('push', (event) => {
+  let data = { title: 'Kozbeyli Konagi', body: 'Yeni bildirim' };
+
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch (e) {
+      data.body = event.data.text();
+    }
+  }
+
+  const options = {
+    body: data.body || '',
+    icon: '/logo.jpeg',
+    badge: '/logo.jpeg',
+    tag: data.tag || 'kozbeyli-notification',
+    data: data.url || '/',
+    vibrate: [200, 100, 200],
+    actions: data.actions || [],
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'Kozbeyli Konagi', options)
+  );
+});
+
+// Notification click handler
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      if (windowClients.length > 0) {
+        return windowClients[0].focus();
+      }
+      return clients.openWindow(event.notification.data || '/');
+    })
   );
 });
