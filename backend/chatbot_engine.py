@@ -129,29 +129,28 @@ AGENT_KEYWORDS = {
 
 FORBIDDEN_KEYWORDS = {
     "politics": [
-        "siyaset", "parti", "secim", "oy", "politika", "hukumet", "muhalefet",
+        "siyaset", "siyasi", "parti", "secim", "oy ver", "hukumet", "muhalefet",
         "akp", "chp", "mhp", "hdp", "iyi parti", "erdogan", "kilicdaroglu",
-        "politics", "election", "government", "vote"
+        "politics", "election", "government", "vote for"
     ],
     "religion": [
-        "din", "allah", "namaz", "cami", "kilise", "ibadet", "helal", "haram",
-        "religion", "mosque", "church", "prayer", "quran", "bible",
-        "muslumanlik", "hristiyanlik"
+        "din hakkinda", "allah hakkinda", "namaz hakkinda", "ibadet hakkinda",
+        "helal mi", "haram mi", "religion about", "quran about", "bible about"
     ],
     "controversial": [
-        "kurtaj", "lgb", "irkcilik", "teror", "savas", "darbe", "iddia",
-        "abortion", "racism", "terror", "war", "coup"
+        "kurtaj", "lgb", "irkcilik", "teror", "savas",
+        "abortion", "racism", "terror"
     ],
     "medical_legal": [
-        "doktor tavsiye", "ilac tavsiye", "hukuki", "avukat", "dava",
+        "doktor tavsiye", "ilac tavsiye", "hukuki tavsiye", "avukat tavsiye",
         "hastalik tedavi", "medical advice", "legal advice", "prescription"
     ],
     "competitors": [
-        "x oteli daha", "baska otel", "rakip", "competitor", "daha ucuz otel",
-        "baska yer onerisi", "alternative hotel"
+        "x oteli daha", "baska otel oner", "rakip otel", "competitor hotel",
+        "daha ucuz otel", "alternative hotel"
     ],
     "inappropriate": [
-        "cinsel", "seks", "sexual", "porn", "xxx", "fuhs", "eskor"
+        "cinsel", "seks", "sexual", "porn", "xxx", "eskor"
     ],
 }
 
