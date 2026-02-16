@@ -144,7 +144,7 @@ TRANSLATIONS = {
         "cancelled": "Annule", "cleaning": "Nettoyage",
         "today": "Aujourd'hui", "this_month": "Ce Mois",
         "analytics": "Analytique", "audit": "Securite", "hotelrunner": "HotelRunner",
-        "integrations": "Integrations",
+        "integrations": "Integrations", "financials": "Finances",
     },
     "ru": {
         "dashboard": "Panel Upravleniya", "rooms": "Nomera", "guests": "Gosti",
