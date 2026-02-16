@@ -39,6 +39,8 @@ from routers.revenue import router as revenue_router
 from routers.analytics import router as analytics_router
 from routers.audit import router as audit_router
 from routers.hotelrunner import router as hotelrunner_router
+from routers.cache import router as cache_router
+from routers.notifications import router as notifications_router
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -119,6 +121,8 @@ api.include_router(revenue_router)
 api.include_router(analytics_router)
 api.include_router(audit_router)
 api.include_router(hotelrunner_router)
+api.include_router(cache_router)
+api.include_router(notifications_router)
 
 app.include_router(api)
 
