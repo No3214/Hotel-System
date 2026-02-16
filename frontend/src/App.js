@@ -4,7 +4,7 @@ import {
   LayoutDashboard, BedDouble, Users, MessageCircle, CheckSquare,
   Calendar, Sparkles, BookOpen, UtensilsCrossed, Menu, ChevronLeft,
   CalendarCheck, UserCog, Mail, MapPin, Settings, Star, TrendingUp, Heart, LogOut, QrCode, Share2,
-  Globe, Bell
+  Globe, Bell, DollarSign
 } from 'lucide-react';
 
 import { setAuthToken, getMe } from './api';
