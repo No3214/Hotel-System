@@ -112,6 +112,7 @@ TRANSLATIONS = {
         "analytics": "Analytik", "audit": "Sicherheit", "hotelrunner": "HotelRunner",
         "integrations": "Integrationen",
     },
+    "fr": {
         "dashboard": "Tableau de Bord", "rooms": "Chambres", "guests": "Clients",
         "chatbot": "Assistant IA", "messages": "Messages", "tasks": "Taches",
         "events": "Evenements", "housekeeping": "Menage",
@@ -145,6 +146,7 @@ TRANSLATIONS = {
         "analytics": "Analytique", "audit": "Securite", "hotelrunner": "HotelRunner",
         "integrations": "Integrations",
     },
+    "ru": {
         "dashboard": "Panel Upravleniya", "rooms": "Nomera", "guests": "Gosti",
         "chatbot": "AI Assistent", "messages": "Soobsheniya", "tasks": "Zadachi",
         "events": "Meropriyatiya", "housekeeping": "Uborka",
