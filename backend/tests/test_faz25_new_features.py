@@ -8,7 +8,7 @@ import os
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 if not BASE_URL:
-    BASE_URL = "https://hotel-manage-tr.preview.emergentagent.com"
+    BASE_URL = "https://hospitality-hub-59.preview.emergentagent.com"
 
 
 class TestHealthAndSetup:
