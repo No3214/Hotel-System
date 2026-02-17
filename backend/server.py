@@ -43,6 +43,7 @@ from routers.cache import router as cache_router
 from routers.notifications import router as notifications_router
 from routers.financials import router as financials_router
 from routers.qr import router as qr_router
+from routers.webhooks import router as webhooks_router
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -127,6 +128,7 @@ api.include_router(cache_router)
 api.include_router(notifications_router)
 api.include_router(financials_router)
 api.include_router(qr_router)
+api.include_router(webhooks_router)
 
 app.include_router(api)
 
