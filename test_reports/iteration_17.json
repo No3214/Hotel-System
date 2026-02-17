@@ -1,0 +1,81 @@
+{
+  "summary": "Iteration 17 - WhatsApp & Instagram Integration Testing Complete. All 15/15 backend tests PASSED (100%). Frontend WhatsApp page verified with all 6 tabs, 5 templates, config status, and mock warning banner working correctly.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration17_whatsapp_instagram.py",
+    "/app/test_reports/pytest/pytest_iteration17.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "WhatsApp Business API service correctly operates in mock mode when credentials not configured",
+    "Instagram Messaging API service follows same pattern with mock mode support",
+    "Webhook router correctly processes Meta's WhatsApp payload format (entry.changes.value.messages)",
+    "Webhook router correctly processes Instagram's payload format (entry.messaging)",
+    "Phone number normalization works (0532xxx → 90532xxx)",
+    "Chatbot engine processes messages through webhooks and returns appropriate responses",
+    "All interactive and status endpoints return proper JSON structure"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration17_whatsapp_instagram.py"
+  ],
+  "success_rate": {
+    "backend": "100% (15/15 tests passed)",
+    "frontend": "100% (All 6 tabs, 5 templates, stat cards, config status, mock warning working)"
+  },
+  "test_credentials": {
+    "admin_username": "admin",
+    "admin_password": "admin123"
+  },
+  "seed_data_creation": "Test data created via webhook POST requests during testing",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 17 verified WhatsApp & Instagram integration features: (1) GET /api/webhooks/status returns both platform configs with verify_tokens and message counts, (2) GET /api/whatsapp/templates returns 5 templates with params, (3) GET /api/whatsapp/config shows configured=false, has_token=false, has_phone_id=false in mock mode, (4) POST /api/whatsapp/send works in mock mode with phone normalization, (5) POST /api/webhooks/whatsapp processes text and interactive button messages, (6) POST /api/webhooks/instagram processes DM messages, (7) GET /api/whatsapp/sessions and /api/whatsapp/messages return stored conversations, (8) GET /api/webhooks/instagram/sessions and /messages return Instagram conversations, (9) Frontend WhatsApp page has 6 tabs: Bildirimler, WhatsApp, Instagram, Sablonlar, Mesaj Gonder, Ayarlar, (10) Frontend shows mock warning when API not configured, (11) Frontend displays webhook URLs for Meta configuration.",
+  "tested_features": {
+    "backend_apis": {
+      "GET /api/webhooks/status": "PASS - Returns WhatsApp and Instagram config status",
+      "GET /api/whatsapp/templates": "PASS - Returns 5 templates with params",
+      "GET /api/whatsapp/config": "PASS - Returns configured=false in mock mode",
+      "POST /api/whatsapp/send": "PASS - Mock sends message, normalizes phone",
+      "POST /api/webhooks/whatsapp (text)": "PASS - Processes incoming text message",
+      "POST /api/webhooks/whatsapp (button)": "PASS - Processes interactive button reply",
+      "GET /api/webhooks/instagram/sessions": "PASS - Returns sessions list",
+      "GET /api/webhooks/instagram/messages": "PASS - Returns messages list",
+      "POST /api/webhooks/instagram": "PASS - Processes incoming DM",
+      "GET /api/whatsapp/sessions": "PASS - Returns WhatsApp sessions",
+      "GET /api/whatsapp/messages": "PASS - Returns WhatsApp messages",
+      "GET /api/whatsapp/notifications": "PASS - Returns group notifications"
+    },
+    "frontend_whatsapp_page": {
+      "status": "WORKING",
+      "tabs": ["Bildirimler", "WhatsApp", "Instagram", "Sablonlar", "Mesaj Gonder", "Ayarlar"],
+      "stat_cards": ["WhatsApp Mesaj: 37", "Instagram Mesaj: 9", "Toplam Konusma: 9", "Bildirim: 18"],
+      "templates": ["checkout_thanks_review", "reservation_reminder_1day", "welcome_checkin", "cleaning_notification", "room_ready_notification"],
+      "settings_status": {
+        "Access Token": "Eksik",
+        "Phone Number ID": "Eksik",
+        "Verify Token": "kozbeyli_verify_2026",
+        "Instagram Durum": "Mock Mod"
+      },
+      "webhook_urls": {
+        "WhatsApp": "https://hospitality-hub-59.preview.emergentagent.com/api/webhooks/whatsapp",
+        "Instagram": "https://hospitality-hub-59.preview.emergentagent.com/api/webhooks/instagram"
+      },
+      "mock_warning": "Visible when API not configured"
+    }
+  },
+  "mocked_features": {
+    "has_mocked_apis": true,
+    "mocked_apis_list": [
+      "WhatsApp Business Cloud API - messages stored in DB but not actually sent",
+      "Instagram Messaging API - messages stored in DB but not actually sent"
+    ]
+  }
+}
