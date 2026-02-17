@@ -812,27 +812,27 @@ async def process_chatbot_message(
     platform: str = "web",
     language: str = "tr"
 ) -> Dict[str, Any]:
-    """Ana chatbot mesaj işleme fonksiyonu"""
+    """Ana chatbot mesaj isleme fonksiyonu - multi-platform destek (web, whatsapp, instagram)"""
     
     # 1. Conversation flow kontrol et
     flow = await ConversationFlow.load(session_id)
     
-    # 2. Aktif flow varsa işle
+    # 2. Aktif flow varsa isle
     if flow.state != ConversationState.IDLE:
         result = await process_table_flow(flow, message)
         if result:
-            # message -> response olarak dönüştür
             return {
                 "response": result.get("message", ""),
                 "intent": "table_flow",
+                "platform": platform,
                 "reservation_created": result.get("reservation_created", False),
                 "reservation": result.get("reservation"),
             }
     
-    # 3. Auto-reply kontrol et
+    # 3. Auto-reply kontrol et (yasakli konu, eskalasyon, intent)
     auto_reply = await get_auto_reply(message, language)
     if auto_reply:
-        # Masa rezervasyonu flow başlat
+        # Masa rezervasyonu flow baslat
         if auto_reply.get("start_flow") == "table":
             flow.state = ConversationState.TABLE_ASK_DATE
             await flow.save()
@@ -840,8 +840,9 @@ async def process_chatbot_message(
         return {
             "response": auto_reply["message"],
             "intent": auto_reply["intent"],
+            "platform": platform,
             "matched": True
         }
     
-    # 4. AI'ya yönlendir
-    return None  # Chatbot router tarafından AI'ya gönderilecek
+    # 4. AI'ya yonlendir
+    return None  # Chatbot router tarafindan AI'ya gonderilecek
