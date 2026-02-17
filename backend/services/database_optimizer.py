@@ -73,6 +73,16 @@ async def apply_indexes():
         await db.sync_logs.create_index("timestamp")
         await db.sync_logs.create_index("sync_type")
 
+        # WhatsApp messages
+        await db.whatsapp_messages.create_index("session_id")
+        await db.whatsapp_messages.create_index("direction")
+        await db.whatsapp_messages.create_index([("created_at", -1)])
+
+        # Instagram messages
+        await db.instagram_messages.create_index("session_id")
+        await db.instagram_messages.create_index("direction")
+        await db.instagram_messages.create_index([("created_at", -1)])
+
         logger.info("Database indexes applied successfully")
     except Exception as e:
         logger.error(f"Error applying database indexes: {e}")
