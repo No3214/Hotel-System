@@ -55,7 +55,7 @@ export default function Dashboard({ onNavigate }) {
 
   const ratings = stats?.ratings || {};
   const weeklyTrend = stats?.weekly_trend || [];
-  const maxOccupancy = Math.max(...weeklyTrend.map(d => d.rate), 1);
+  const maxOccupancy = weeklyTrend.length > 0 ? Math.max(...weeklyTrend.map(d => d.rate || 0), 1) : 1;
 
   return (
     <div className="p-6 lg:p-8 space-y-6 max-w-[1400px]" data-testid="dashboard-page">

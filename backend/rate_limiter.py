@@ -25,6 +25,9 @@ def _clean_old_requests(key: str, window: int):
     """Eski istekleri temizle"""
     now = time.time()
     _request_counts[key] = [t for t in _request_counts[key] if now - t < window]
+    # Remove empty keys to prevent memory leak
+    if not _request_counts[key]:
+        del _request_counts[key]
 
 
 def check_rate_limit(identifier: str, endpoint_type: str = "default") -> dict:

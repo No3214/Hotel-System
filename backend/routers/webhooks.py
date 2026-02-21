@@ -42,7 +42,8 @@ async def verify_whatsapp_webhook(
     cfg = get_wa_config()
     if hub_mode == "subscribe" and hub_token == cfg["verify_token"]:
         logger.info("WhatsApp webhook verified successfully")
-        return int(hub_challenge) if hub_challenge else ""
+        from fastapi.responses import PlainTextResponse
+        return PlainTextResponse(hub_challenge or "")
     raise HTTPException(403, "Verification failed")
 
 
@@ -53,7 +54,8 @@ async def receive_whatsapp_webhook(
 ):
     """Process incoming WhatsApp messages and status updates."""
     body_bytes = await request.body()
-    body = await request.json()
+    import json as _json
+    body = _json.loads(body_bytes)
 
     # Signature verification (optional - when APP_SECRET is set)
     cfg = get_wa_config()
@@ -229,7 +231,8 @@ async def verify_instagram_webhook(
     cfg = get_ig_config()
     if hub_mode == "subscribe" and hub_token == cfg["verify_token"]:
         logger.info("Instagram webhook verified successfully")
-        return int(hub_challenge) if hub_challenge else ""
+        from fastapi.responses import PlainTextResponse
+        return PlainTextResponse(hub_challenge or "")
     raise HTTPException(403, "Verification failed")
 
 

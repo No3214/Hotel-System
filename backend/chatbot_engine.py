@@ -594,10 +594,10 @@ _Kozbeyli Konağı - Antakya Sofrası_""",
 def parse_date(text: str) -> Optional[str]:
     """Metinden tarih parse et"""
     import re
-    from datetime import datetime, timedelta
-    
+    from datetime import datetime, timedelta, timezone
+
     lower = text.lower().strip()
-    today = datetime.now()
+    today = datetime.now(timezone.utc)
     
     # Bugün, yarın, vs
     if "bugun" in lower or "bugün" in lower:
@@ -667,7 +667,7 @@ def format_date_turkish(date_str: str) -> str:
         date = datetime.strptime(date_str, "%Y-%m-%d")
         day_name = days[date.weekday()]
         return f"{date.day} {months[date.month-1]} {day_name}"
-    except:
+    except (ValueError, TypeError, IndexError):
         return date_str
 
 

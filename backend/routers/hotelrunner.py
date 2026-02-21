@@ -47,7 +47,7 @@ def calculate_cancellation_penalty(check_in_str: str, total_price: float) -> dic
     except (ValueError, TypeError):
         return {"percentage": 0, "amount": 0, "reason": "Gecersiz tarih"}
 
-    days_until = (check_in - datetime.now()).days
+    days_until = (check_in - datetime.now(timezone.utc).replace(tzinfo=None)).days
 
     if is_special_day(check_in):
         return {

@@ -23,16 +23,17 @@ export default function AnalyticsPage() {
   const loadAll = async () => {
     setLoading(true);
     try {
-      const [kpiRes, srcRes, hmRes, rpRes] = await Promise.all([
+      const results = await Promise.allSettled([
         getAnalyticsKPI(),
         getBookingSources(),
         getOccupancyHeatmap(),
         getRoomPerformance(),
       ]);
-      setKPI(kpiRes.data);
-      setSources(srcRes.data);
-      setHeatmap(hmRes.data);
-      setRoomPerf(rpRes.data);
+      if (results[0].status === 'fulfilled') setKPI(results[0].value.data);
+      if (results[1].status === 'fulfilled') setSources(results[1].value.data);
+      if (results[2].status === 'fulfilled') setHeatmap(results[2].value.data);
+      if (results[3].status === 'fulfilled') setRoomPerf(results[3].value.data);
+      results.filter(r => r.status === 'rejected').forEach(r => console.error('Analytics load error:', r.reason));
       await loadTrend();
     } catch (e) { console.error(e); }
     setLoading(false);

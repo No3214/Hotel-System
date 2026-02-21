@@ -46,14 +46,15 @@ async def auto_schedule_housekeeping():
 
     created = 0
     for res in checked_out:
+        room_num = res.get("room_id") or res.get("room_number") or res.get("room_type", "unknown")
         existing = await db.housekeeping.find_one({
-            "room_number": res.get("room_type", ""),
+            "room_number": room_num,
             "status": {"$in": [HousekeepingStatus.PENDING, HousekeepingStatus.IN_PROGRESS]},
         })
         if not existing:
             log = {
                 "id": new_id(),
-                "room_number": res.get("room_type", "unknown"),
+                "room_number": room_num,
                 "task_type": "checkout_clean",
                 "priority": "high",
                 "assigned_to": None,

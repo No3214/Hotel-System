@@ -1,9 +1,15 @@
 import os
 import json
 import logging
-from pywebpush import webpush, WebPushException
 
 logger = logging.getLogger(__name__)
+
+try:
+    from pywebpush import webpush, WebPushException
+except ImportError:
+    logger.warning("pywebpush not installed — push notifications disabled. Install with: pip install pywebpush")
+    webpush = None
+    WebPushException = Exception
 
 VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY", "")
 VAPID_CLAIMS_EMAIL = os.environ.get("VAPID_CLAIMS_EMAIL", "mailto:info@kozbeylikonagi.com")
@@ -11,6 +17,8 @@ VAPID_CLAIMS_EMAIL = os.environ.get("VAPID_CLAIMS_EMAIL", "mailto:info@kozbeylik
 
 async def send_push_to_all(db, title: str, body: str, tag: str = "kozbeyli", url: str = "/"):
     """Send push notification to all subscribed users."""
+    if webpush is None:
+        return {"sent": 0, "failed": 0, "reason": "pywebpush_not_installed"}
     if not VAPID_PRIVATE_KEY:
         logger.warning("VAPID key not configured, skipping push")
         return {"sent": 0, "failed": 0, "reason": "no_vapid_key"}

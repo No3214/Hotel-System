@@ -17,7 +17,10 @@ export default function LoginPage() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    if (!username || !password) return;
+    if (!username || !password) {
+      setError('Kullanici adi ve sifre gereklidir');
+      return;
+    }
     setLoading(true);
     setError('');
     try {

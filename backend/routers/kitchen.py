@@ -8,7 +8,7 @@ from database import db
 from helpers import utcnow, new_id, clean_doc
 from pydantic import BaseModel
 from enum import Enum
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 router = APIRouter(tags=["kitchen"])
 
@@ -110,7 +110,7 @@ async def list_orders(
         "preparing": await db.kitchen_orders.count_documents({"status": OrderStatus.preparing}),
         "ready": await db.kitchen_orders.count_documents({"status": OrderStatus.ready}),
         "today_total": await db.kitchen_orders.count_documents({
-            "created_at": {"$gte": datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).isoformat()}
+            "created_at": {"$gte": datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0).isoformat()}
         }),
     }
     
@@ -181,7 +181,7 @@ async def cancel_order(order_id: str):
 # Gunluk Ozet
 @router.get("/kitchen/summary")
 async def get_daily_summary():
-    today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+    today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
     
     pipeline = [
         {"$match": {"created_at": {"$gte": today_start}}},
@@ -195,7 +195,7 @@ async def get_daily_summary():
     result = await db.kitchen_orders.aggregate(pipeline).to_list(10)
     
     summary = {
-        "date": datetime.now().strftime("%Y-%m-%d"),
+        "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         "by_status": {r["_id"]: {"count": r["count"], "items": r["total_items"]} for r in result},
         "total_orders": sum(r["count"] for r in result),
         "total_items": sum(r["total_items"] for r in result),
@@ -229,7 +229,7 @@ async def get_notifications():
     ).sort("created_at", 1).to_list(10)
     
     # 15 dakikadan fazla bekleyen siparisler
-    fifteen_min_ago = (datetime.now() - timedelta(minutes=15)).isoformat()
+    fifteen_min_ago = (datetime.now(timezone.utc) - timedelta(minutes=15)).isoformat()
     delayed_orders = await db.kitchen_orders.find(
         {"status": OrderStatus.pending, "created_at": {"$lt": fifteen_min_ago}},
         {"_id": 0}

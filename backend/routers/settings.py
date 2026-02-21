@@ -281,7 +281,7 @@ async def dashboard_stats():
 
     # Today's data
     from datetime import datetime, timedelta, timezone
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     todays_checkins = await db.reservations.count_documents({
         "check_in": today,
@@ -304,7 +304,7 @@ async def dashboard_stats():
     )
 
     # Weekly occupancy trend (last 7 days)
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     weekly_trend = []
     day_names_tr = ["Pzt", "Sal", "Car", "Per", "Cum", "Cmt", "Paz"]
     for i in range(6, -1, -1):
