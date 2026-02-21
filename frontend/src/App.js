@@ -1,13 +1,15 @@
-import React, { useState, useEffect, Suspense, lazy } from 'react';
+import React, { useState, useEffect, Suspense, lazy, useCallback } from 'react';
+import { BrowserRouter, Routes, Route, useNavigate, useLocation, Navigate, Outlet } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, BedDouble, Users, MessageCircle, CheckSquare,
   Calendar, Sparkles, BookOpen, UtensilsCrossed, Menu, ChevronLeft,
-  CalendarCheck, UserCog, Mail, MapPin, Settings, Star, Heart, LogOut, QrCode, Share2,
-  Globe, Bell, FileText
+  CalendarCheck, UserCog, Mail, MapPin, Settings, Star, TrendingUp, Heart, LogOut, QrCode, Share2,
+  Globe, Bell, DollarSign
 } from 'lucide-react';
 
-import { setAuthToken, getMe } from './api';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { LanguageProvider, useLanguage } from './hooks/useLanguage';
 import LoginPage from './pages/LoginPage';
 import PublicMenuPage from './pages/PublicMenuPage';
@@ -21,6 +23,7 @@ const TasksPage = lazy(() => import('./pages/TasksPage'));
 const EventsPage = lazy(() => import('./pages/EventsPage'));
 const HousekeepingPage = lazy(() => import('./pages/HousekeepingPage'));
 const KnowledgePage = lazy(() => import('./pages/KnowledgeBasePage'));
+const MenuPage = lazy(() => import('./pages/MenuPage'));
 const MessagesPage = lazy(() => import('./pages/MessagesPage'));
 const ReservationsPage = lazy(() => import('./pages/ReservationsPage'));
 const StaffPage = lazy(() => import('./pages/StaffPage'));
@@ -28,117 +31,165 @@ const CampaignsPage = lazy(() => import('./pages/CampaignsPage'));
 const FocaGuidePage = lazy(() => import('./pages/FocaGuidePage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const ReviewsPage = lazy(() => import('./pages/ReviewsPage'));
+const PricingPage = lazy(() => import('./pages/PricingPage'));
 const TableReservationsPage = lazy(() => import('./pages/TableReservationsPage'));
 const LifecyclePage = lazy(() => import('./pages/LifecyclePage'));
 const AutomationPage = lazy(() => import('./pages/AutomationPage'));
 const SocialMediaPage = lazy(() => import('./pages/SocialMediaPage'));
+const KitchenPage = lazy(() => import('./pages/KitchenPage'));
 const WhatsAppPage = lazy(() => import('./pages/WhatsAppPage'));
+const RevenueManagementPage = lazy(() => import('./pages/RevenueManagementPage'));
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
 const AuditSecurityPage = lazy(() => import('./pages/AuditSecurityPage'));
 const HotelRunnerPage = lazy(() => import('./pages/HotelRunnerPage'));
-const OrganizationPage = lazy(() => import('./pages/OrganizationPage'));
-const ProposalsPage = lazy(() => import('./pages/ProposalsPage'));
+const FinancialsPage = lazy(() => import('./pages/FinancialsPage'));
 
 const NAV_CONFIG = [
   {
     labelKey: 'general',
     items: [
-      { id: 'dashboard', nameKey: 'dashboard', icon: LayoutDashboard },
-      { id: 'reservations', nameKey: 'reservations', icon: CalendarCheck },
-      { id: 'rooms', nameKey: 'rooms', icon: BedDouble },
-      { id: 'guests', nameKey: 'guests', icon: Users },
-      { id: 'analytics', nameKey: 'analytics', icon: LayoutDashboard },
+      { id: 'dashboard', path: '/admin', nameKey: 'dashboard', icon: LayoutDashboard },
+      { id: 'reservations', path: '/admin/reservations', nameKey: 'reservations', icon: CalendarCheck },
+      { id: 'rooms', path: '/admin/rooms', nameKey: 'rooms', icon: BedDouble },
+      { id: 'guests', path: '/admin/guests', nameKey: 'guests', icon: Users },
+      { id: 'pricing', path: '/admin/pricing', nameKey: 'pricing', icon: TrendingUp },
+      { id: 'revenue', path: '/admin/revenue', nameKey: 'revenue', icon: TrendingUp },
+      { id: 'analytics', path: '/admin/analytics', nameKey: 'analytics', icon: LayoutDashboard },
+      { id: 'financials', path: '/admin/financials', nameKey: 'financials', icon: DollarSign },
     ],
   },
   {
     labelKey: 'communication',
     items: [
-      { id: 'chatbot', nameKey: 'chatbot', icon: Sparkles },
-      { id: 'messages', nameKey: 'messages', icon: MessageCircle },
-      { id: 'whatsapp', nameKey: 'whatsapp', icon: MessageCircle },
-      { id: 'campaigns', nameKey: 'campaigns', icon: Mail },
-      { id: 'reviews', nameKey: 'reviews', icon: Star },
-      { id: 'lifecycle', nameKey: 'lifecycle', icon: Heart },
-      { id: 'social', nameKey: 'social', icon: Share2 },
+      { id: 'chatbot', path: '/admin/chatbot', nameKey: 'chatbot', icon: Sparkles },
+      { id: 'messages', path: '/admin/messages', nameKey: 'messages', icon: MessageCircle },
+      { id: 'whatsapp', path: '/admin/whatsapp', nameKey: 'whatsapp', icon: MessageCircle },
+      { id: 'campaigns', path: '/admin/campaigns', nameKey: 'campaigns', icon: Mail },
+      { id: 'reviews', path: '/admin/reviews', nameKey: 'reviews', icon: Star },
+      { id: 'lifecycle', path: '/admin/lifecycle', nameKey: 'lifecycle', icon: Heart },
+      { id: 'social', path: '/admin/social', nameKey: 'social', icon: Share2 },
     ],
   },
   {
     labelKey: 'operations',
     items: [
-      { id: 'tasks', nameKey: 'tasks', icon: CheckSquare },
-      { id: 'events', nameKey: 'events', icon: Calendar },
-      { id: 'housekeeping', nameKey: 'housekeeping', icon: BedDouble },
-      { id: 'staff', nameKey: 'staff', icon: UserCog },
-      { id: 'table_reservations', nameKey: 'table_reservations', icon: UtensilsCrossed },
-      { id: 'organization', nameKey: 'organization', icon: Heart },
-      { id: 'proposals', nameKey: 'proposals', icon: FileText },
+      { id: 'tasks', path: '/admin/tasks', nameKey: 'tasks', icon: CheckSquare },
+      { id: 'events', path: '/admin/events', nameKey: 'events', icon: Calendar },
+      { id: 'housekeeping', path: '/admin/housekeeping', nameKey: 'housekeeping', icon: BedDouble },
+      { id: 'staff', path: '/admin/staff', nameKey: 'staff', icon: UserCog },
+      { id: 'table_reservations', path: '/admin/table-reservations', nameKey: 'table_reservations', icon: UtensilsCrossed },
+      { id: 'kitchen', path: '/admin/kitchen', nameKey: 'kitchen', icon: UtensilsCrossed },
     ],
   },
   {
     labelKey: 'integrations',
     items: [
-      { id: 'hotelrunner', nameKey: 'hotelrunner', icon: Globe },
+      { id: 'hotelrunner', path: '/admin/hotelrunner', nameKey: 'hotelrunner', icon: Globe },
     ],
   },
   {
     labelKey: 'information',
     items: [
-      { id: 'knowledge', nameKey: 'knowledge', icon: BookOpen },
-      { id: 'menu', nameKey: 'menu', icon: QrCode },
-      { id: 'guide', nameKey: 'guide', icon: MapPin },
+      { id: 'knowledge', path: '/admin/knowledge', nameKey: 'knowledge', icon: BookOpen },
+      { id: 'menu', path: '/admin/menu', nameKey: 'menu', icon: QrCode },
+      { id: 'guide', path: '/admin/guide', nameKey: 'guide', icon: MapPin },
     ],
   },
   {
     labelKey: 'system',
     items: [
-      { id: 'automation', nameKey: 'automation', icon: Settings },
-      { id: 'audit', nameKey: 'audit', icon: Settings },
-      { id: 'settings', nameKey: 'settings', icon: Settings },
+      { id: 'automation', path: '/admin/automation', nameKey: 'automation', icon: Settings },
+      { id: 'audit', path: '/admin/audit', nameKey: 'audit', icon: Settings },
+      { id: 'settings', path: '/admin/settings', nameKey: 'settings', icon: Settings },
     ],
   },
 ];
 
-const PAGES = {
-  dashboard: Dashboard,
-  rooms: RoomsPage,
-  guests: GuestsPage,
-  chatbot: ChatbotPage,
-  messages: MessagesPage,
-  tasks: TasksPage,
-  events: EventsPage,
-  housekeeping: HousekeepingPage,
-  knowledge: KnowledgePage,
-  reservations: ReservationsPage,
-  staff: StaffPage,
-  campaigns: CampaignsPage,
-  reviews: ReviewsPage,
-  table_reservations: TableReservationsPage,
-  lifecycle: LifecyclePage,
-  automation: AutomationPage,
-  social: SocialMediaPage,
-  whatsapp: WhatsAppPage,
-  guide: FocaGuidePage,
-  settings: SettingsPage,
-  analytics: AnalyticsPage,
-  audit: AuditSecurityPage,
-  hotelrunner: HotelRunnerPage,
-  organization: OrganizationPage,
-  proposals: ProposalsPage,
-};
-
 export default function App() {
-  const path = window.location.pathname;
+  return (
+    <ErrorBoundary>
+      <BrowserRouter>
+        <AuthProvider>
+          <LanguageProvider>
+            <Routes>
+              {/* Public routes */}
+              <Route path="/" element={<PublicMenuPage />} />
+              <Route path="/menu" element={<PublicMenuPage />} />
+              <Route path="/login" element={<LoginRoute />} />
 
-  // Public menu: / veya /menu
-  if (path === '/' || path === '/menu') {
-    return <PublicMenuPage />;
+              {/* Admin routes */}
+              <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+                <Route index element={<Dashboard />} />
+                <Route path="reservations" element={<PageWrapper><ReservationsPage /></PageWrapper>} />
+                <Route path="rooms" element={<PageWrapper><RoomsPage /></PageWrapper>} />
+                <Route path="guests" element={<PageWrapper><GuestsPage /></PageWrapper>} />
+                <Route path="pricing" element={<PageWrapper><PricingPage /></PageWrapper>} />
+                <Route path="revenue" element={<PageWrapper><RevenueManagementPage /></PageWrapper>} />
+                <Route path="analytics" element={<PageWrapper><AnalyticsPage /></PageWrapper>} />
+                <Route path="financials" element={<PageWrapper><FinancialsPage /></PageWrapper>} />
+                <Route path="chatbot" element={<PageWrapper><ChatbotPage /></PageWrapper>} />
+                <Route path="messages" element={<PageWrapper><MessagesPage /></PageWrapper>} />
+                <Route path="whatsapp" element={<PageWrapper><WhatsAppPage /></PageWrapper>} />
+                <Route path="campaigns" element={<PageWrapper><CampaignsPage /></PageWrapper>} />
+                <Route path="reviews" element={<PageWrapper><ReviewsPage /></PageWrapper>} />
+                <Route path="lifecycle" element={<PageWrapper><LifecyclePage /></PageWrapper>} />
+                <Route path="social" element={<PageWrapper><SocialMediaPage /></PageWrapper>} />
+                <Route path="tasks" element={<PageWrapper><TasksPage /></PageWrapper>} />
+                <Route path="events" element={<PageWrapper><EventsPage /></PageWrapper>} />
+                <Route path="housekeeping" element={<PageWrapper><HousekeepingPage /></PageWrapper>} />
+                <Route path="staff" element={<PageWrapper><StaffPage /></PageWrapper>} />
+                <Route path="table-reservations" element={<PageWrapper><TableReservationsPage /></PageWrapper>} />
+                <Route path="kitchen" element={<PageWrapper><KitchenPage /></PageWrapper>} />
+                <Route path="hotelrunner" element={<PageWrapper><HotelRunnerPage /></PageWrapper>} />
+                <Route path="knowledge" element={<PageWrapper><KnowledgePage /></PageWrapper>} />
+                <Route path="menu" element={<PageWrapper><MenuPage /></PageWrapper>} />
+                <Route path="guide" element={<PageWrapper><FocaGuidePage /></PageWrapper>} />
+                <Route path="automation" element={<PageWrapper><AutomationPage /></PageWrapper>} />
+                <Route path="audit" element={<PageWrapper><AuditSecurityPage /></PageWrapper>} />
+                <Route path="settings" element={<PageWrapper><SettingsPage /></PageWrapper>} />
+              </Route>
+
+              {/* Catch-all: redirect to public menu */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </LanguageProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
+  );
+}
+
+function LoginRoute() {
+  const { user } = useAuth();
+  if (user) return <Navigate to="/admin" replace />;
+  return <LoginPage />;
+}
+
+function ProtectedRoute({ children }) {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <div className="min-h-screen bg-[#0a0a0f]" />;
   }
 
-  // Admin panel: /admin ve altı
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
+
+function PageWrapper({ children }) {
   return (
-    <LanguageProvider>
-      <AdminApp />
-    </LanguageProvider>
+    <ErrorBoundary>
+      <Suspense fallback={
+        <div className="flex items-center justify-center h-full">
+          <div className="w-8 h-8 border-2 border-[#C4972A] border-t-transparent rounded-full animate-spin" />
+        </div>
+      }>
+        {children}
+      </Suspense>
+    </ErrorBoundary>
   );
 }
 
@@ -193,7 +244,6 @@ function NotificationBell({ compact }) {
     if (typeof Notification !== 'undefined') {
       setPermission(Notification.permission);
     }
-    // Fetch today's notifications count
     import('./api').then(({ getTodayNotifications }) => {
       getTodayNotifications().then(r => setCount(r.data?.total || 0)).catch(() => {});
     });
@@ -236,41 +286,26 @@ function NotificationBell({ compact }) {
   );
 }
 
-function AdminApp() {
-  const [page, setPage] = useState('dashboard');
+function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [user, setUser] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  const { user, logout, hasPermission } = useAuth();
   const { t } = useLanguage();
+  const navigate = useNavigate();
+  const location = useLocation();
 
+  // Listen for auth:logout event from API interceptor
   useEffect(() => {
-    const saved = localStorage.getItem('kozbeyli_user');
-    const token = localStorage.getItem('kozbeyli_token');
-    if (saved && token) {
-      setUser(JSON.parse(saved));
-      getMe().then(r => {
-        const u = r.data;
-        setUser(u);
-        localStorage.setItem('kozbeyli_user', JSON.stringify(u));
-      }).catch(() => {
-        setAuthToken(null);
-        setUser(null);
-      });
-    }
-    setAuthLoading(false);
-  }, []);
+    const handleLogout = () => {
+      logout();
+      navigate('/login');
+    };
+    window.addEventListener('auth:logout', handleLogout);
+    return () => window.removeEventListener('auth:logout', handleLogout);
+  }, [logout, navigate]);
 
-  const handleLogin = (userData) => setUser(userData);
-  const handleLogout = () => { setAuthToken(null); setUser(null); };
-
-  if (authLoading) return <div className="min-h-screen bg-[#0a0a0f]" />;
-  if (!user) return <LoginPage onLogin={handleLogin} />;
-
-  const hasPermission = (pageId) => {
-    if (!user) return false;
-    if (user.role === 'admin') return true;
-    const perms = user.permissions || [];
-    return perms.includes('*') || perms.includes(pageId);
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
   };
 
   const filteredSections = NAV_CONFIG.map(section => ({
@@ -278,13 +313,12 @@ function AdminApp() {
     items: section.items.filter(item => hasPermission(item.id)),
   })).filter(section => section.items.length > 0);
 
-  const PageComponent = PAGES[page] || Dashboard;
-
-  const LazyFallback = (
-    <div className="flex items-center justify-center h-full">
-      <div className="w-8 h-8 border-2 border-[#C4972A] border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
+  const isActive = (item) => {
+    if (item.path === '/admin') {
+      return location.pathname === '/admin';
+    }
+    return location.pathname.startsWith(item.path);
+  };
 
   return (
     <div className="flex h-screen bg-[#0a0a0f]" data-testid="app-root">
@@ -297,11 +331,15 @@ function AdminApp() {
         <div className="p-4 border-b border-[#C4972A]/10">
           <div className="flex items-center gap-3">
             <img src="/logo.jpeg" alt="Kozbeyli Konagi"
-              className="w-10 h-10 rounded-lg flex-shrink-0 object-cover" data-testid="sidebar-logo" />
+              className="w-10 h-10 rounded-lg flex-shrink-0 object-cover cursor-pointer"
+              onClick={() => navigate('/admin')}
+              data-testid="sidebar-logo" />
             <AnimatePresence>
               {sidebarOpen && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                  <h1 className="text-base font-bold text-[#C4972A]" style={{ fontFamily: 'var(--font-heading)' }}>
+                  <h1 className="text-base font-bold text-[#C4972A] cursor-pointer"
+                    onClick={() => navigate('/admin')}
+                    style={{ fontFamily: 'var(--font-heading)' }}>
                     Kozbeyli Konagi
                   </h1>
                   <p className="text-xs text-[#7e7e8a]">{t('hotel_management')}</p>
@@ -326,11 +364,11 @@ function AdminApp() {
               <div className="space-y-0.5">
                 {section.items.map((item) => {
                   const Icon = item.icon;
-                  const active = page === item.id;
+                  const active = isActive(item);
                   return (
                     <button
                       key={item.id}
-                      onClick={() => setPage(item.id)}
+                      onClick={() => navigate(item.path)}
                       className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${
                         active
                           ? 'bg-[#C4972A]/15 text-[#C4972A] gold-glow'
@@ -357,12 +395,8 @@ function AdminApp() {
 
         {/* Footer */}
         <div className="p-3 border-t border-[#C4972A]/10 space-y-2">
-          {/* Notification Bell */}
           <NotificationBell compact={!sidebarOpen} />
-
-          {/* Language Selector */}
           <LanguageSelector compact={!sidebarOpen} />
-
           {sidebarOpen && user && (
             <div className="flex items-center justify-between px-2 py-1">
               <div>
@@ -389,19 +423,22 @@ function AdminApp() {
       <main className="flex-1 overflow-y-auto">
         <AnimatePresence mode="wait">
           <motion.div
-            key={page}
+            key={location.pathname}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.2 }}
             className="h-full"
           >
-            <Suspense fallback={LazyFallback}>
-              <PageComponent onNavigate={setPage} />
-            </Suspense>
+            <Outlet />
           </motion.div>
         </AnimatePresence>
       </main>
     </div>
   );
+}
+
+// Renders the matched child route from the Routes definition
+function AdminContent() {
+  return <Outlet />;
 }

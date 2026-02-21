@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
-import { login, setAuthToken, setupAdmin } from '../api';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { setupAdmin } from '../api';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Lock, User, AlertCircle } from 'lucide-react';
 
-export default function LoginPage({ onLogin }) {
+export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [setupMsg, setSetupMsg] = useState('');
+  const { loginUser } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -17,12 +21,15 @@ export default function LoginPage({ onLogin }) {
     setLoading(true);
     setError('');
     try {
-      const res = await login({ username, password });
-      setAuthToken(res.data.token);
-      localStorage.setItem('kozbeyli_user', JSON.stringify(res.data.user));
-      onLogin(res.data.user);
+      await loginUser(username, password);
+      navigate('/admin');
     } catch (err) {
-      setError(err.response?.data?.detail || 'Giris basarisiz');
+      const detail = err.response?.data?.detail;
+      if (err.response?.status === 429) {
+        setError('Cok fazla deneme yaptiniz. Lutfen biraz bekleyin.');
+      } else {
+        setError(detail || 'Giris basarisiz');
+      }
     }
     setLoading(false);
   };
@@ -31,11 +38,9 @@ export default function LoginPage({ onLogin }) {
     try {
       const res = await setupAdmin();
       if (res.data.has_users) {
-        // System already set up
         setSetupMsg('Sistem zaten kurulmus. Mevcut admin bilgilerini kullanin.');
       } else if (res.data.username && res.data.password) {
-        // New admin created
-        setSetupMsg(`Admin olusturuldu! Kullanici: ${res.data.username} / Sifre: ${res.data.password}`);
+        setSetupMsg(`Admin olusturuldu! Kullanici: ${res.data.username} / Sifre: ${res.data.password} — Bu sifre sadece bir kez gosterilir!`);
       } else {
         setSetupMsg(res.data.message || 'Kurulum tamamlandi');
       }
@@ -103,9 +108,6 @@ export default function LoginPage({ onLogin }) {
             Ilk kurulum? Admin olustur
           </button>
           {setupMsg && <p className="text-xs text-[#C4972A] mt-2 bg-[#C4972A]/10 rounded p-2" data-testid="setup-message">{setupMsg}</p>}
-          <p className="text-xs text-[#4a4a55] mt-3">
-            Varsayilan: admin / kozbeyli2026
-          </p>
         </div>
       </div>
     </div>

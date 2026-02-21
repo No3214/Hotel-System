@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  # ==================== MongoDB ====================
+  mongodb:
+    image: mongo:7
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: kozbeyli_konagi
+    volumes:
+      - mongodb_data:/data/db
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh --quiet
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - hotel-network
+
+  # ==================== Backend API ====================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      - MONGO_URL=mongodb://mongodb:27017
+      - DB_NAME=kozbeyli_konagi
+      - ENVIRONMENT=production
+      - CORS_ORIGINS=http://localhost:3000,http://localhost,https://panel.kozbeylikonagi.com
+    ports:
+      - "8000:8000"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - hotel-network
+
+  # ==================== Frontend ====================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_BACKEND_URL: ""
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - hotel-network
+
+  # ==================== Nginx Reverse Proxy ====================
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - certbot_data:/var/www/certbot:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - hotel-network
+
+volumes:
+  mongodb_data:
+    driver: local
+  certbot_data:
+    driver: local
+
+networks:
+  hotel-network:
+    driver: bridge

@@ -11,9 +11,10 @@ logger = logging.getLogger(__name__)
 
 # Yapilandirma
 RATE_LIMITS = {
-    "chatbot": {"max_requests": 15, "window_seconds": 60},
-    "reviews": {"max_requests": 10, "window_seconds": 60},
-    "default": {"max_requests": 60, "window_seconds": 60},
+    "login": {"max_requests": 5, "window_seconds": 300},     # 5 attempts per 5 min
+    "chatbot": {"max_requests": 15, "window_seconds": 60},   # 15 per minute
+    "reviews": {"max_requests": 10, "window_seconds": 60},   # 10 per minute
+    "default": {"max_requests": 60, "window_seconds": 60},   # 60 per minute
 }
 
 # In-memory istek sayaci
