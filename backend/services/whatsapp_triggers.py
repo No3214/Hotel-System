@@ -6,7 +6,7 @@ import logging
 from datetime import datetime, timezone, timedelta
 
 from database import db
-from helpers import utcnow
+from helpers import utcnow, new_id
 from services.whatsapp_service import (
     send_checkout_thanks,
     send_reservation_reminder,
@@ -80,7 +80,7 @@ async def trigger_cleaning_notification(room_number: str, guest_name: str, prior
     if not cleaning_phone:
         logger.warning("No cleaning team phone configured")
         await db.group_notifications.insert_one({
-            "id": (await __import__('helpers')).new_id() if False else "",
+            "id": new_id(),
             "type": "cleaning",
             "message": f"Oda {room_number} temizlik bekliyor ({guest_name})",
             "status": "pending",

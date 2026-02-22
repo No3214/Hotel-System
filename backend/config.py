@@ -26,16 +26,19 @@ if _missing:
     print("Ornek: cp .env.example .env && nano .env")
     sys.exit(1)
 
+# ==================== ENVIRONMENT ====================
+ENVIRONMENT = os.environ.get('ENVIRONMENT', 'development')
+DEBUG = os.environ.get('DEBUG', 'false').lower() == 'true'
+
 # ==================== CORS ====================
 _cors_raw = os.environ.get('CORS_ORIGINS', '')
 if _cors_raw and _cors_raw.strip() != '*':
     CORS_ORIGINS = [origin.strip() for origin in _cors_raw.split(',') if origin.strip()]
+elif ENVIRONMENT == 'production':
+    CORS_ORIGINS = []  # Must be explicitly configured in production
+    logger.warning("CORS_ORIGINS not set in production! Set CORS_ORIGINS env var.")
 else:
-    CORS_ORIGINS = ['*']
-
-# ==================== ENVIRONMENT ====================
-ENVIRONMENT = os.environ.get('ENVIRONMENT', 'development')
-DEBUG = os.environ.get('DEBUG', 'false').lower() == 'true'
+    CORS_ORIGINS = ['http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:3000']
 
 # ==================== AI / LLM KEYS ====================
 GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY', '')
