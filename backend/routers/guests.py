@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from typing import Optional
 from database import db
-from helpers import utcnow, new_id, clean_doc
+from helpers import utcnow, new_id, clean_doc, escape_regex
 from models import GuestCreate
 
 router = APIRouter(tags=["guests"])
@@ -11,10 +11,11 @@ router = APIRouter(tags=["guests"])
 async def list_guests(search: Optional[str] = None, limit: int = 50, skip: int = 0):
     query = {}
     if search:
+        safe_search = escape_regex(search)
         query["$or"] = [
-            {"name": {"$regex": search, "$options": "i"}},
-            {"email": {"$regex": search, "$options": "i"}},
-            {"phone": {"$regex": search, "$options": "i"}},
+            {"name": {"$regex": safe_search, "$options": "i"}},
+            {"email": {"$regex": safe_search, "$options": "i"}},
+            {"phone": {"$regex": safe_search, "$options": "i"}},
         ]
     guests = await db.guests.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
     total = await db.guests.count_documents(query)

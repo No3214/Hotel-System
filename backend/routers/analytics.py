@@ -7,7 +7,15 @@ from services.cache_service import cache_get, cache_set
 
 router = APIRouter(tags=["analytics"])
 
-TOTAL_ROOMS = 16
+_rooms_count_cache = {"value": None}
+
+
+async def get_total_rooms() -> int:
+    """Get total room count from DB, cached after first call."""
+    if _rooms_count_cache["value"] is None:
+        count = await db.rooms.count_documents({})
+        _rooms_count_cache["value"] = count if count > 0 else 16
+    return _rooms_count_cache["value"]
 MONTH_NAMES_TR = ["", "Oca", "Sub", "Mar", "Nis", "May", "Haz", "Tem", "Agu", "Eyl", "Eki", "Kas", "Ara"]
 
 
@@ -15,7 +23,7 @@ async def calc_revenue(date_from: str, date_to: str) -> float:
     reservations = await db.reservations.find({
         "check_in": {"$gte": date_from, "$lte": date_to},
         "status": {"$in": ["confirmed", "checked_in", "checked_out"]},
-    }, {"_id": 0, "total_price": 1}).to_list(2000)
+    }, {"_id": 0, "total_price": 1}).to_list(5000)
     return sum(r.get("total_price", 0) or 0 for r in reservations)
 
 
@@ -27,7 +35,8 @@ async def calc_occupancy(date_from: str, date_to: str) -> float:
         return 0
 
     total_days = (d_to - d_from).days + 1
-    total_room_nights = TOTAL_ROOMS * total_days
+    total_rooms = await get_total_rooms()
+    total_room_nights = total_rooms * total_days
     if total_room_nights <= 0:
         return 0
 
@@ -35,7 +44,7 @@ async def calc_occupancy(date_from: str, date_to: str) -> float:
         "check_in": {"$lte": date_to},
         "check_out": {"$gte": date_from},
         "status": {"$in": ["confirmed", "checked_in", "checked_out"]},
-    }, {"_id": 0, "check_in": 1, "check_out": 1}).to_list(2000)
+    }, {"_id": 0, "check_in": 1, "check_out": 1}).to_list(5000)
 
     occupied_nights = 0
     for r in reservations:
@@ -55,7 +64,7 @@ async def calc_sold_nights(date_from: str, date_to: str) -> int:
     reservations = await db.reservations.find({
         "check_in": {"$gte": date_from, "$lte": date_to},
         "status": {"$in": ["confirmed", "checked_in", "checked_out"]},
-    }, {"_id": 0, "check_in": 1, "check_out": 1}).to_list(2000)
+    }, {"_id": 0, "check_in": 1, "check_out": 1}).to_list(5000)
 
     total = 0
     for r in reservations:
@@ -94,7 +103,8 @@ async def get_kpi_metrics(
     adr = round(daily_revenue / sold_nights) if sold_nights > 0 else 0
 
     total_days = (date_to - date_from).days + 1
-    total_room_nights = TOTAL_ROOMS * total_days
+    total_rooms = await get_total_rooms()
+    total_room_nights = total_rooms * total_days
     revpar = round(daily_revenue / total_room_nights) if total_room_nights > 0 else 0
 
     # Previous period
@@ -174,7 +184,7 @@ async def get_booking_sources(
 
     reservations = await db.reservations.find({
         "created_at": {"$gte": date_from.isoformat(), "$lte": date_to.isoformat() + "T23:59:59"},
-    }, {"_id": 0, "source": 1, "total_price": 1}).to_list(2000)
+    }, {"_id": 0, "source": 1, "total_price": 1}).to_list(5000)
 
     sources_data = {}
     for r in reservations:
@@ -217,17 +227,7 @@ async def get_occupancy_heatmap(year: Optional[int] = Query(default=None)):
     if not year:
         year = date.today().year
 
-    year_start = date(year, 1, 1).isoformat()
-    year_end = date(year, 12, 31).isoformat()
-    all_reservations = await db.reservations.find(
-        {
-            "check_in": {"$lte": year_end},
-            "check_out": {"$gte": year_start},
-            "status": {"$in": ["confirmed", "checked_in", "checked_out"]},
-        },
-        {"_id": 0, "check_in": 1, "check_out": 1},
-    ).to_list(2000)
-
+    total_rooms = await get_total_rooms()
     heatmap = []
     for month in range(1, 13):
         month_data = []
@@ -238,11 +238,12 @@ async def get_occupancy_heatmap(year: Optional[int] = Query(default=None)):
                 break
 
             date_str = current_date.isoformat()
-            booked = sum(
-                1 for r in all_reservations
-                if r.get("check_in", "") <= date_str and r.get("check_out", "") >= date_str
-            )
-            occupancy = round(booked / TOTAL_ROOMS * 100, 1)
+            booked = await db.reservations.count_documents({
+                "check_in": {"$lte": date_str},
+                "check_out": {"$gte": date_str},
+                "status": {"$in": ["confirmed", "checked_in", "checked_out"]},
+            })
+            occupancy = round(booked / total_rooms * 100, 1)
             if occupancy >= 80:
                 level = "high"
             elif occupancy >= 60:
@@ -328,7 +329,7 @@ async def get_guest_satisfaction(period: str = Query(default="30d")):
 
     reviews = await db.reviews.find({
         "created_at": {"$gte": cutoff},
-    }, {"_id": 0}).to_list(500)
+    }, {"_id": 0}).to_list(1000)
 
     if not reviews:
         return {

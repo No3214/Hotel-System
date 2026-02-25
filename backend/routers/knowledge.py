@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from typing import Optional
 from database import db
-from helpers import utcnow, new_id, clean_doc
+from helpers import utcnow, new_id, clean_doc, escape_regex
 from models import KnowledgeCreate
 
 router = APIRouter(tags=["knowledge"])
@@ -13,9 +13,10 @@ async def list_knowledge(category: Optional[str] = None, search: Optional[str] =
     if category:
         query["category"] = category
     if search:
+        safe_search = escape_regex(search)
         query["$or"] = [
-            {"title": {"$regex": search, "$options": "i"}},
-            {"content": {"$regex": search, "$options": "i"}},
+            {"title": {"$regex": safe_search, "$options": "i"}},
+            {"content": {"$regex": safe_search, "$options": "i"}},
         ]
     items = await db.knowledge.find(query, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
     total = await db.knowledge.count_documents(query)

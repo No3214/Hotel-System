@@ -5,6 +5,7 @@ import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Users, Plus, Search, Phone, Mail, Globe, Award, TrendingUp, Star, Crown, ArrowUp, RefreshCw } from 'lucide-react';
+import { guestSchema, validateForm } from '../lib/validations';
 
 const LOYALTY_ICONS = {
   bronze: Award,
@@ -30,6 +31,7 @@ export default function GuestsPage() {
   const [loyaltyStats, setLoyaltyStats] = useState(null);
   const [tab, setTab] = useState('all');
   const [form, setForm] = useState({ name: '', email: '', phone: '', nationality: '', notes: '' });
+  const [errors, setErrors] = useState({});
 
   const load = () => {
     getGuests({ search: search || undefined })
@@ -42,8 +44,13 @@ export default function GuestsPage() {
   useEffect(() => { load(); }, [search]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCreate = async () => {
-    if (!form.name) return;
-    await createGuest(form);
+    const { success, errors: validationErrors, data } = validateForm(guestSchema, form);
+    if (!success) {
+      setErrors(validationErrors);
+      return;
+    }
+    setErrors({});
+    await createGuest(data);
     setForm({ name: '', email: '', phone: '', nationality: '', notes: '' });
     setOpen(false);
     load();
@@ -93,10 +100,16 @@ export default function GuestsPage() {
               <DialogTitle className="text-[#C4972A]">Yeni Misafir</DialogTitle>
             </DialogHeader>
             <div className="space-y-3">
-              <Input placeholder="Ad Soyad *" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
-                className="bg-white/5 border-white/10" data-testid="guest-name-input" />
-              <Input placeholder="E-posta" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}
-                className="bg-white/5 border-white/10" />
+              <div>
+                <Input placeholder="Ad Soyad *" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
+                  className={`bg-white/5 ${errors.name ? 'border-red-500' : 'border-white/10'}`} data-testid="guest-name-input" />
+                {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name}</p>}
+              </div>
+              <div>
+                <Input placeholder="E-posta" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}
+                  className={`bg-white/5 ${errors.email ? 'border-red-500' : 'border-white/10'}`} />
+                {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email}</p>}
+              </div>
               <Input placeholder="Telefon" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })}
                 className="bg-white/5 border-white/10" />
               <Input placeholder="Uyruk" value={form.nationality} onChange={e => setForm({ ...form, nationality: e.target.value })}

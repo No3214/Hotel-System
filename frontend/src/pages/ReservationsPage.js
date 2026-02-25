@@ -6,6 +6,7 @@ import { Badge } from '../components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Calendar, Plus, Trash2, User, ArrowRight, Check } from 'lucide-react';
+import { reservationSchema, validateForm } from '../lib/validations';
 
 const STATUS_CONFIG = {
   pending: { label: 'Bekliyor', color: 'bg-yellow-500/20 text-yellow-400' },
@@ -26,6 +27,7 @@ export default function ReservationsPage() {
   const [filter, setFilter] = useState('all');
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ guest_id: '', room_type: '', check_in: '', check_out: '', guests_count: 1, notes: '', total_price: '' });
+  const [errors, setErrors] = useState({});
 
   const load = () => {
     const params = filter !== 'all' ? { status: filter } : {};
@@ -39,11 +41,16 @@ export default function ReservationsPage() {
   }, []);
 
   const handleCreate = async () => {
-    if (!form.guest_id || !form.room_type || !form.check_in || !form.check_out) return;
+    const { success, errors: validationErrors, data } = validateForm(reservationSchema, form);
+    if (!success) {
+      setErrors(validationErrors);
+      return;
+    }
+    setErrors({});
     await createReservation({
-      ...form,
-      guests_count: parseInt(form.guests_count) || 1,
-      total_price: form.total_price ? parseFloat(form.total_price) : null,
+      ...data,
+      guests_count: parseInt(data.guests_count) || 1,
+      total_price: data.total_price ? parseFloat(data.total_price) : null,
     });
     setForm({ guest_id: '', room_type: '', check_in: '', check_out: '', guests_count: 1, notes: '', total_price: '' });
     setOpen(false);
@@ -73,30 +80,41 @@ export default function ReservationsPage() {
           <DialogContent className="bg-[#1a1a22] border-[#C4972A]/20">
             <DialogHeader><DialogTitle className="text-[#C4972A]">Yeni Rezervasyon</DialogTitle></DialogHeader>
             <div className="space-y-3">
-              <Select value={form.guest_id} onValueChange={v => setForm({ ...form, guest_id: v })}>
-                <SelectTrigger className="bg-white/5 border-white/10"><SelectValue placeholder="Misafir secin *" /></SelectTrigger>
-                <SelectContent className="bg-[#1a1a22] border-[#C4972A]/20 max-h-48">
-                  {guests.map(g => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <Select value={form.room_type} onValueChange={v => setForm({ ...form, room_type: v })}>
-                <SelectTrigger className="bg-white/5 border-white/10"><SelectValue placeholder="Oda tipi *" /></SelectTrigger>
-                <SelectContent className="bg-[#1a1a22] border-[#C4972A]/20">
-                  {rooms.map(r => <SelectItem key={r.room_id} value={r.room_id}>{r.name_tr} - {r.base_price_try} TL</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <div>
+                <Select value={form.guest_id} onValueChange={v => setForm({ ...form, guest_id: v })}>
+                  <SelectTrigger className={`bg-white/5 ${errors.guest_id ? 'border-red-500' : 'border-white/10'}`}><SelectValue placeholder="Misafir secin *" /></SelectTrigger>
+                  <SelectContent className="bg-[#1a1a22] border-[#C4972A]/20 max-h-48">
+                    {guests.map(g => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                {errors.guest_id && <p className="text-red-400 text-xs mt-1">{errors.guest_id}</p>}
+              </div>
+              <div>
+                <Select value={form.room_type} onValueChange={v => setForm({ ...form, room_type: v })}>
+                  <SelectTrigger className={`bg-white/5 ${errors.room_type ? 'border-red-500' : 'border-white/10'}`}><SelectValue placeholder="Oda tipi *" /></SelectTrigger>
+                  <SelectContent className="bg-[#1a1a22] border-[#C4972A]/20">
+                    {rooms.map(r => <SelectItem key={r.room_id} value={r.room_id}>{r.name_tr} - {r.base_price_try} TL</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                {errors.room_type && <p className="text-red-400 text-xs mt-1">{errors.room_type}</p>}
+              </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="text-xs text-[#7e7e8a] mb-1 block">Giris *</label>
-                  <Input type="date" value={form.check_in} onChange={e => setForm({ ...form, check_in: e.target.value })} className="bg-white/5 border-white/10" data-testid="res-checkin" />
+                  <Input type="date" value={form.check_in} onChange={e => setForm({ ...form, check_in: e.target.value })} className={`bg-white/5 ${errors.check_in ? 'border-red-500' : 'border-white/10'}`} data-testid="res-checkin" />
+                  {errors.check_in && <p className="text-red-400 text-xs mt-1">{errors.check_in}</p>}
                 </div>
                 <div>
                   <label className="text-xs text-[#7e7e8a] mb-1 block">Cikis *</label>
-                  <Input type="date" value={form.check_out} onChange={e => setForm({ ...form, check_out: e.target.value })} className="bg-white/5 border-white/10" data-testid="res-checkout" />
+                  <Input type="date" value={form.check_out} onChange={e => setForm({ ...form, check_out: e.target.value })} className={`bg-white/5 ${errors.check_out ? 'border-red-500' : 'border-white/10'}`} data-testid="res-checkout" />
+                  {errors.check_out && <p className="text-red-400 text-xs mt-1">{errors.check_out}</p>}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <Input type="number" min="1" placeholder="Kisi sayisi" value={form.guests_count} onChange={e => setForm({ ...form, guests_count: e.target.value })} className="bg-white/5 border-white/10" />
+                <div>
+                  <Input type="number" min="1" placeholder="Kisi sayisi" value={form.guests_count} onChange={e => setForm({ ...form, guests_count: e.target.value })} className={`bg-white/5 ${errors.guests_count ? 'border-red-500' : 'border-white/10'}`} />
+                  {errors.guests_count && <p className="text-red-400 text-xs mt-1">{errors.guests_count}</p>}
+                </div>
                 <Input type="number" placeholder="Toplam fiyat (TL)" value={form.total_price} onChange={e => setForm({ ...form, total_price: e.target.value })} className="bg-white/5 border-white/10" />
               </div>
               <Input placeholder="Notlar" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} className="bg-white/5 border-white/10" />

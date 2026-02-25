@@ -7,6 +7,8 @@ import logging
 import time
 import traceback
 
+import uuid as _uuid
+
 from config import CORS_ORIGINS, DB_NAME, ENVIRONMENT, RATE_LIMIT_ENABLED, LOG_LEVEL
 from database import db, client
 from helpers import utcnow
@@ -97,7 +99,9 @@ async def request_logging_middleware(request: Request, call_next):
     else:
         logger.debug(f"{request.method} {request.url.path} -> {response.status_code} ({duration_ms}ms)")
 
+    request_id = request.headers.get("X-Request-ID", str(_uuid.uuid4())[:8])
     response.headers["X-Response-Time"] = f"{duration_ms}ms"
+    response.headers["X-Request-ID"] = request_id
     return response
 
 
@@ -315,6 +319,10 @@ async def startup():
         for room in ROOMS:
             await db.rooms.insert_one({**room, "created_at": utcnow()})
         logger.info("Rooms seeded successfully")
+
+    # Database schema validation
+    from database import apply_schema_validation
+    await apply_schema_validation()
 
     # Database indexing
     from services.database_optimizer import apply_indexes
