@@ -29,7 +29,7 @@ export default function RoomsPage() {
     <div className="p-6 lg:p-8 space-y-6 max-w-[1400px]" data-testid="rooms-page">
       <div>
         <h1 className="text-2xl lg:text-3xl font-bold text-[#C4972A]">Odalar</h1>
-        <p className="text-[#7e7e8a] text-sm mt-1">16 oda - 4 farkli tip</p>
+        <p className="text-[#7e7e8a] text-sm mt-1">16 oda - 8 farkli tip</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

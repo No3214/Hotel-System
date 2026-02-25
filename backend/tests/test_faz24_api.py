@@ -194,7 +194,7 @@ class TestReservationsExtended:
         """POST /api/reservations - Create reservation"""
         res_data = {
             "guest_id": test_guest_id,
-            "room_type": "double",
+            "room_type": "standart-bahce",
             "check_in": "2026-03-01",
             "check_out": "2026-03-05",
             "guests_count": 2,
@@ -205,7 +205,7 @@ class TestReservationsExtended:
         assert response.status_code == 200
         created = response.json()
         assert created["guest_id"] == test_guest_id
-        assert created["room_type"] == "double"
+        assert created["room_type"] == "standart-bahce"
         assert created["status"] == "pending"
         assert created["total_price"] == 12000.0
         assert "id" in created
@@ -252,7 +252,7 @@ class TestReservationsExtended:
     def test_delete_reservation(self, test_guest_id):
         """DELETE /api/reservations/{id} - Delete reservation"""
         # Create reservation
-        res_data = {"guest_id": test_guest_id, "room_type": "single", "check_in": "2026-04-01", "check_out": "2026-04-03"}
+        res_data = {"guest_id": test_guest_id, "room_type": "standart", "check_in": "2026-04-01", "check_out": "2026-04-03"}
         create_response = requests.post(f"{BASE_URL}/api/reservations", json=res_data)
         res_id = create_response.json()["id"]
         

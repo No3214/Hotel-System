@@ -5,19 +5,26 @@ Guncel fiyatlar, mesaj sablonlari ve otel bilgileri
 
 # Guncel Oda Fiyatlari (Nakit/Havale - TL)
 ROOM_PRICES_TRY = {
-    "tek_kisilik": 3000,
-    "cift_kisilik": 3500,
+    "standart": 3500,
+    "standart_bahce_manzarali": 3500,
+    "standart_deniz_manzarali": 3500,
     "uc_kisilik": 5000,
-    "superior": 5500,
     "aile_odasi": 6000,
+    "aile_odasi_balkonlu": 6000,
+    "superior": 5500,
+    "superior_uc_kisilik": 5500,
 }
 
 # Ozel Gun Fiyatlari (14 Subat, Yilbasi vb.)
 SPECIAL_DAY_PRICES_TRY = {
-    "cift_kisilik": 4500,
+    "standart": 4500,
+    "standart_bahce_manzarali": 4500,
+    "standart_deniz_manzarali": 4500,
     "uc_kisilik": 5000,
-    "superior": 5500,
     "aile_odasi": 6000,
+    "aile_odasi_balkonlu": 6000,
+    "superior": 5500,
+    "superior_uc_kisilik": 5500,
 }
 
 # Fix Menu Fiyatlari
@@ -54,11 +61,14 @@ MESSAGE_TEMPLATES = {
 menumuz asagidaki baglanti uzerinden incelenebilmektedir.
 
 Konaklama fiyatlarimiz (serpme kahvalti dahil):
-* Tek kisilik oda: {tek_kisilik} TL
-* Cift kisilik oda: {cift_kisilik} TL
-* Uc kisilik oda: {uc_kisilik} TL
-* Superior oda: {superior} TL
-* Aile odasi: {aile_odasi} TL
+* Standart Oda: {standart} TL
+* Standart Bahce Manzarali Oda: {standart_bahce_manzarali} TL
+* Standart Deniz Manzarali Oda: {standart_deniz_manzarali} TL
+* Uc Kisilik Oda: {uc_kisilik} TL
+* Aile Odasi (4 Kisilik): {aile_odasi} TL
+* Aile Odasi (4 Kisilik) Balkonlu: {aile_odasi_balkonlu} TL
+* Superior Oda: {superior} TL
+* Superior 3 Kisilik Oda: {superior_uc_kisilik} TL
 
 Tum oda fiyatlarimiza serpme kahvalti, sucuklu yumurta ve pisi dahildir.
 
@@ -78,10 +88,10 @@ Bu ozel gunde restoranimizda yalnizca fix menu hizmeti sunulacak olup, alakart s
 * Kisi basi alkol ve yemek dahil: 3.500 TL
 
 Konaklama fiyatlarimiz (kahvalti dahil):
-* Cift kisilik oda: 4.500 TL
-* Uc kisilik oda: 5.000 TL
-* Superior oda: 5.500 TL
-* Aile odasi: 6.000 TL
+* Standart / Bahce / Deniz Manzarali Oda: 4.500 TL
+* Uc Kisilik Oda: 5.000 TL
+* Superior / Superior 3 Kisilik Oda: 5.500 TL
+* Aile Odasi / Aile Odasi Balkonlu: 6.000 TL
 
 Tum oda fiyatlarimiza serpme kahvalti, sucuklu yumurta ve pisi dahildir.
 
@@ -103,10 +113,10 @@ Bu tarihte restoranimizda fix menu hizmeti sunulacaktir.
 * Kisi basi sinirsiz alkolu yemek menusu: {alkol_fiyat} TL
 
 Konaklama fiyatlarimiz (kahvalti dahil):
-* Cift kisilik oda: {cift_kisilik} TL
-* Uc kisilik oda: {uc_kisilik} TL
-* Superior oda: {superior} TL
-* Aile odasi: {aile_odasi} TL
+* Standart / Bahce / Deniz Manzarali Oda: {standart} TL
+* Uc Kisilik Oda: {uc_kisilik} TL
+* Superior / Superior 3 Kisilik Oda: {superior} TL
+* Aile Odasi / Aile Odasi Balkonlu: {aile_odasi} TL
 
 Tum oda fiyatlarimiza serpme kahvalti, sucuklu yumurta ve pisi dahildir.
 
@@ -169,47 +179,91 @@ HOTEL_KNOWLEDGE_BASE = {
     "oda_bilgileri": {
         "toplam_oda": 16,
         "dagilim": {
-            "iki_kisilik": 9,  # 4 tanesi tek kisi konaklamaya uygun
+            "standart": 1,
+            "standart_bahce_manzarali": 3,
+            "standart_deniz_manzarali": 4,
             "uc_kisilik": 2,
-            "superior": 1,  # 2 veya 3 kisilik
-            "dort_kisilik": 4,
+            "aile_odasi": 2,
+            "aile_odasi_balkonlu": 2,
+            "superior": 1,
+            "superior_uc_kisilik": 1,
         },
         "kahvalti_konsepti": "Oda + serpme kahvalti seklinde hizmet verilmektedir. Kahvalti yalnizca konaklamanizi takip eden sabah servis edilir.",
         "ek_yatak": "Odalara ek yatak konulmaz; kapasite oda tipine goredir. Bebek yatagi ucretsizdir.",
     },
 
     "oda_tipleri": {
-        "tek_kisilik": {
-            "metrekare": 25,
-            "yatak": "1 adet cift kisilik yatak",
-            "manzara": "Bahce ve dag manzarasi",
-            "ozellikler": ["Mini buzdolabi", "Klima", "Televizyon", "Ozel banyo"],
-            "ikram": "2 adet su, sallama cay, nescafe, bambu karistirma cubugu, cikolatali mini berliner",
-            "fiyat": 3000,
-        },
         "standart": {
             "metrekare": 25,
             "yatak": "1 adet cift kisilik yatak",
-            "manzara": "Bahce ve dag manzarasi",
+            "manzara": "Standart",
             "ozellikler": ["Mini buzdolabi", "Klima", "Televizyon", "Ozel banyo"],
-            "ikram": "2 adet su, sallama cay, nescafe, bambu karistirma cubugu, cikolatali mini berliner",
+            "ikram": "2 adet su, sallama cay, nescafe, cikolatali mini berliner",
             "fiyat": 3500,
+            "adet": 1,
+        },
+        "standart_bahce_manzarali": {
+            "metrekare": 25,
+            "yatak": "1 adet cift kisilik yatak",
+            "manzara": "Bahce manzarasi",
+            "ozellikler": ["Mini buzdolabi", "Klima", "Televizyon", "Ozel banyo"],
+            "ikram": "2 adet su, sallama cay, nescafe, cikolatali mini berliner",
+            "fiyat": 3500,
+            "adet": 3,
+        },
+        "standart_deniz_manzarali": {
+            "metrekare": 25,
+            "yatak": "1 adet cift kisilik yatak",
+            "manzara": "Foca Korfezi deniz manzarasi",
+            "ozellikler": ["Mini buzdolabi", "Klima", "Televizyon", "Ozel banyo"],
+            "ikram": "2 adet su, sallama cay, nescafe, cikolatali mini berliner",
+            "fiyat": 3500,
+            "adet": 4,
+        },
+        "uc_kisilik": {
+            "metrekare": 30,
+            "yatak": "Uc kisilik yatak duzeni",
+            "manzara": "Karisik",
+            "ozellikler": ["Mini buzdolabi", "Klima", "Televizyon", "Ozel banyo"],
+            "ikram": "3 adet su, sallama cay, nescafe, cikolatali mini berliner",
+            "fiyat": 5000,
+            "adet": 2,
+        },
+        "aile_odasi": {
+            "metrekare": 50,
+            "yatak": "1 cift kisilik + 2 tek kisilik yatak",
+            "manzara": "Karisik",
+            "ozellikler": ["Mini buzdolabi", "Klima", "Televizyon", "Ozel banyo", "Oturma alani"],
+            "ikram": "4 adet su, sallama cay, nescafe, cikolatali mini berliner",
+            "fiyat": 6000,
+            "adet": 2,
+        },
+        "aile_odasi_balkonlu": {
+            "metrekare": 55,
+            "yatak": "1 cift kisilik + 2 tek kisilik yatak",
+            "manzara": "Karisik",
+            "ozellikler": ["Mini buzdolabi", "Klima", "Televizyon", "Ozel banyo", "Oturma alani", "Balkon"],
+            "ikram": "4 adet su, sallama cay, nescafe, cikolatali mini berliner",
+            "fiyat": 6000,
+            "adet": 2,
         },
         "superior": {
             "metrekare": 35,
-            "yatak": "1 cift kisilik + 1 tek kisilik yatak",
-            "manzara": "Bahce ve dag manzarasi",
-            "ozellikler": ["Mini buzdolabi", "Klima", "Televizyon", "Ozel banyo", "Oturma alani", "Balkon opsiyonu"],
+            "yatak": "1 cift kisilik yatak",
+            "manzara": "Deniz manzarasi",
+            "ozellikler": ["Mini buzdolabi", "Klima", "Televizyon", "Ozel banyo", "Oturma alani", "Balkon"],
             "ikram": "3 adet su, sallama cay, nescafe, cikolatali mini berliner",
             "fiyat": 5500,
+            "adet": 1,
         },
-        "aile": {
-            "metrekare": 50,
-            "yatak": "1 cift kisilik + 2 tek kisilik yatak",
-            "manzara": "Bahce ve dag manzarasi",
-            "ozellikler": ["Mini buzdolabi", "Klima", "Televizyon", "Ozel banyo", "Oturma alani", "Balkon secenegi"],
-            "ikram": "4 adet su, sallama cay, nescafe, bambu karistirma cubugu, cikolatali mini berliner",
-            "fiyat": 6000,
+        "superior_uc_kisilik": {
+            "metrekare": 35,
+            "yatak": "1 cift kisilik + 1 tek kisilik yatak",
+            "manzara": "Deniz manzarasi",
+            "ozellikler": ["Mini buzdolabi", "Klima", "Televizyon", "Ozel banyo", "Oturma alani", "Balkon"],
+            "ikram": "3 adet su, sallama cay, nescafe, cikolatali mini berliner",
+            "fiyat": 5500,
+            "adet": 1,
         },
     },
 

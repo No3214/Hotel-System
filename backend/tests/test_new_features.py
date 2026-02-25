@@ -80,7 +80,7 @@ class TestDynamicPricing:
     
     def test_pricing_calculate_high_season_holiday(self):
         """GET /api/pricing/calculate - high season + holiday (July 15)"""
-        response = requests.get(f"{BASE_URL}/api/pricing/calculate?room_id=double&date=2026-07-15")
+        response = requests.get(f"{BASE_URL}/api/pricing/calculate?room_id=standart-bahce&date=2026-07-15")
         assert response.status_code == 200
         data = response.json()
         
@@ -103,7 +103,7 @@ class TestDynamicPricing:
     
     def test_pricing_calculate_low_season(self):
         """GET /api/pricing/calculate - low season (February 15)"""
-        response = requests.get(f"{BASE_URL}/api/pricing/calculate?room_id=single&date=2026-02-15")
+        response = requests.get(f"{BASE_URL}/api/pricing/calculate?room_id=standart&date=2026-02-15")
         assert response.status_code == 200
         data = response.json()
         
@@ -118,7 +118,7 @@ class TestDynamicPricing:
     
     def test_pricing_range(self):
         """GET /api/pricing/range - price range calculation"""
-        response = requests.get(f"{BASE_URL}/api/pricing/range?room_id=double&start_date=2026-07-10&end_date=2026-07-15")
+        response = requests.get(f"{BASE_URL}/api/pricing/range?room_id=standart-bahce&start_date=2026-07-10&end_date=2026-07-15")
         assert response.status_code == 200
         data = response.json()
         

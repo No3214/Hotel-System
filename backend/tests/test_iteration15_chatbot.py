@@ -165,13 +165,12 @@ class TestRoomPrices:
         assert response.status_code == 200
         data = response.json()
         resp_text = data["response"]
-        # Should contain prices: Tek 3000, Cift 3500, Uc 5000, Superior 5500, Aile 6000
-        assert "3.000" in resp_text or "3000" in resp_text, f"Should have Tek Kisilik 3000: {resp_text}"
-        assert "3.500" in resp_text or "3500" in resp_text, f"Should have Cift Kisilik 3500: {resp_text}"
+        # Should contain prices: Standart 3500, Uc Kisilik 5000, Superior 5500, Aile 6000
+        assert "3.500" in resp_text or "3500" in resp_text, f"Should have Standart 3500: {resp_text}"
         assert "5.000" in resp_text or "5000" in resp_text, f"Should have Uc Kisilik 5000: {resp_text}"
         assert "5.500" in resp_text or "5500" in resp_text, f"Should have Superior 5500: {resp_text}"
         assert "6.000" in resp_text or "6000" in resp_text, f"Should have Aile Odasi 6000: {resp_text}"
-        print(f"✓ Room prices test passed - All 5 room types with prices")
+        print(f"✓ Room prices test passed - All 8 room types with prices")
 
 
 class TestCancellationPolicy:

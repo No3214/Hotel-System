@@ -106,12 +106,12 @@ class TestDynamicPricing:
     def test_calculate_high_season_holiday(self):
         """GET /api/pricing/calculate - high season + holiday pricing"""
         response = requests.get(f"{BASE_URL}/api/pricing/calculate", params={
-            "room_id": "double",
+            "room_id": "standart-bahce",
             "date": "2026-07-15"
         })
         assert response.status_code == 200
         data = response.json()
-        assert data["room_id"] == "double"
+        assert data["room_id"] == "standart-bahce"
         assert data["season"] == "Yuksek Sezon"
         assert data["season_multiplier"] == 1.4
         assert data["is_holiday"] == True
@@ -122,7 +122,7 @@ class TestDynamicPricing:
     def test_calculate_low_season(self):
         """GET /api/pricing/calculate - low season pricing"""
         response = requests.get(f"{BASE_URL}/api/pricing/calculate", params={
-            "room_id": "single",
+            "room_id": "standart",
             "date": "2026-01-15"
         })
         assert response.status_code == 200
@@ -136,7 +136,7 @@ class TestDynamicPricing:
     def test_calculate_price_range(self):
         """GET /api/pricing/range - price for date range"""
         response = requests.get(f"{BASE_URL}/api/pricing/range", params={
-            "room_id": "double",
+            "room_id": "standart-bahce",
             "start_date": "2026-07-10",
             "end_date": "2026-07-15"
         })
@@ -372,7 +372,7 @@ class TestDashboardAndRooms:
         print(f"✓ Rooms: {len(data['rooms'])} room types")
         if "superior" in room_prices:
             print(f"  - Superior: {room_prices['superior']} TL")
-        if "family" in room_prices:
+        if "aile" in room_prices:
             print(f"  - Family: {room_prices['family']} TL")
 
 

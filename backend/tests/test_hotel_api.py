@@ -77,11 +77,11 @@ class TestRooms:
         data = response.json()
         assert "rooms" in data
         rooms = data["rooms"]
-        assert len(rooms) == 4, f"Expected 4 room types, got {len(rooms)}"
-        
+        assert len(rooms) == 8, f"Expected 8 room types, got {len(rooms)}"
+
         # Verify room types
         room_ids = [r["room_id"] for r in rooms]
-        assert "single" in room_ids or "double" in room_ids, "Expected room types not found"
+        assert "standart" in room_ids, "Expected room types not found"
         
         # Check prices
         for room in rooms:
@@ -92,10 +92,10 @@ class TestRooms:
 
     def test_get_single_room(self):
         """GET /api/rooms/{room_id} - Get single room"""
-        response = requests.get(f"{BASE_URL}/api/rooms/double")
+        response = requests.get(f"{BASE_URL}/api/rooms/standart")
         assert response.status_code == 200
         data = response.json()
-        assert data["room_id"] == "double"
+        assert data["room_id"] == "standart"
         assert "name_tr" in data
         print("✓ Single room retrieval works")
 
