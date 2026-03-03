@@ -15,7 +15,7 @@ async def calc_revenue(date_from: str, date_to: str) -> float:
     reservations = await db.reservations.find({
         "check_in": {"$gte": date_from, "$lte": date_to},
         "status": {"$in": ["confirmed", "checked_in", "checked_out"]},
-    }, {"_id": 0, "total_price": 1}).to_list(5000)
+    }, {"_id": 0, "total_price": 1}).to_list(2000)
     return sum(r.get("total_price", 0) or 0 for r in reservations)
 
 
@@ -35,7 +35,7 @@ async def calc_occupancy(date_from: str, date_to: str) -> float:
         "check_in": {"$lte": date_to},
         "check_out": {"$gte": date_from},
         "status": {"$in": ["confirmed", "checked_in", "checked_out"]},
-    }, {"_id": 0, "check_in": 1, "check_out": 1}).to_list(5000)
+    }, {"_id": 0, "check_in": 1, "check_out": 1}).to_list(2000)
 
     occupied_nights = 0
     for r in reservations:
@@ -55,7 +55,7 @@ async def calc_sold_nights(date_from: str, date_to: str) -> int:
     reservations = await db.reservations.find({
         "check_in": {"$gte": date_from, "$lte": date_to},
         "status": {"$in": ["confirmed", "checked_in", "checked_out"]},
-    }, {"_id": 0, "check_in": 1, "check_out": 1}).to_list(5000)
+    }, {"_id": 0, "check_in": 1, "check_out": 1}).to_list(2000)
 
     total = 0
     for r in reservations:
@@ -174,7 +174,7 @@ async def get_booking_sources(
 
     reservations = await db.reservations.find({
         "created_at": {"$gte": date_from.isoformat(), "$lte": date_to.isoformat() + "T23:59:59"},
-    }, {"_id": 0, "source": 1, "total_price": 1}).to_list(5000)
+    }, {"_id": 0, "source": 1, "total_price": 1}).to_list(2000)
 
     sources_data = {}
     for r in reservations:
@@ -217,6 +217,17 @@ async def get_occupancy_heatmap(year: Optional[int] = Query(default=None)):
     if not year:
         year = date.today().year
 
+    year_start = date(year, 1, 1).isoformat()
+    year_end = date(year, 12, 31).isoformat()
+    all_reservations = await db.reservations.find(
+        {
+            "check_in": {"$lte": year_end},
+            "check_out": {"$gte": year_start},
+            "status": {"$in": ["confirmed", "checked_in", "checked_out"]},
+        },
+        {"_id": 0, "check_in": 1, "check_out": 1},
+    ).to_list(2000)
+
     heatmap = []
     for month in range(1, 13):
         month_data = []
@@ -227,11 +238,10 @@ async def get_occupancy_heatmap(year: Optional[int] = Query(default=None)):
                 break
 
             date_str = current_date.isoformat()
-            booked = await db.reservations.count_documents({
-                "check_in": {"$lte": date_str},
-                "check_out": {"$gte": date_str},
-                "status": {"$in": ["confirmed", "checked_in", "checked_out"]},
-            })
+            booked = sum(
+                1 for r in all_reservations
+                if r.get("check_in", "") <= date_str and r.get("check_out", "") >= date_str
+            )
             occupancy = round(booked / TOTAL_ROOMS * 100, 1)
             if occupancy >= 80:
                 level = "high"
@@ -318,7 +328,7 @@ async def get_guest_satisfaction(period: str = Query(default="30d")):
 
     reviews = await db.reviews.find({
         "created_at": {"$gte": cutoff},
-    }, {"_id": 0}).to_list(1000)
+    }, {"_id": 0}).to_list(500)
 
     if not reviews:
         return {
