@@ -36,6 +36,7 @@ const WhatsAppPage = lazy(() => import('./pages/WhatsAppPage'));
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
 const AuditSecurityPage = lazy(() => import('./pages/AuditSecurityPage'));
 const HotelRunnerPage = lazy(() => import('./pages/HotelRunnerPage'));
+const OrganizationPage = lazy(() => import('./pages/OrganizationPage'));
 
 const NAV_CONFIG = [
   {
@@ -68,6 +69,7 @@ const NAV_CONFIG = [
       { id: 'housekeeping', nameKey: 'housekeeping', icon: BedDouble },
       { id: 'staff', nameKey: 'staff', icon: UserCog },
       { id: 'table_reservations', nameKey: 'table_reservations', icon: UtensilsCrossed },
+      { id: 'organization', nameKey: 'organization', icon: Heart },
     ],
   },
   {
@@ -118,6 +120,7 @@ const PAGES = {
   analytics: AnalyticsPage,
   audit: AuditSecurityPage,
   hotelrunner: HotelRunnerPage,
+  organization: OrganizationPage,
 };
 
 export default function App() {

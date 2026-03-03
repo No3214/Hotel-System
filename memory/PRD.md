@@ -1,46 +1,37 @@
 # Kozbeyli Konagi - Otel Yonetim Sistemi PRD
 
-## Problem Statement
-Kozbeyli Konagi (Izmir/Foca) butik tas otel icin kapsamli dijital yonetim ekosistemi.
-Domain: kozbeylikonagi.com.tr
-
 ## Tech Stack
 - **Frontend:** React 19, TailwindCSS, Shadcn UI, Framer Motion
 - **Backend:** FastAPI, Motor (async MongoDB)
-- **Database:** MongoDB
-- **Task Queue:** Celery + Redis (6 zamanli gorev + on-demand)
-- **AI:** Google Gemini (emergentintegrations)
-- **Auth:** JWT + bcrypt
-- **Caching:** Redis
-- **Push Notifications:** VAPID (pywebpush)
-
-## Silinen Moduller (3 Mart 2026)
-- ~~Mutfak Dashboard~~ - ~~Finansal Takip~~ - ~~Dinamik Fiyatlandirma~~
+- **Database:** MongoDB | **Task Queue:** Celery + Redis
+- **AI:** Google Gemini | **Auth:** JWT + bcrypt
 
 ## Tamamlanan Ozellikler
-- Dashboard, Room/Guest/Reservation CRUD, AI Chatbot (Gemini)
+- Dashboard, Room/Guest/Reservation CRUD, AI Chatbot
 - Staff/Shifts, Events, Housekeeping, Knowledge Base
-- QR Menu (100+ urun), Sosyal Medya
-- WhatsApp Bot + Instagram DM (mock mod) + Unified Webhook Router
-- Anti-Halucinasyon, Rate Limiter, Sadakat Sistemi
-- Coklu Dil (5 dil), PWA, Redis Caching, Push Notifications
-- Domain Routing (/admin, / = public menu), SEO, QR Kod
+- QR Menu (100+ urun), Sosyal Medya, Sadakat
+- WhatsApp Bot + Instagram DM (mock) + Webhook Router
+- Coklu Dil, PWA, Redis Caching, Push Notifications
 - Celery Task Queue (6 zamanli + 2 on-demand)
 - Analitik Dashboard, Guvenlik/Audit
-- **Gorsel Masa Yerlsim Plani** (20 masa, 5 bolge, 106 kapasite, gercek PDF'den)
-- **Railway + WhatsApp Kurulum Rehberi** (KURULUM_REHBERI.md)
+- **Gorsel Masa Yerlesim Plani** (20 masa, 5 bolge, 106 kapasite)
+- **Organizasyon Yonetimi** (dugun/nisan talebi, chatbot entegrasyonu, PDF paylasim)
+- **Railway + WhatsApp Kurulum Rehberi**
 
-## Masa Yerlsim Plani (3 Mart 2026)
-- Somine Bolgesi: M1, M2, M3 (dikdortgen) + A, B, C (yuvarlak)
-- Sahne Bolgesi: M5, M6, M7, M8
-- Manzara Bolgesi: M10, M11, M12, M13
-- Ara Bolge: S1, S2, S3, S4 (kucuk)
-- Bar Bolgesi: BAR1, BAR2
-- Birlestirilebilir masa gruplari (max 24 kisi)
+## Organizasyon Modulu (3 Mart 2026)
+- organization_data.py: Dugun/nisan verileri, menu, dekorasyon, foto, muzik paketleri
+- routers/organization.py: CRUD + bilgi formu + istatistik API
+- OrganizationPage.js: Admin panel, talep yonetimi, durum takibi, PDF link
+- Chatbot: "dugun/nisan/organizasyon" intent → otomatik bilgi + PDF link
+- 8 organizasyon turu, 2 dekorasyon paketi, 3 muzik secenegi
+- PDF sunumlari otomatik paylasiliyor
+
+## Masa Yerlesim Plani
+- 5 bolge: Somine (M1-3,A-C), Sahne (M5-8), Manzara (M10-13), Ara (S1-4), Bar (BAR1-2)
 - Floor-plan API: /api/table-reservations/floor-plan
+- Birlestirilebilir masa gruplari (max 24 kisi)
 
-## Credentials
-- Admin: admin / admin123
+## Credentials: admin / admin123
 
 ## Upcoming Tasks
 - P0: HotelRunner API (anahtarlar bekleniyor)

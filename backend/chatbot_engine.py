@@ -71,10 +71,20 @@ INTENT_KEYWORDS = {
     "wifi": [
         "wifi", "internet", "sifre", "password", "baglanti", "ag"
     ],
-    # Etkinlikler
+    # Etkinlikler (otel ic etkinlikler)
     "events": [
-        "etkinlik", "dugun", "nisan", "toplanti", "organizasyon",
-        "event", "wedding", "meeting", "parti", "kutlama", "dogum gunu"
+        "etkinlik", "toplanti", "event", "meeting", "parti",
+    ],
+    # Organizasyon (dugun, nisan, soz vb.)
+    "organization": [
+        "dugun", "nisan", "soz", "kina", "organizasyon", "kutlama",
+        "wedding", "engagement", "dugun organizasyonu", "nisan organizasyonu",
+        "soz kesme", "kina gecesi", "dogum gunu partisi", "yil donumu",
+        "ozel gun", "kurumsal etkinlik", "gala", "nisan yemegi", "dugun yemegi",
+        "nisan menüsü", "dugun menüsü", "susleme", "dekorasyon",
+        "dugun fiyat", "nisan fiyat", "organizasyon fiyat",
+        "dugun paketi", "nisan paketi", "dugun teklifi",
+        "ceremony", "celebration", "kaç kisilik organizasyon",
     ],
     # Ek Hizmetler
     "extra_services": [
@@ -271,7 +281,7 @@ def detect_intent(message: str) -> str:
     
     # Öncelik sırasına göre kontrol
     priority_order = [
-        "table_reservation", "room_reservation", "cancellation", 
+        "organization", "table_reservation", "room_reservation", "cancellation", 
         "menu", "location", "wifi", "events", "extra_services", "checkin", 
         "pets", "contact", "price", "greeting", "thanks"
     ]
@@ -386,6 +396,19 @@ async def get_auto_reply(message: str, language: str = "tr") -> Optional[Dict[st
             "matched": True,
             "intent": intent,
             "message": "Guncel Oda Fiyatlari (Gecelik, Kahvalti Dahil):\n\nTek Kisilik (25m2): 3.000 TL\nCift Kisilik (25m2): 3.500 TL\nUc Kisilik (30m2): 5.000 TL\nSuperior (35m2): 5.500 TL\nAile Odasi (50m2): 6.000 TL\n\nTum odalarda: Klima, TV, WiFi, mini buzdolabi, ozel banyo.\nHos geldin ikrami: Su, cay, Nescafe, cikolatali Berliner.\n\nOzel gun fiyatlari (14 Subat, Yilbasi, Bayramlar) farkli olabilir.\n\nRezervason icin: +90 532 234 26 86"
+        }
+
+    if intent == "organization":
+        from organization_data import PRESENTATION_PDFS, ORGANIZATION_AUTO_REPLY
+        # Sunum PDF linklerini ekle
+        pdf_links = "\n".join([f"- {p['name']}: {p['url']}" for p in PRESENTATION_PDFS])
+        form_link = "Bilgi formunu doldurun: [link admin panelden paylasılacak]"
+        return {
+            "matched": True,
+            "intent": intent,
+            "message": ORGANIZATION_AUTO_REPLY + "\n\nSunumlarimiz:\n" + pdf_links,
+            "attachments": [p["url"] for p in PRESENTATION_PDFS],
+            "start_flow": "organization",
         }
 
     if intent == "cancellation":
