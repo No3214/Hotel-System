@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import {
   FileText, Plus, Eye, Copy, Trash2, Send, Check, X,
   Calendar, Users, DollarSign, RefreshCw, Clock, Heart,
-  ChevronDown, ChevronUp, Building2, Sparkles, Search
+  ChevronDown, ChevronUp, Building2, Sparkles, Search, Download
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -127,6 +127,18 @@ export default function ProposalsPage() {
   const handleDelete = async (id) => {
     if (!window.confirm('Teklifi silmek istediginize emin misiniz?')) return;
     try { await api.delete(`/proposals/${id}`); load(); } catch (err) { console.error(err); }
+  };
+
+  const handleDownloadPdf = async (id, proposalNumber) => {
+    try {
+      const res = await api.get(`/proposals/${id}/pdf`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${proposalNumber || 'teklif'}.pdf`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) { console.error(err); alert('PDF indirme hatasi'); }
   };
 
   const filtered = proposals.filter(p => {
@@ -314,6 +326,10 @@ export default function ProposalsPage() {
 
                   {/* Actions */}
                   <div className="flex flex-wrap gap-2 pt-2 border-t border-white/10">
+                    <Button size="sm" onClick={() => handleDownloadPdf(p.id, p.proposal_number)}
+                      className="bg-[#C4972A]/20 text-[#C4972A] hover:bg-[#C4972A]/30" data-testid={`pdf-btn-${p.id}`}>
+                      <Download className="w-3 h-3 mr-1" /> PDF Indir
+                    </Button>
                     {p.status === 'draft' && (
                       <Button size="sm" onClick={() => handleStatus(p.id, 'sent')} className="bg-blue-500/20 text-blue-400 hover:bg-blue-500/30">
                         <Send className="w-3 h-3 mr-1" /> Gonderildi

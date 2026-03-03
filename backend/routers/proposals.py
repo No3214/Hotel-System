@@ -3,11 +3,14 @@ Kozbeyli Konagi - Teklif Yonetimi (Proposal/Quote Management) Router
 Organizasyon teklifleri olusturma, takip ve arsiv sistemi.
 """
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from database import db
 from helpers import utcnow, new_id
 from datetime import datetime, timezone, timedelta
+from pathlib import Path
+import io
 
 router = APIRouter(tags=["proposals"])
 
@@ -266,3 +269,253 @@ async def proposal_stats():
         "accepted_value": accepted_value,
         "conversion_rate": round(accepted / sent * 100, 1) if sent > 0 else 0,
     }
+
+
+# ===================== PDF GENERATION =====================
+
+def _fmt(n):
+    """Format number as Turkish currency"""
+    if not n:
+        return "-"
+    return f"{n:,.0f} TL".replace(",", ".")
+
+
+def _generate_proposal_pdf(p: dict) -> io.BytesIO:
+    """Generate a professional PDF for a proposal"""
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import mm, cm
+    from reportlab.lib.colors import HexColor, black, white
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Spacer, Paragraph, Image
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
+
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=1.5*cm, bottomMargin=2*cm, leftMargin=2*cm, rightMargin=2*cm)
+
+    gold = HexColor("#C4972A")
+    dark = HexColor("#1a1a2e")
+    gray = HexColor("#666666")
+    light_gold = HexColor("#FFF8E7")
+
+    styles = getSampleStyleSheet()
+    s_title = ParagraphStyle("Title2", parent=styles["Title"], fontSize=22, textColor=gold, spaceAfter=2*mm)
+    s_subtitle = ParagraphStyle("Sub", parent=styles["Normal"], fontSize=10, textColor=gray, spaceAfter=4*mm)
+    s_heading = ParagraphStyle("Heading", parent=styles["Heading2"], fontSize=13, textColor=dark, spaceBefore=6*mm, spaceAfter=3*mm)
+    s_small = ParagraphStyle("Small", parent=styles["Normal"], fontSize=9, textColor=gray, leading=12)
+
+    elements = []
+
+    # --- Header with logo ---
+    logo_path = Path(__file__).parent.parent / "uploads" / "logo.jpeg"
+    header_data = []
+    if logo_path.exists():
+        img = Image(str(logo_path), width=2.2*cm, height=2.2*cm)
+        header_data = [[img, Paragraph("KOZBEYLI KONAGI", ParagraphStyle("Logo", parent=styles["Title"], fontSize=20, textColor=gold, alignment=TA_LEFT))]]
+    else:
+        header_data = [["", Paragraph("KOZBEYLI KONAGI", ParagraphStyle("Logo", parent=styles["Title"], fontSize=20, textColor=gold, alignment=TA_LEFT))]]
+
+    ht = Table(header_data, colWidths=[3*cm, 14*cm])
+    ht.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4*mm),
+    ]))
+    elements.append(ht)
+
+    # Gold line
+    line_data = [["" ]]
+    line_t = Table(line_data, colWidths=[17*cm], rowHeights=[1.5*mm])
+    line_t.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), gold)]))
+    elements.append(line_t)
+    elements.append(Spacer(1, 4*mm))
+
+    # --- Proposal info ---
+    elements.append(Paragraph("FIYAT TEKLIFI", s_title))
+    pnum = p.get("proposal_number", "")
+    created = ""
+    if p.get("created_at"):
+        try:
+            dt = datetime.fromisoformat(p["created_at"].replace("Z", "+00:00")) if isinstance(p["created_at"], str) else p["created_at"]
+            created = dt.strftime("%d.%m.%Y")
+        except Exception:
+            created = str(p["created_at"])[:10]
+    elements.append(Paragraph(f"Teklif No: {pnum} &nbsp;&nbsp;|&nbsp;&nbsp; Tarih: {created}", s_subtitle))
+
+    # --- Customer info ---
+    elements.append(Paragraph("MUSTERI BILGILERI", s_heading))
+    cust_data = [
+        ["Musteri Adi:", p.get("customer_name", "-")],
+        ["Telefon:", p.get("customer_phone", "-")],
+    ]
+    if p.get("customer_email"):
+        cust_data.append(["E-posta:", p["customer_email"]])
+
+    event_types = {"dugun": "Dugun", "nisan": "Nisan", "soz": "Soz", "kina": "Kina",
+                   "dogum_gunu": "Dogum Gunu", "yil_donumu": "Yil Donumu", "kurumsal": "Kurumsal", "diger": "Diger"}
+    cust_data.append(["Etkinlik Turu:", event_types.get(p.get("event_type", ""), p.get("event_type", "-"))])
+    if p.get("event_date"):
+        cust_data.append(["Etkinlik Tarihi:", p["event_date"]])
+    if p.get("guest_count"):
+        cust_data.append(["Kisi Sayisi:", str(p["guest_count"])])
+
+    ct = Table(cust_data, colWidths=[4*cm, 13*cm])
+    ct.setStyle(TableStyle([
+        ("FONTSIZE", (0, 0), (-1, -1), 10),
+        ("TEXTCOLOR", (0, 0), (0, -1), gray),
+        ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 2*mm),
+        ("TOPPADDING", (0, 0), (-1, -1), 1*mm),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+    ]))
+    elements.append(ct)
+
+    # --- Accommodation ---
+    acc_items = [i for i in (p.get("accommodation_items") or []) if i.get("room_count", 0) > 0]
+    if acc_items:
+        elements.append(Paragraph("KONAKLAMA", s_heading))
+        acc_data = [["Oda Tipi", "Adet", "Gece", "Birim Fiyat", "Toplam"]]
+        for a in acc_items:
+            total = a.get("total", 0) or (a.get("room_count", 0) * a.get("nights", 1) * a.get("per_room_price", 0))
+            acc_data.append([
+                a.get("room_type", "-"),
+                str(a.get("room_count", 0)),
+                str(a.get("nights", 1)),
+                _fmt(a.get("per_room_price", 0)),
+                _fmt(total),
+            ])
+        acc_data.append(["", "", "", "Konaklama Toplam:", _fmt(p.get("accommodation_total", 0))])
+
+        at = Table(acc_data, colWidths=[5.5*cm, 2*cm, 2*cm, 3.5*cm, 4*cm])
+        at.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), gold),
+            ("TEXTCOLOR", (0, 0), (-1, 0), white),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, -1), 9),
+            ("ALIGN", (1, 0), (-1, -1), "CENTER"),
+            ("ALIGN", (3, 0), (-1, -1), "RIGHT"),
+            ("GRID", (0, 0), (-1, -2), 0.5, HexColor("#dddddd")),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 3*mm),
+            ("TOPPADDING", (0, 0), (-1, -1), 2*mm),
+            ("FONTNAME", (3, -1), (-1, -1), "Helvetica-Bold"),
+            ("TEXTCOLOR", (3, -1), (-1, -1), gold),
+        ]))
+        elements.append(at)
+
+        if p.get("accommodation_note"):
+            elements.append(Spacer(1, 2*mm))
+            elements.append(Paragraph(f"Not: {p['accommodation_note']}", s_small))
+
+    # --- Meals ---
+    meals = p.get("meal_options") or []
+    if meals:
+        elements.append(Paragraph("YEMEK SECENEKLERI", s_heading))
+        meal_data = [["Aciklama", "Kisi Basi", "Kisi Sayisi", "Toplam"]]
+        for m in meals:
+            meal_data.append([
+                m.get("description", "-"),
+                _fmt(m.get("per_person_price", 0)),
+                str(m.get("guest_count", 0)),
+                _fmt(m.get("total", 0)),
+            ])
+
+        mt = Table(meal_data, colWidths=[6*cm, 3.5*cm, 3.5*cm, 4*cm])
+        mt.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), HexColor("#E67E22")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), white),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, -1), 9),
+            ("ALIGN", (1, 0), (-1, -1), "RIGHT"),
+            ("GRID", (0, 0), (-1, -1), 0.5, HexColor("#dddddd")),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 3*mm),
+            ("TOPPADDING", (0, 0), (-1, -1), 2*mm),
+        ]))
+        elements.append(mt)
+
+    # --- Extra Services ---
+    extras = p.get("extra_services") or []
+    if extras:
+        elements.append(Paragraph("EK HIZMETLER", s_heading))
+        ext_data = [["Hizmet", "Aciklama", "Fiyat"]]
+        for e in extras:
+            ext_data.append([e.get("name", "-"), e.get("description", "-"), _fmt(e.get("price", 0))])
+        ext_data.append(["", "Ek Hizmetler Toplam:", _fmt(p.get("extras_total", 0))])
+
+        et = Table(ext_data, colWidths=[4*cm, 9*cm, 4*cm])
+        et.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), HexColor("#8E44AD")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), white),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, -1), 9),
+            ("ALIGN", (2, 0), (2, -1), "RIGHT"),
+            ("GRID", (0, 0), (-1, -2), 0.5, HexColor("#dddddd")),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 3*mm),
+            ("TOPPADDING", (0, 0), (-1, -1), 2*mm),
+            ("FONTNAME", (1, -1), (-1, -1), "Helvetica-Bold"),
+            ("TEXTCOLOR", (1, -1), (-1, -1), HexColor("#8E44AD")),
+        ]))
+        elements.append(et)
+
+    # --- Grand Total ---
+    elements.append(Spacer(1, 6*mm))
+    total_data = []
+    if p.get("discount_amount", 0) > 0:
+        total_data.append(["Indirim:", f"-{_fmt(p['discount_amount'])} {p.get('discount_note', '')}"])
+    total_data.append(["GENEL TOPLAM:", _fmt(p.get("grand_total", 0))])
+
+    if p.get("deposit_percentage"):
+        deposit = (p.get("grand_total", 0) * p["deposit_percentage"]) / 100
+        total_data.append([f"Kapora (%{p['deposit_percentage']}):", _fmt(deposit)])
+
+    gt = Table(total_data, colWidths=[13*cm, 4*cm])
+    gt.setStyle(TableStyle([
+        ("BACKGROUND", (0, -1 if not p.get("deposit_percentage") else -2), (-1, -1 if not p.get("deposit_percentage") else -2), light_gold),
+        ("FONTNAME", (0, 0), (-1, -1), "Helvetica-Bold"),
+        ("FONTSIZE", (0, -1 if not p.get("deposit_percentage") else -2), (-1, -1 if not p.get("deposit_percentage") else -2), 14),
+        ("TEXTCOLOR", (0, -1 if not p.get("deposit_percentage") else -2), (-1, -1 if not p.get("deposit_percentage") else -2), gold),
+        ("ALIGN", (0, 0), (0, -1), "RIGHT"),
+        ("ALIGN", (1, 0), (1, -1), "RIGHT"),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 3*mm),
+        ("TOPPADDING", (0, 0), (-1, -1), 3*mm),
+    ]))
+    elements.append(gt)
+
+    # --- Payment & Notes ---
+    if p.get("payment_note"):
+        elements.append(Spacer(1, 4*mm))
+        elements.append(Paragraph(f"Odeme Kosullari: {p['payment_note']}", s_small))
+
+    if p.get("notes"):
+        elements.append(Spacer(1, 3*mm))
+        elements.append(Paragraph(f"Notlar: {p['notes']}", s_small))
+
+    # Validity
+    validity = p.get("validity_days", 15)
+    elements.append(Spacer(1, 4*mm))
+    elements.append(Paragraph(f"Bu teklif {validity} gun gecerlidir.", ParagraphStyle("Valid", parent=s_small, fontName="Helvetica-BoldOblique", textColor=gold)))
+
+    # --- Footer ---
+    elements.append(Spacer(1, 8*mm))
+    foot_line = Table([[""]], colWidths=[17*cm], rowHeights=[1*mm])
+    foot_line.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), gold)]))
+    elements.append(foot_line)
+    elements.append(Spacer(1, 3*mm))
+    elements.append(Paragraph("Kozbeyli Konagi | Foca, Izmir | www.kozbeylikonagi.com", ParagraphStyle("Foot", parent=s_small, alignment=TA_CENTER, textColor=gold)))
+
+    doc.build(elements)
+    buf.seek(0)
+    return buf
+
+
+@router.get("/proposals/{proposal_id}/pdf")
+async def download_proposal_pdf(proposal_id: str):
+    """Teklif PDF ciktisi indir"""
+    p = await db.proposals.find_one({"id": proposal_id}, {"_id": 0})
+    if not p:
+        raise HTTPException(404, "Teklif bulunamadi")
+
+    buf = _generate_proposal_pdf(p)
+    filename = f"{p.get('proposal_number', 'teklif')}.pdf"
+    return StreamingResponse(
+        buf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
