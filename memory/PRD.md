@@ -17,6 +17,13 @@
 - **Gorsel Masa Yerlesim Plani** (20 masa, 5 bolge, 106 kapasite)
 - **Organizasyon Yonetimi** (dugun/nisan talebi, chatbot entegrasyonu, PDF paylasim)
 - **Railway + WhatsApp Kurulum Rehberi**
+- **Teklif Yonetimi (Proposal Management)** (3 Mart 2026)
+  - Backend: Full CRUD API (/api/proposals) - create, list, get, update, delete, duplicate, stats
+  - Frontend: ProposalsPage.js - listing, search/filter, expandable details, creation dialog
+  - Auto-generated proposal numbers (TKL-YYYY-NNN format)
+  - Status workflow: draft -> sent -> accepted/rejected/expired
+  - Stats dashboard with conversion rate tracking
+  - Accommodation, meal options, extra services detail sections
 
 ## Organizasyon Modulu (3 Mart 2026)
 - organization_data.py: Dugun/nisan verileri, menu, dekorasyon, foto, muzik paketleri
@@ -36,4 +43,12 @@
 ## Upcoming Tasks
 - P0: HotelRunner API (anahtarlar bekleniyor)
 - P1: Online odeme (Stripe/Iyzico)
+- P1: Startup Strateji Danismanligi (marka, pazarlama, Ar-Ge)
 - P2: Misafir Self-Servis Portali
+
+## Key API Endpoints
+- POST/GET /api/proposals - Create/List proposals
+- GET /api/proposals/stats/summary - Proposal statistics
+- PATCH /api/proposals/{id} - Update proposal status
+- POST /api/proposals/{id}/duplicate - Duplicate proposal
+- DELETE /api/proposals/{id} - Delete proposal
