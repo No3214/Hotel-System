@@ -29,7 +29,7 @@ class TableReservationCreate(BaseModel):
     phone: str
     date: str
     time: str
-    party_size: int = Field(ge=1, le=12)
+    party_size: int = Field(ge=1, le=24)
     meal_type: MealType
     notes: Optional[str] = None
     occasion: Optional[str] = None  # birthday, anniversary, business, etc.
@@ -37,37 +37,56 @@ class TableReservationCreate(BaseModel):
     preferred_table_id: Optional[str] = None
 
 
-# Masa tanımları
+# Masa tanımları - Kozbeyli Konağı Gerçek Yerleşim Planı
+# 13 dikdörtgen + 3 yuvarlak + 4 küçük = 20 masa
 TABLES = [
-    # 2 kişilik masalar (9 adet)
-    {"id": "T01", "name": "Masa 1", "capacity": 2, "type": "small", "location": "indoor"},
-    {"id": "T02", "name": "Masa 2", "capacity": 2, "type": "small", "location": "indoor"},
-    {"id": "T03", "name": "Masa 3", "capacity": 2, "type": "small", "location": "indoor"},
-    {"id": "T04", "name": "Masa 4", "capacity": 2, "type": "small", "location": "indoor"},
-    {"id": "T05", "name": "Masa 5", "capacity": 2, "type": "small", "location": "indoor"},
-    {"id": "T06", "name": "Masa 6", "capacity": 2, "type": "small", "location": "outdoor"},
-    {"id": "T07", "name": "Masa 7", "capacity": 2, "type": "small", "location": "outdoor"},
-    {"id": "T08", "name": "Masa 8", "capacity": 2, "type": "small", "location": "outdoor"},
-    {"id": "T09", "name": "Masa 9", "capacity": 2, "type": "small", "location": "outdoor"},
-    # 3 kişilik masalar (4 adet)
-    {"id": "T10", "name": "Masa 10", "capacity": 3, "type": "small", "location": "indoor"},
-    {"id": "T11", "name": "Masa 11", "capacity": 3, "type": "small", "location": "indoor"},
-    {"id": "T12", "name": "Masa 12", "capacity": 3, "type": "small", "location": "outdoor"},
-    {"id": "T13", "name": "Masa 13", "capacity": 3, "type": "small", "location": "outdoor"},
-    # 4 kişilik masalar (6 adet)
-    {"id": "T14", "name": "Masa 14", "capacity": 4, "type": "medium", "location": "indoor"},
-    {"id": "T15", "name": "Masa 15", "capacity": 4, "type": "medium", "location": "indoor"},
-    {"id": "T16", "name": "Masa 16", "capacity": 4, "type": "medium", "location": "indoor"},
-    {"id": "T17", "name": "Masa 17", "capacity": 4, "type": "medium", "location": "outdoor"},
-    {"id": "T18", "name": "Masa 18", "capacity": 4, "type": "medium", "location": "outdoor"},
-    {"id": "T19", "name": "Masa 19", "capacity": 4, "type": "medium", "location": "outdoor"},
+    # SOMINE BOLGESI (Sol taraf)
+    {"id": "M1", "name": "Masa 1", "capacity": 6, "type": "rectangular", "zone": "somine", "zone_label": "Somine"},
+    {"id": "M2", "name": "Masa 2", "capacity": 6, "type": "rectangular", "zone": "somine", "zone_label": "Somine"},
+    {"id": "M3", "name": "Masa 3", "capacity": 6, "type": "rectangular", "zone": "somine", "zone_label": "Somine"},
+    {"id": "A", "name": "Yuvarlak A", "capacity": 8, "type": "round", "zone": "somine", "zone_label": "Somine"},
+    {"id": "B", "name": "Yuvarlak B", "capacity": 8, "type": "round", "zone": "somine", "zone_label": "Somine"},
+    {"id": "C", "name": "Yuvarlak C", "capacity": 8, "type": "round", "zone": "somine", "zone_label": "Somine"},
+    # SAHNE BOLGESI (Orta)
+    {"id": "M5", "name": "Masa 5", "capacity": 6, "type": "rectangular", "zone": "sahne", "zone_label": "Sahne"},
+    {"id": "M6", "name": "Masa 6", "capacity": 6, "type": "rectangular", "zone": "sahne", "zone_label": "Sahne"},
+    {"id": "M7", "name": "Masa 7", "capacity": 6, "type": "rectangular", "zone": "sahne", "zone_label": "Sahne"},
+    {"id": "M8", "name": "Masa 8", "capacity": 6, "type": "rectangular", "zone": "sahne", "zone_label": "Sahne"},
+    # MANZARA BOLGESI (Sag taraf)
+    {"id": "M10", "name": "Masa 10", "capacity": 6, "type": "rectangular", "zone": "manzara", "zone_label": "Manzara"},
+    {"id": "M11", "name": "Masa 11", "capacity": 6, "type": "rectangular", "zone": "manzara", "zone_label": "Manzara"},
+    {"id": "M12", "name": "Masa 12", "capacity": 6, "type": "rectangular", "zone": "manzara", "zone_label": "Manzara"},
+    {"id": "M13", "name": "Masa 13", "capacity": 6, "type": "rectangular", "zone": "manzara", "zone_label": "Manzara"},
+    # KUCUK MASALAR (Sahne-Manzara arasi)
+    {"id": "S1", "name": "Kucuk S1", "capacity": 2, "type": "small", "zone": "ara", "zone_label": "Ara Bolge"},
+    {"id": "S2", "name": "Kucuk S2", "capacity": 2, "type": "small", "zone": "ara", "zone_label": "Ara Bolge"},
+    {"id": "S3", "name": "Kucuk S3", "capacity": 2, "type": "small", "zone": "ara", "zone_label": "Ara Bolge"},
+    {"id": "S4", "name": "Kucuk S4", "capacity": 2, "type": "small", "zone": "ara", "zone_label": "Ara Bolge"},
+    # BAR BOLGESI (2 bar taburesi masasi)
+    {"id": "BAR1", "name": "Bar 1", "capacity": 4, "type": "bar", "zone": "bar", "zone_label": "Bar"},
+    {"id": "BAR2", "name": "Bar 2", "capacity": 4, "type": "bar", "zone": "bar", "zone_label": "Bar"},
 ]
 
 # Birleştirilebilir masa grupları (büyük gruplar için)
 COMBINABLE_TABLES = [
-    {"ids": ["T14", "T15"], "combined_capacity": 8, "name": "Masa 14-15 (Birlesik)", "location": "indoor"},
-    {"ids": ["T17", "T18"], "combined_capacity": 8, "name": "Masa 17-18 (Birlesik)", "location": "outdoor"},
-    {"ids": ["T14", "T15", "T16"], "combined_capacity": 12, "name": "Masa 14-15-16 (Birlesik)", "location": "indoor"},
+    {"ids": ["M1", "M2"], "combined_capacity": 12, "name": "Masa 1-2 (Birlesik)", "zone": "somine"},
+    {"ids": ["M1", "M2", "M3"], "combined_capacity": 18, "name": "Masa 1-2-3 (Birlesik)", "zone": "somine"},
+    {"ids": ["M5", "M6"], "combined_capacity": 12, "name": "Masa 5-6 (Birlesik)", "zone": "sahne"},
+    {"ids": ["M7", "M8"], "combined_capacity": 12, "name": "Masa 7-8 (Birlesik)", "zone": "sahne"},
+    {"ids": ["M5", "M6", "M7", "M8"], "combined_capacity": 24, "name": "Masa 5-8 (Birlesik)", "zone": "sahne"},
+    {"ids": ["M10", "M11"], "combined_capacity": 12, "name": "Masa 10-11 (Birlesik)", "zone": "manzara"},
+    {"ids": ["M12", "M13"], "combined_capacity": 12, "name": "Masa 12-13 (Birlesik)", "zone": "manzara"},
+    {"ids": ["M10", "M11", "M12", "M13"], "combined_capacity": 24, "name": "Masa 10-13 (Birlesik)", "zone": "manzara"},
+    {"ids": ["A", "B", "C"], "combined_capacity": 24, "name": "Yuvarlak A-B-C (Birlesik)", "zone": "somine"},
+]
+
+# Bölge bilgileri
+ZONES = [
+    {"id": "somine", "name": "Somine Bolgesi", "description": "Sol taraf, somine yakininda, 3 dikdortgen + 3 yuvarlak masa"},
+    {"id": "sahne", "name": "Sahne Bolgesi", "description": "Orta kisim, sahne onunde, 4 dikdortgen masa"},
+    {"id": "manzara", "name": "Manzara Bolgesi", "description": "Sag taraf, manzara yonunde, 4 dikdortgen masa"},
+    {"id": "ara", "name": "Ara Bolge", "description": "Sahne-manzara arasi, 4 kucuk masa"},
+    {"id": "bar", "name": "Bar Bolgesi", "description": "Ana giris yaninda, 2 bar masasi"},
 ]
 
 # Öğün süreleri (dakika)
@@ -86,16 +105,17 @@ MEAL_TIME_SLOTS = {
 
 # Restoran konfigi
 RESTAURANT_CONFIG = {
-    "name": "Antakya Sofrasi",
+    "name": "Kozbeyli Konagi - Antakya Sofrasi",
     "total_tables": len(TABLES),
-    "small_tables_2": len([t for t in TABLES if t["capacity"] == 2]),
-    "small_tables_3": len([t for t in TABLES if t["capacity"] == 3]),
-    "medium_tables_4": len([t for t in TABLES if t["capacity"] == 4]),
-    "indoor_tables": len([t for t in TABLES if t["location"] == "indoor"]),
-    "outdoor_tables": len([t for t in TABLES if t["location"] == "outdoor"]),
-    "max_party_size": 12,  # Masa birleştirme ile
+    "rectangular_tables": len([t for t in TABLES if t["type"] == "rectangular"]),
+    "round_tables": len([t for t in TABLES if t["type"] == "round"]),
+    "small_tables": len([t for t in TABLES if t["type"] == "small"]),
+    "bar_tables": len([t for t in TABLES if t["type"] == "bar"]),
+    "total_capacity": sum(t["capacity"] for t in TABLES),
+    "max_party_size": 24,
     "tables": TABLES,
     "combinable_tables": COMBINABLE_TABLES,
+    "zones": ZONES,
     "meal_durations": {k.value: v for k, v in MEAL_DURATIONS.items()},
     "meal_time_slots": {k.value: v for k, v in MEAL_TIME_SLOTS.items()},
 }
@@ -173,7 +193,7 @@ async def find_available_tables(date: str, time: str, meal_type: MealType, party
                         "name": combo["name"],
                         "capacity": combo["combined_capacity"],
                         "type": "combined",
-                        "location": combo["location"],
+                        "zone": combo["zone"],
                         "is_combined": True,
                         "combined_table_ids": combo["ids"],
                     })
@@ -399,3 +419,69 @@ async def table_reservation_stats():
         },
         "config": RESTAURANT_CONFIG,
     }
+
+
+
+@router.get("/table-reservations/floor-plan")
+async def get_floor_plan(date: Optional[str] = None):
+    """Get full floor plan with current table statuses for a given date"""
+    check_date = date or utcnow()[:10]
+    now_time = datetime.now().strftime("%H:%M")
+
+    reservations = await db.table_reservations.find({
+        "date": check_date,
+        "status": {"$in": [TableStatus.PENDING, TableStatus.CONFIRMED, TableStatus.SEATED]},
+    }, {"_id": 0}).to_list(200)
+
+    # Build table status map
+    table_status_map = {}
+    for res in reservations:
+        tid = res.get("table_id")
+        if tid:
+            start = time_to_minutes(res["time"])
+            end = start + res.get("duration_minutes", 120)
+            now_mins = time_to_minutes(now_time)
+            is_current = start <= now_mins < end
+            table_status_map[tid] = {
+                "reservation_id": res["id"],
+                "guest_name": res["guest_name"],
+                "party_size": res["party_size"],
+                "time": res["time"],
+                "end_time": res.get("end_time", ""),
+                "status": res["status"],
+                "meal_type": res.get("meal_type", ""),
+                "is_current": is_current,
+            }
+
+    floor_plan = []
+    for zone in ZONES:
+        zone_tables = []
+        for table in TABLES:
+            if table["zone"] == zone["id"]:
+                reservation_info = table_status_map.get(table["id"])
+                zone_tables.append({
+                    **table,
+                    "is_occupied": table["id"] in table_status_map,
+                    "reservation": reservation_info,
+                })
+        floor_plan.append({
+            **zone,
+            "tables": zone_tables,
+            "occupied_count": sum(1 for t in zone_tables if t["is_occupied"]),
+            "total_count": len(zone_tables),
+        })
+
+    return {
+        "date": check_date,
+        "zones": floor_plan,
+        "total_tables": len(TABLES),
+        "occupied_tables": len(table_status_map),
+        "available_tables": len(TABLES) - len(table_status_map),
+        "total_capacity": sum(t["capacity"] for t in TABLES),
+    }
+
+
+@router.get("/table-reservations/zones")
+async def get_zones():
+    """Get zone definitions"""
+    return {"zones": ZONES}

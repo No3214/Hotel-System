@@ -15,41 +15,34 @@ Domain: kozbeylikonagi.com.tr
 - **Push Notifications:** VAPID (pywebpush)
 
 ## Silinen Moduller (3 Mart 2026)
-- ~~Mutfak Dashboard (Kitchen)~~ - SILINDI
-- ~~Finansal Takip (Financials)~~ - SILINDI
-- ~~Dinamik Fiyatlandirma (Pricing/Revenue)~~ - SILINDI
+- ~~Mutfak Dashboard~~ - ~~Finansal Takip~~ - ~~Dinamik Fiyatlandirma~~
 
-## Celery Task Queue (3 Mart 2026 - EKLENDI)
-APScheduler yerine Celery + Redis entegrasyonu:
-- 6 zamanli gorev (beat): kahvalti, sabah hatirlama, temizlik, aksam kontrol, WA hatirlatma, WA tesekkur
-- 2 on-demand gorev: WA bildirim, audit alert
-- Worker: 2 concurrent, celery+scheduled queues
-- Beat: Europe/Istanbul timezone
-
-## Implementation Status
-
-### Tamamlanan Ozellikler
+## Tamamlanan Ozellikler
 - Dashboard, Room/Guest/Reservation CRUD, AI Chatbot (Gemini)
 - Staff/Shifts, Events, Housekeeping, Knowledge Base
-- QR Menu (100+ urun), Sosyal Medya, Masa Rez.
-- WhatsApp Bot + Instagram DM (mock mod)
-- Unified Webhook Router (WA + IG)
+- QR Menu (100+ urun), Sosyal Medya
+- WhatsApp Bot + Instagram DM (mock mod) + Unified Webhook Router
 - Anti-Halucinasyon, Rate Limiter, Sadakat Sistemi
 - Coklu Dil (5 dil), PWA, Redis Caching, Push Notifications
 - Domain Routing (/admin, / = public menu), SEO, QR Kod
 - Celery Task Queue (6 zamanli + 2 on-demand)
 - Analitik Dashboard, Guvenlik/Audit
+- **Gorsel Masa Yerlsim Plani** (20 masa, 5 bolge, 106 kapasite, gercek PDF'den)
+- **Railway + WhatsApp Kurulum Rehberi** (KURULUM_REHBERI.md)
 
-### Test Durumu
-- Iteration 17: WA/IG entegrasyonu %100
-- Iteration 18: Modul silme + Celery %100
+## Masa Yerlsim Plani (3 Mart 2026)
+- Somine Bolgesi: M1, M2, M3 (dikdortgen) + A, B, C (yuvarlak)
+- Sahne Bolgesi: M5, M6, M7, M8
+- Manzara Bolgesi: M10, M11, M12, M13
+- Ara Bolge: S1, S2, S3, S4 (kucuk)
+- Bar Bolgesi: BAR1, BAR2
+- Birlestirilebilir masa gruplari (max 24 kisi)
+- Floor-plan API: /api/table-reservations/floor-plan
 
 ## Credentials
 - Admin: admin / admin123
 
 ## Upcoming Tasks
-- P0: Vercel Deployment Rehberi (kozbeylikonagi.com.tr)
-- P0: WhatsApp API Edinme Rehberi
 - P0: HotelRunner API (anahtarlar bekleniyor)
 - P1: Online odeme (Stripe/Iyzico)
 - P2: Misafir Self-Servis Portali
