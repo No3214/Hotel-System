@@ -1,6 +1,14 @@
 # Kozbeyli Konagi - Changelog
 
-## [2026-02-17] Faz 20: WhatsApp & Instagram Entegrasyonu
+## [2026-03-03] Modul Silme + Celery Task Queue
+- **Silindi:** Mutfak Dashboard (kitchen router + KitchenPage), Finansal Takip (financials router + FinancialsPage), Dinamik Fiyatlandirma (pricing + revenue routers, PricingPage + RevenueManagementPage)
+- **Eklendi:** Celery Task Queue - APScheduler yerine Redis-backed dagitik gorev kuyrugu
+  - `celery_app.py`: Celery konfigurasyonu, 6 beat zamanlama, worker/beat subprocess yonetimi
+  - `celery_tasks.py`: 8 gorev (6 zamanli + 2 on-demand), pymongo sync DB erisimi
+  - `routers/automation.py` guncellendi: Celery .delay() ile gorev tetikleme
+  - `server.py` guncellendi: scheduler → celery_app
+- **Frontend:** App.js'den 4 sayfa (kitchen, financials, pricing, revenue) + nav linkleri kaldirildi
+- Test: Backend 15/15 (%100), Frontend %100 - Iteration 18
 - **WhatsApp Business API Service** (`services/whatsapp_service.py`): Production-grade WhatsApp Cloud API entegrasyonu, mock mod, 5 otel sablon metodu
 - **Instagram Messaging API Service** (`services/instagram_service.py`): Instagram DM islemesi, mock mod destegi
 - **Unified Webhook Router** (`routers/webhooks.py`): WhatsApp + Instagram webhook isleme, HMAC dogrulama, chatbot entegrasyonu
