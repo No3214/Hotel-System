@@ -16,7 +16,7 @@ const FALLBACK_TR = {
   occupied: "Dolu", pending: "Bekleyen", completed: "Tamamlanan",
   whatsapp: "WhatsApp", pricing: "Fiyatlama", reviews: "Google Yorumlari",
   lifecycle: "Misafir Dongusu", social: "Sosyal Medya",
-  table_reservations: "Masa Rez.", organization: "Organizasyon",
+  table_reservations: "Masa Rez.", organization: "Organizasyon", proposals: "Teklifler",
   guide: "Foca Rehberi", automation: "Otomasyon",
   general: "Genel", communication: "Iletisim", operations: "Operasyon",
   information: "Bilgi", system: "Sistem",

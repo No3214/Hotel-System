@@ -65,8 +65,8 @@
         "Instagram Durum": "Mock Mod"
       },
       "webhook_urls": {
-        "WhatsApp": "https://hospitality-hub-59.preview.emergentagent.com/api/webhooks/whatsapp",
-        "Instagram": "https://hospitality-hub-59.preview.emergentagent.com/api/webhooks/instagram"
+        "WhatsApp": "https://teklif-yonetimi-2.preview.emergentagent.com/api/webhooks/whatsapp",
+        "Instagram": "https://teklif-yonetimi-2.preview.emergentagent.com/api/webhooks/instagram"
       },
       "mock_warning": "Visible when API not configured"
     }
