@@ -25,23 +25,19 @@ from routers.messages import router as messages_router
 from routers.campaigns import router as campaigns_router
 from routers.reviews import router as reviews_router
 from routers.settings import router as settings_router
-from routers.pricing import router as pricing_router
 from routers.table_reservations import router as table_router
 from routers.lifecycle import router as lifecycle_router
 from routers.automation import router as automation_router
 from routers.public_menu import router as public_menu_router
 from routers.menu_admin import router as menu_admin_router
 from routers.social_media import router as social_media_router
-from routers.kitchen import router as kitchen_router
 from routers.whatsapp import router as whatsapp_router
 from routers.loyalty import router as loyalty_router
-from routers.revenue import router as revenue_router
 from routers.analytics import router as analytics_router
 from routers.audit import router as audit_router
 from routers.hotelrunner import router as hotelrunner_router
 from routers.cache import router as cache_router
 from routers.notifications import router as notifications_router
-from routers.financials import router as financials_router
 from routers.qr import router as qr_router
 from routers.webhooks import router as webhooks_router
 
@@ -110,23 +106,19 @@ api.include_router(messages_router)
 api.include_router(campaigns_router)
 api.include_router(reviews_router)
 api.include_router(settings_router)
-api.include_router(pricing_router)
 api.include_router(table_router)
 api.include_router(lifecycle_router)
 api.include_router(automation_router)
 api.include_router(public_menu_router)
 api.include_router(menu_admin_router)
 api.include_router(social_media_router)
-api.include_router(kitchen_router)
 api.include_router(whatsapp_router)
 api.include_router(loyalty_router)
-api.include_router(revenue_router)
 api.include_router(analytics_router)
 api.include_router(audit_router)
 api.include_router(hotelrunner_router)
 api.include_router(cache_router)
 api.include_router(notifications_router)
-api.include_router(financials_router)
 api.include_router(qr_router)
 api.include_router(webhooks_router)
 
@@ -154,10 +146,10 @@ async def startup():
     from services.database_optimizer import apply_indexes
     await apply_indexes()
 
-    # Scheduler baslat
-    from scheduler import start_scheduler
-    start_scheduler()
-    logger.info("Scheduler started")
+    # Celery beat baslat (background process)
+    from celery_app import start_celery_beat
+    start_celery_beat()
+    logger.info("Celery beat started")
 
 
 @app.on_event("shutdown")

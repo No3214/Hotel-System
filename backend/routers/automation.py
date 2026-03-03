@@ -4,12 +4,11 @@ from database import db
 from helpers import utcnow, new_id
 from datetime import datetime, timedelta, timezone
 from hotel_data import HOTEL_POLICIES
-from scheduler import (
-    breakfast_prep_job,
-    morning_reminders_job,
-    checkout_cleaning_job,
-    evening_room_check_job,
-    get_scheduled_jobs,
+from celery_tasks import (
+    breakfast_prep_task,
+    morning_reminders_task,
+    checkout_cleaning_task,
+    evening_room_check_task,
 )
 
 router = APIRouter(tags=["automation"])
@@ -223,49 +222,51 @@ async def automation_summary():
 
 @router.post("/automation/breakfast-notification")
 async def run_breakfast_notification():
-    """Kahvalti hazirligi bildirimini manuel tetikle"""
-    await breakfast_prep_job()
-    last_log = await db.automation_logs.find_one(
-        {"type": "breakfast_prep"}, {"_id": 0}, sort=[("created_at", -1)]
-    )
-    return {"success": True, "type": "breakfast_prep", "notification": last_log}
+    """Kahvalti hazirligi bildirimini Celery ile tetikle"""
+    breakfast_prep_task.delay()
+    return {"success": True, "type": "breakfast_prep", "message": "Gorev kuyruga eklendi"}
 
 
 @router.post("/automation/morning-reminders")
 async def run_morning_reminders():
-    """Sabah hatirlama mesajlarini manuel tetikle"""
-    await morning_reminders_job()
-    logs = await db.automation_logs.find(
-        {"type": {"$in": ["morning_toilet_reminder", "morning_checkin_reminder"]}},
-        {"_id": 0}
-    ).sort("created_at", -1).limit(2).to_list(2)
-    return {"success": True, "type": "morning_reminders", "notifications": logs}
+    """Sabah hatirlama mesajlarini Celery ile tetikle"""
+    morning_reminders_task.delay()
+    return {"success": True, "type": "morning_reminders", "message": "Gorev kuyruga eklendi"}
 
 
 @router.post("/automation/cleaning-notification")
 async def run_cleaning_notification():
-    """Temizlik listesi bildirimini manuel tetikle"""
-    await checkout_cleaning_job()
-    last_log = await db.automation_logs.find_one(
-        {"type": "checkout_cleaning"}, {"_id": 0}, sort=[("created_at", -1)]
-    )
-    return {"success": True, "type": "checkout_cleaning", "notification": last_log}
+    """Temizlik listesi bildirimini Celery ile tetikle"""
+    checkout_cleaning_task.delay()
+    return {"success": True, "type": "checkout_cleaning", "message": "Gorev kuyruga eklendi"}
 
 
 @router.post("/automation/evening-room-check")
 async def run_evening_room_check():
-    """Aksam oda kontrolu bildirimini manuel tetikle"""
-    await evening_room_check_job()
-    last_log = await db.automation_logs.find_one(
-        {"type": "evening_room_check"}, {"_id": 0}, sort=[("created_at", -1)]
-    )
-    return {"success": True, "type": "evening_room_check", "notification": last_log}
+    """Aksam oda kontrolu bildirimini Celery ile tetikle"""
+    evening_room_check_task.delay()
+    return {"success": True, "type": "evening_room_check", "message": "Gorev kuyruga eklendi"}
 
 
 @router.get("/automation/scheduled-jobs")
 async def list_scheduled_jobs():
-    """Zamanli gorevlerin durumunu getir"""
-    jobs = get_scheduled_jobs()
+    """Celery beat zamanli gorevlerini getir"""
+    from celery_app import celery_app as capp
+    beat_schedule = capp.conf.beat_schedule or {}
+    jobs = []
+    for name, config in beat_schedule.items():
+        schedule = config.get("schedule", {})
+        if hasattr(schedule, 'hour') and hasattr(schedule, 'minute'):
+            schedule_str = f"{schedule.hour}:{str(schedule.minute).zfill(2)}"
+        else:
+            schedule_str = str(schedule)
+        jobs.append({
+            "id": name,
+            "name": name,
+            "task": config.get("task", ""),
+            "schedule": schedule_str,
+            "status": "active",
+        })
     return {"jobs": jobs, "total": len(jobs)}
 
 

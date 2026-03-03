@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, BedDouble, Users, MessageCircle, CheckSquare,
   Calendar, Sparkles, BookOpen, UtensilsCrossed, Menu, ChevronLeft,
-  CalendarCheck, UserCog, Mail, MapPin, Settings, Star, TrendingUp, Heart, LogOut, QrCode, Share2,
-  Globe, Bell, DollarSign
+  CalendarCheck, UserCog, Mail, MapPin, Settings, Star, Heart, LogOut, QrCode, Share2,
+  Globe, Bell
 } from 'lucide-react';
 
 import { setAuthToken, getMe } from './api';
@@ -21,7 +21,6 @@ const TasksPage = lazy(() => import('./pages/TasksPage'));
 const EventsPage = lazy(() => import('./pages/EventsPage'));
 const HousekeepingPage = lazy(() => import('./pages/HousekeepingPage'));
 const KnowledgePage = lazy(() => import('./pages/KnowledgeBasePage'));
-const MenuPage = lazy(() => import('./pages/MenuPage'));
 const MessagesPage = lazy(() => import('./pages/MessagesPage'));
 const ReservationsPage = lazy(() => import('./pages/ReservationsPage'));
 const StaffPage = lazy(() => import('./pages/StaffPage'));
@@ -29,18 +28,14 @@ const CampaignsPage = lazy(() => import('./pages/CampaignsPage'));
 const FocaGuidePage = lazy(() => import('./pages/FocaGuidePage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const ReviewsPage = lazy(() => import('./pages/ReviewsPage'));
-const PricingPage = lazy(() => import('./pages/PricingPage'));
 const TableReservationsPage = lazy(() => import('./pages/TableReservationsPage'));
 const LifecyclePage = lazy(() => import('./pages/LifecyclePage'));
 const AutomationPage = lazy(() => import('./pages/AutomationPage'));
 const SocialMediaPage = lazy(() => import('./pages/SocialMediaPage'));
-const KitchenPage = lazy(() => import('./pages/KitchenPage'));
 const WhatsAppPage = lazy(() => import('./pages/WhatsAppPage'));
-const RevenueManagementPage = lazy(() => import('./pages/RevenueManagementPage'));
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
 const AuditSecurityPage = lazy(() => import('./pages/AuditSecurityPage'));
 const HotelRunnerPage = lazy(() => import('./pages/HotelRunnerPage'));
-const FinancialsPage = lazy(() => import('./pages/FinancialsPage'));
 
 const NAV_CONFIG = [
   {
@@ -50,10 +45,7 @@ const NAV_CONFIG = [
       { id: 'reservations', nameKey: 'reservations', icon: CalendarCheck },
       { id: 'rooms', nameKey: 'rooms', icon: BedDouble },
       { id: 'guests', nameKey: 'guests', icon: Users },
-      { id: 'pricing', nameKey: 'pricing', icon: TrendingUp },
-      { id: 'revenue', nameKey: 'revenue', icon: TrendingUp },
       { id: 'analytics', nameKey: 'analytics', icon: LayoutDashboard },
-      { id: 'financials', nameKey: 'financials', icon: DollarSign },
     ],
   },
   {
@@ -76,7 +68,6 @@ const NAV_CONFIG = [
       { id: 'housekeeping', nameKey: 'housekeeping', icon: BedDouble },
       { id: 'staff', nameKey: 'staff', icon: UserCog },
       { id: 'table_reservations', nameKey: 'table_reservations', icon: UtensilsCrossed },
-      { id: 'kitchen', nameKey: 'kitchen', icon: UtensilsCrossed },
     ],
   },
   {
@@ -113,25 +104,20 @@ const PAGES = {
   events: EventsPage,
   housekeeping: HousekeepingPage,
   knowledge: KnowledgePage,
-  menu: MenuPage,
   reservations: ReservationsPage,
   staff: StaffPage,
   campaigns: CampaignsPage,
   reviews: ReviewsPage,
-  pricing: PricingPage,
   table_reservations: TableReservationsPage,
   lifecycle: LifecyclePage,
   automation: AutomationPage,
   social: SocialMediaPage,
-  kitchen: KitchenPage,
   whatsapp: WhatsAppPage,
   guide: FocaGuidePage,
   settings: SettingsPage,
-  revenue: RevenueManagementPage,
   analytics: AnalyticsPage,
   audit: AuditSecurityPage,
   hotelrunner: HotelRunnerPage,
-  financials: FinancialsPage,
 };
 
 export default function App() {
