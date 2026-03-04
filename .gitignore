@@ -96,5 +96,5 @@ docker-compose.override.yml
 backend/uploads/*
 !backend/uploads/.gitkeep
 
-# Frontend build copied into backend (created by Docker)
-backend/static_frontend/
+# Frontend build copied into backend (served by FastAPI)
+# backend/static_frontend/ is tracked — contains production frontend build
