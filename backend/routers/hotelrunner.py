@@ -15,15 +15,11 @@ from services.hotelrunner_service import (
     pull_reservations, confirm_reservation, get_hr_channels, full_hr_sync,
 )
 import logging
-import os
 
 router = APIRouter(tags=["hotelrunner"])
 logger = logging.getLogger(__name__)
 
-# Legacy env vars (kept for backward compatibility)
-HOTELRUNNER_API_KEY = os.environ.get("HOTELRUNNER_API_KEY", "")
-HOTELRUNNER_HOTEL_ID = os.environ.get("HOTELRUNNER_HOTEL_ID", "")
-MOCK_MODE = not is_live() and not (HOTELRUNNER_API_KEY and HOTELRUNNER_HOTEL_ID)
+MOCK_MODE = not is_live()
 
 # Kozbeyli Konagi special days
 SPECIAL_DATES = [
@@ -184,19 +180,16 @@ async def sync_rates():
 
 @router.post("/hotelrunner/sync/full")
 async def sync_full():
-    if is_live():
-        hr_result = await full_hr_sync()
-        results = {
-            "reservations": {"success": True, "type": "reservations", **hr_result.get("reservations", {})},
-            "availability": {"success": True, "type": "availability", **hr_result.get("rooms", {})},
-            "rates": await sync_rates(),
-        }
-    else:
-        results = {
-            "reservations": await sync_reservations(),
-            "availability": await sync_availability(),
-            "rates": await sync_rates(),
-        }
+    results = {
+        "reservations": await sync_reservations(),
+        "availability": await sync_availability(),
+        "rates": await sync_rates(),
+    }
+    await db.sync_logs.insert_one({
+        "id": new_id(), "timestamp": utcnow(), "sync_type": "full",
+        "status": "success", "items_processed": 0,
+        "items_failed": 0, "mock": MOCK_MODE, "duration_ms": 0,
+    })
     return {"success": True, "type": "full_sync", "results": results, "mock": MOCK_MODE}
 
 
@@ -212,8 +205,8 @@ async def get_status():
         "connected": is_live(),
         "mock_mode": MOCK_MODE,
         "mode": "live" if is_live() else "mock",
-        "api_key_set": is_live() or bool(HOTELRUNNER_API_KEY),
-        "hotel_id_set": is_live() or bool(HOTELRUNNER_HOTEL_ID),
+        "api_key_set": is_live(),
+        "hotel_id_set": is_live(),
         "last_sync": last_sync,
         "total_syncs": total_syncs,
         "failed_syncs": failed_syncs,
@@ -347,8 +340,8 @@ async def get_config():
     return {
         "mock_mode": MOCK_MODE,
         "live_mode": is_live(),
-        "api_key_set": is_live() or bool(HOTELRUNNER_API_KEY),
-        "hotel_id_set": is_live() or bool(HOTELRUNNER_HOTEL_ID),
+        "api_key_set": is_live(),
+        "hotel_id_set": is_live(),
         "sync_interval_minutes": 15,
         "features": {
             "reservation_sync": True,

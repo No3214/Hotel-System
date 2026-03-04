@@ -309,23 +309,30 @@ app.add_middleware(
 
 async def sync_rooms():
     """Sync rooms in DB with hotel_data.py definitions. Upsert by room_id."""
+    from pymongo import UpdateOne, InsertOne
+
     expected_ids = {r["room_id"] for r in ROOMS}
     db_rooms = await db.rooms.find({}, {"_id": 0, "room_id": 1}).to_list(100)
     db_ids = {r["room_id"] for r in db_rooms}
 
     if db_ids == expected_ids and len(db_ids) == len(ROOMS):
-        # Same room IDs — update fields in case data changed
-        for room in ROOMS:
-            await db.rooms.update_one(
+        # Same room IDs — bulk update fields in case data changed
+        ops = [
+            UpdateOne(
                 {"room_id": room["room_id"]},
                 {"$set": {**room, "updated_at": utcnow()}},
             )
+            for room in ROOMS
+        ]
+        await db.rooms.bulk_write(ops)
         return "updated"
 
     # Room IDs changed — drop old and insert fresh
     await db.rooms.delete_many({})
-    for room in ROOMS:
-        await db.rooms.insert_one({**room, "status": "available", "created_at": utcnow()})
+    now = utcnow()
+    await db.rooms.insert_many(
+        [{**room, "status": "available", "created_at": now} for room in ROOMS]
+    )
     logger.info(f"Rooms re-seeded: {len(ROOMS)} room types")
     return "reseeded"
 

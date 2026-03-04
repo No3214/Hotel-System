@@ -27,24 +27,30 @@ def _auth():
 class HRClient:
     def __init__(self):
         self.timeout = httpx.Timeout(30.0, connect=10.0)
+        self._client = None
+
+    def _get_client(self):
+        if self._client is None or self._client.is_closed:
+            self._client = httpx.AsyncClient(timeout=self.timeout)
+        return self._client
 
     async def request(self, method, path, ver="v2", params=None, data=None):
         url = f"{HR_BASE}/{ver}/{path}"
         all_params = {**(params or {}), **_auth()}
+        client = self._get_client()
         for attempt in range(3):
             try:
-                async with httpx.AsyncClient(timeout=self.timeout) as c:
-                    kw = {"params": all_params}
-                    if method == "GET":
-                        resp = await c.get(url, **kw)
-                    elif method == "PUT":
-                        resp = await c.put(url, data=data, **kw)
-                    elif method == "POST":
-                        resp = await c.post(url, data=data, **kw)
-                    else:
-                        resp = await c.get(url, **kw)
-                    resp.raise_for_status()
-                    return resp.json()
+                kw = {"params": all_params}
+                if method == "GET":
+                    resp = await client.get(url, **kw)
+                elif method == "PUT":
+                    resp = await client.put(url, data=data, **kw)
+                elif method == "POST":
+                    resp = await client.post(url, data=data, **kw)
+                else:
+                    resp = await client.get(url, **kw)
+                resp.raise_for_status()
+                return resp.json()
             except httpx.HTTPStatusError as e:
                 if attempt < 2 and e.response.status_code in (429, 500, 502, 503):
                     await asyncio.sleep(2 * (attempt + 1))
@@ -178,11 +184,13 @@ async def full_hr_sync():
     results = {"timestamp": datetime.now(timezone.utc).isoformat()}
     try:
         results["rooms"] = await get_rooms()
-    except Exception:
+    except Exception as e:
+        logger.error(f"full_hr_sync rooms failed: {e}")
         results["rooms"] = {"error": "failed"}
     try:
         results["reservations"] = await pull_reservations(per_page=50)
-    except Exception:
+    except Exception as e:
+        logger.error(f"full_hr_sync reservations failed: {e}")
         results["reservations"] = {"error": "failed"}
     return results
 
