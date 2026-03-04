@@ -95,3 +95,6 @@ docker-compose.override.yml
 # Uploads
 backend/uploads/*
 !backend/uploads/.gitkeep
+
+# Frontend build copied into backend (created by Docker)
+backend/static_frontend/

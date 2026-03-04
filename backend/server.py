@@ -1,5 +1,6 @@
 from fastapi import FastAPI, APIRouter, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from pathlib import Path
@@ -296,6 +297,54 @@ api.include_router(organization_router)
 api.include_router(proposals_router)
 
 app.include_router(api)
+
+# ==================== FRONTEND STATIC FILES ====================
+FRONTEND_DIR = Path(__file__).parent / "static_frontend"
+
+if FRONTEND_DIR.exists() and (FRONTEND_DIR / "index.html").exists():
+    # Serve static assets (JS, CSS, images, fonts)
+    if (FRONTEND_DIR / "static").exists():
+        app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR / "static")), name="static-assets")
+    if (FRONTEND_DIR / "fonts").exists():
+        app.mount("/fonts", StaticFiles(directory=str(FRONTEND_DIR / "fonts")), name="fonts")
+    if (FRONTEND_DIR / "brand").exists():
+        app.mount("/brand", StaticFiles(directory=str(FRONTEND_DIR / "brand")), name="brand")
+    if (FRONTEND_DIR / "uploads").exists():
+        app.mount("/uploads", StaticFiles(directory=str(FRONTEND_DIR / "uploads")), name="uploads")
+
+    # Serve root-level files (manifest.json, logo.jpeg, etc.)
+    @app.get("/manifest.json")
+    async def manifest():
+        return FileResponse(str(FRONTEND_DIR / "manifest.json"))
+
+    @app.get("/asset-manifest.json")
+    async def asset_manifest():
+        return FileResponse(str(FRONTEND_DIR / "asset-manifest.json"))
+
+    @app.get("/service-worker.js")
+    async def service_worker():
+        return FileResponse(str(FRONTEND_DIR / "service-worker.js"), media_type="application/javascript")
+
+    @app.get("/logo.jpeg")
+    async def logo():
+        return FileResponse(str(FRONTEND_DIR / "logo.jpeg"))
+
+    # SPA fallback — serve index.html for all non-API routes
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        # Don't intercept /api routes
+        if full_path.startswith("api/"):
+            return JSONResponse(status_code=404, content={"detail": "Not Found"})
+        # Try to serve the file directly first
+        file_path = FRONTEND_DIR / full_path
+        if full_path and file_path.exists() and file_path.is_file():
+            return FileResponse(str(file_path))
+        # SPA fallback
+        return FileResponse(str(FRONTEND_DIR / "index.html"))
+
+    logger.info(f"Frontend static files served from {FRONTEND_DIR}")
+else:
+    logger.warning(f"Frontend directory not found at {FRONTEND_DIR} — frontend will not be served")
 
 app.add_middleware(
     CORSMiddleware,
