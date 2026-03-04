@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getReviews, createReview, generateReviewResponse, updateReview, deleteReview, getReviewStats } from '../api';
+import { getReviews, createReview, generateReviewResponse, updateReview, deleteReview, getReviewStats, postReviewToGoogle, syncGoogleReviews, getGoogleReviewConfig } from '../api';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
-import { Star, Plus, Trash2, Sparkles, Copy, Check, RefreshCw, MessageSquare, TrendingUp } from 'lucide-react';
+import { Star, Plus, Trash2, Sparkles, Copy, Check, RefreshCw, MessageSquare, TrendingUp, Send, Settings, ExternalLink, AlertCircle } from 'lucide-react';
 
 const TONES = [
   { value: 'professional', label: 'Profesyonel' },
@@ -27,7 +27,7 @@ function StarRating({ rating, onChange, interactive = false }) {
   );
 }
 
-function ReviewCard({ review, onGenerate, onDelete, generating }) {
+function ReviewCard({ review, onGenerate, onDelete, onPostToGoogle, generating, posting }) {
   const [copied, setCopied] = useState(false);
   const [tone, setTone] = useState('professional');
   const [editedResponse, setEditedResponse] = useState(review.ai_response || '');
@@ -64,6 +64,11 @@ function ReviewCard({ review, onGenerate, onDelete, generating }) {
                 <Badge variant="outline" className="text-[10px] border-white/10 text-[#7e7e8a]">
                   {review.platform === 'google' ? 'Google' : review.platform}
                 </Badge>
+                {review.google_reply_posted && (
+                  <Badge className="bg-emerald-500/10 text-emerald-400 border-0 text-[10px]">
+                    <Check className="w-2.5 h-2.5 mr-0.5" /> Google'a Gonderildi
+                  </Badge>
+                )}
               </div>
             </div>
           </div>
@@ -112,6 +117,13 @@ function ReviewCard({ review, onGenerate, onDelete, generating }) {
                   {saving ? 'Kaydediliyor...' : 'Kaydet'}
                 </Button>
               )}
+              {review.google_review_name && !review.google_reply_posted && (
+                <Button size="sm" className="h-7 text-xs bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={() => onPostToGoogle(review.id)} disabled={posting === review.id}>
+                  <Send className="w-3 h-3 mr-1" />
+                  {posting === review.id ? 'Gonderiliyor...' : "Google'a Gonder"}
+                </Button>
+              )}
               <div className="flex-1" />
               <select value={tone} onChange={e => setTone(e.target.value)}
                 className="h-7 bg-[#0f0f14] border border-white/10 rounded text-xs text-[#a9a9b2] px-2" data-testid={`tone-select-${review.id}`}>
@@ -149,7 +161,7 @@ function ReviewCard({ review, onGenerate, onDelete, generating }) {
         </span>
         {review.responded_at && (
           <span className="text-[10px] text-emerald-400/60">
-            Yanitlandi: {review.responded_at.split('T')[0]}
+            Yanitlandi: {typeof review.responded_at === 'string' ? review.responded_at.split('T')[0] : ''}
           </span>
         )}
       </div>
@@ -162,7 +174,11 @@ export default function ReviewsPage() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(null);
+  const [posting, setPosting] = useState(null);
+  const [syncing, setSyncing] = useState(false);
   const [open, setOpen] = useState(false);
+  const [configOpen, setConfigOpen] = useState(false);
+  const [googleConfig, setGoogleConfig] = useState(null);
   const [form, setForm] = useState({ reviewer_name: '', rating: 5, review_text: '', platform: 'google', review_date: '' });
 
   const load = useCallback(() => {
@@ -184,18 +200,55 @@ export default function ReviewsPage() {
 
   const handleGenerate = async (reviewId, tone) => {
     setGenerating(reviewId);
-    try {
-      await generateReviewResponse(reviewId, tone);
-      load();
-    } catch (err) {
-      console.error(err);
-    }
+    try { await generateReviewResponse(reviewId, tone); load(); } catch (err) { console.error(err); }
     setGenerating(null);
+  };
+
+  const handlePostToGoogle = async (reviewId) => {
+    setPosting(reviewId);
+    try {
+      const res = await postReviewToGoogle(reviewId);
+      if (res.data.posted) {
+        load();
+      } else {
+        alert(res.data.reason || 'Google API hatasi');
+      }
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Google API baglantisi ayarlanmamis');
+    }
+    setPosting(null);
+  };
+
+  const handleSyncGoogle = async () => {
+    setSyncing(true);
+    try {
+      const res = await syncGoogleReviews();
+      if (res.data.success) {
+        alert(`${res.data.synced} yeni yorum senkronize edildi`);
+        load();
+      } else {
+        setConfigOpen(true);
+        // Load config for setup guide
+        try {
+          const cfg = await getGoogleReviewConfig();
+          setGoogleConfig(cfg.data);
+        } catch (e) { console.error(e); }
+      }
+    } catch (err) { console.error(err); }
+    setSyncing(false);
   };
 
   const handleDelete = async (id) => {
     await deleteReview(id).catch(console.error);
     load();
+  };
+
+  const loadConfig = async () => {
+    try {
+      const cfg = await getGoogleReviewConfig();
+      setGoogleConfig(cfg.data);
+      setConfigOpen(true);
+    } catch (e) { console.error(e); }
   };
 
   if (loading) {
@@ -212,49 +265,119 @@ export default function ReviewsPage() {
   return (
     <div className="p-6 lg:p-8 space-y-6 max-w-[1400px]" data-testid="reviews-page">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold text-[#C4972A]" data-testid="reviews-title">Google Yorumlari</h1>
-          <p className="text-[#7e7e8a] text-sm mt-1">AI destekli profesyonel yorum yanitlama</p>
+          <p className="text-[#7e7e8a] text-sm mt-1">AI destekli profesyonel yorum yanitlama + Google API entegrasyonu</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-[#C4972A] hover:bg-[#a87a1f] text-white" data-testid="add-review-btn">
-              <Plus className="w-4 h-4 mr-2" /> Yorum Ekle
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="bg-[#1a1a22] border-[#C4972A]/20">
-            <DialogHeader><DialogTitle className="text-[#C4972A]">Yeni Google Yorumu</DialogTitle></DialogHeader>
-            <div className="space-y-3">
-              <Input placeholder="Misafir adi *" value={form.reviewer_name}
-                onChange={e => setForm({ ...form, reviewer_name: e.target.value })}
-                className="bg-white/5 border-white/10 text-white" data-testid="review-name-input" />
-              <div className="space-y-1">
-                <label className="text-xs text-[#7e7e8a]">Puan</label>
-                <StarRating rating={form.rating} onChange={r => setForm({ ...form, rating: r })} interactive />
-              </div>
-              <textarea
-                placeholder="Yorum metni *"
-                value={form.review_text}
-                onChange={e => setForm({ ...form, review_text: e.target.value })}
-                className="w-full bg-white/5 border border-white/10 rounded-md p-3 text-sm text-white resize-none focus:border-[#C4972A]/40 focus:outline-none"
-                rows={4}
-                data-testid="review-text-input"
-              />
-              <Input type="date" value={form.review_date}
-                onChange={e => setForm({ ...form, review_date: e.target.value })}
-                className="bg-white/5 border-white/10 text-white" data-testid="review-date-input" />
-              <Button className="w-full bg-[#C4972A] hover:bg-[#a87a1f] text-white" onClick={handleCreate} data-testid="submit-review-btn">
-                Yorum Ekle
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" className="border-white/10 text-[#7e7e8a] hover:text-[#C4972A] hover:border-[#C4972A]/30 text-xs"
+            onClick={loadConfig}>
+            <Settings className="w-3.5 h-3.5 mr-1.5" /> Google API Ayarlari
+          </Button>
+          <Button variant="outline" className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10 text-xs"
+            onClick={handleSyncGoogle} disabled={syncing}>
+            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${syncing ? 'animate-spin' : ''}`} />
+            {syncing ? 'Senkronize Ediliyor...' : "Google'dan Cek"}
+          </Button>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-[#C4972A] hover:bg-[#a87a1f] text-white" data-testid="add-review-btn">
+                <Plus className="w-4 h-4 mr-2" /> Yorum Ekle
               </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent className="bg-[#1a1a22] border-[#C4972A]/20">
+              <DialogHeader><DialogTitle className="text-[#C4972A]">Yeni Google Yorumu</DialogTitle></DialogHeader>
+              <div className="space-y-3">
+                <Input placeholder="Misafir adi *" value={form.reviewer_name}
+                  onChange={e => setForm({ ...form, reviewer_name: e.target.value })}
+                  className="bg-white/5 border-white/10 text-white" data-testid="review-name-input" />
+                <div className="space-y-1">
+                  <label className="text-xs text-[#7e7e8a]">Puan</label>
+                  <StarRating rating={form.rating} onChange={r => setForm({ ...form, rating: r })} interactive />
+                </div>
+                <textarea
+                  placeholder="Yorum metni *"
+                  value={form.review_text}
+                  onChange={e => setForm({ ...form, review_text: e.target.value })}
+                  className="w-full bg-white/5 border border-white/10 rounded-md p-3 text-sm text-white resize-none focus:border-[#C4972A]/40 focus:outline-none"
+                  rows={4}
+                  data-testid="review-text-input"
+                />
+                <Input type="date" value={form.review_date}
+                  onChange={e => setForm({ ...form, review_date: e.target.value })}
+                  className="bg-white/5 border-white/10 text-white" data-testid="review-date-input" />
+                <Button className="w-full bg-[#C4972A] hover:bg-[#a87a1f] text-white" onClick={handleCreate} data-testid="submit-review-btn">
+                  Yorum Ekle
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
+
+      {/* Google API Config Dialog */}
+      <Dialog open={configOpen} onOpenChange={setConfigOpen}>
+        <DialogContent className="bg-[#1a1a22] border-[#C4972A]/20 max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader><DialogTitle className="text-[#C4972A]">Google Business API Kurulumu</DialogTitle></DialogHeader>
+          <div className="space-y-4 text-sm">
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 flex gap-2">
+              <AlertCircle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+              <div className="text-amber-200/80 text-xs">
+                Google yorumlariniza otomatik yanit verebilmek icin Google Business Profile API entegrasyonu gereklidir.
+              </div>
+            </div>
+
+            {googleConfig && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${googleConfig.configured ? 'bg-emerald-400' : 'bg-red-400'}`} />
+                  <span className="text-[#a9a9b2] text-xs">Client ID/Secret: {googleConfig.configured ? 'Ayarlandi' : 'Eksik'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${googleConfig.has_account_id ? 'bg-emerald-400' : 'bg-red-400'}`} />
+                  <span className="text-[#a9a9b2] text-xs">Account ID: {googleConfig.has_account_id ? 'Ayarlandi' : 'Eksik'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${googleConfig.has_location_id ? 'bg-emerald-400' : 'bg-red-400'}`} />
+                  <span className="text-[#a9a9b2] text-xs">Location ID: {googleConfig.has_location_id ? 'Ayarlandi' : 'Eksik'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${googleConfig.has_refresh_token ? 'bg-emerald-400' : 'bg-red-400'}`} />
+                  <span className="text-[#a9a9b2] text-xs">Refresh Token: {googleConfig.has_refresh_token ? 'Ayarlandi' : 'Eksik'}</span>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <h4 className="text-[#C4972A] font-medium text-xs uppercase">Kurulum Adimlari</h4>
+              <ol className="space-y-1.5 text-xs text-[#a9a9b2]">
+                <li>1. <a href="https://console.cloud.google.com" target="_blank" rel="noreferrer" className="text-blue-400 hover:underline">Google Cloud Console</a>'a gidin</li>
+                <li>2. Yeni proje olusturun veya mevcut projeyi secin</li>
+                <li>3. <strong>My Business Business Information API</strong> etkinlestirin</li>
+                <li>4. <strong>Kimlik Bilgileri</strong> &gt; OAuth 2.0 istemci kimligi olusturun</li>
+                <li>5. <strong>Redirect URI:</strong> <code className="text-[#C4972A] bg-white/5 px-1 rounded">https://hotel-system-production.up.railway.app/api/reviews/google-callback</code></li>
+                <li>6. Asagidaki degiskenleri Railway environment variables'a ekleyin:</li>
+              </ol>
+              <div className="bg-black/30 rounded-lg p-3 text-xs font-mono text-[#a9a9b2] space-y-1">
+                <div>GOOGLE_BUSINESS_CLIENT_ID=xxx</div>
+                <div>GOOGLE_BUSINESS_CLIENT_SECRET=xxx</div>
+                <div>GOOGLE_BUSINESS_ACCOUNT_ID=xxx</div>
+                <div>GOOGLE_BUSINESS_LOCATION_ID=xxx</div>
+                <div>GOOGLE_BUSINESS_REFRESH_TOKEN=xxx</div>
+              </div>
+              <p className="text-[10px] text-[#7e7e8a]">
+                Account ID ve Location ID bilgilerini Google Business Profile yonetim panelinizden bulabilirsiniz.
+                Refresh token icin OAuth2 playground kullanabilirsiniz.
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Stats */}
       {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3" data-testid="review-stats">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3" data-testid="review-stats">
           <div className="bg-[#12121a] border border-white/5 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-1">
               <MessageSquare className="w-4 h-4 text-[#C4972A]" />
@@ -283,6 +406,13 @@ export default function ReviewsPage() {
             </div>
             <p className="text-2xl font-bold text-white" data-testid="stat-pending">{stats.pending}</p>
           </div>
+          <div className="bg-[#12121a] border border-white/5 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <ExternalLink className="w-4 h-4 text-blue-400" />
+              <span className="text-xs text-[#7e7e8a]">Google'a Gonderilen</span>
+            </div>
+            <p className="text-2xl font-bold text-white">{stats.google_posted || 0}</p>
+          </div>
         </div>
       )}
 
@@ -292,6 +422,11 @@ export default function ReviewsPage() {
           <MessageSquare className="w-12 h-12 text-[#3a3a45] mx-auto mb-3" />
           <p className="text-[#7e7e8a]">Henuz yorum eklenmemis</p>
           <p className="text-[#5a5a65] text-sm mt-1">Google yorumlarinizi ekleyerek AI ile profesyonel yanitlar olusturun</p>
+          <Button className="mt-4 bg-blue-600 hover:bg-blue-700 text-white text-xs"
+            onClick={handleSyncGoogle} disabled={syncing}>
+            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${syncing ? 'animate-spin' : ''}`} />
+            Google'dan Yorumlari Cek
+          </Button>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4" data-testid="reviews-list">
@@ -301,7 +436,9 @@ export default function ReviewsPage() {
               review={review}
               onGenerate={handleGenerate}
               onDelete={handleDelete}
+              onPostToGoogle={handlePostToGoogle}
               generating={generating}
+              posting={posting}
             />
           ))}
         </div>

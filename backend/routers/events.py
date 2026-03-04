@@ -1,10 +1,40 @@
-from fastapi import APIRouter, HTTPException
-from typing import Optional
+from fastapi import APIRouter, HTTPException, UploadFile, File
+from typing import Optional, List
 from database import db
 from helpers import utcnow, new_id, clean_doc
 from models import EventCreate
+from config import UPLOAD_DIR
+from pathlib import Path
+import base64
+import uuid
 
 router = APIRouter(tags=["events"])
+
+EVENTS_UPLOAD_DIR = UPLOAD_DIR / "events"
+EVENTS_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def save_base64_image(data_uri: str) -> str:
+    """Save a base64 data URI to disk and return the URL path."""
+    if not data_uri.startswith("data:image/"):
+        # Already a URL, return as-is
+        return data_uri
+
+    # Parse data URI: data:image/png;base64,xxxxx
+    header, b64data = data_uri.split(",", 1)
+    ext = "jpg"
+    if "png" in header:
+        ext = "png"
+    elif "webp" in header:
+        ext = "webp"
+    elif "gif" in header:
+        ext = "gif"
+
+    filename = f"{uuid.uuid4().hex[:12]}.{ext}"
+    filepath = EVENTS_UPLOAD_DIR / filename
+    filepath.write_bytes(base64.b64decode(b64data))
+
+    return f"/uploads/events/{filename}"
 
 
 @router.get("/events")
@@ -16,9 +46,16 @@ async def list_events(active_only: bool = False):
 
 @router.post("/events")
 async def create_event(data: EventCreate):
+    # Process images (base64 -> file)
+    saved_images = []
+    for img in (data.images or [])[:2]:  # Max 2 images
+        if img:
+            saved_images.append(save_base64_image(img))
+
     event = {
         "id": new_id(),
         **data.model_dump(),
+        "images": saved_images,
         "created_at": utcnow(),
         "updated_at": utcnow(),
         "registrations": 0,
@@ -29,6 +66,14 @@ async def create_event(data: EventCreate):
 
 @router.patch("/events/{event_id}")
 async def update_event(event_id: str, data: dict):
+    # Process images if present
+    if "images" in data and isinstance(data["images"], list):
+        saved = []
+        for img in data["images"][:2]:
+            if img:
+                saved.append(save_base64_image(img))
+        data["images"] = saved
+
     data["updated_at"] = utcnow()
     result = await db.events.update_one({"id": event_id}, {"$set": data})
     if result.matched_count == 0:
@@ -78,6 +123,7 @@ async def seed_sample_events():
                 "sinirsiz_alkolu_menu": 5500
             },
             "cover_image": "https://customer-assets.emergentagent.com/job_eefe8292-3bc3-43c2-a988-596565102f4c/artifacts/wezbaewp_image.png",
+            "images": [],
             "created_at": utcnow(),
             "updated_at": utcnow(),
             "registrations": 0,
@@ -112,6 +158,7 @@ async def seed_sample_events():
                 "sinirsiz_alkolu_menu": 6000
             },
             "cover_image": "https://customer-assets.emergentagent.com/job_eefe8292-3bc3-43c2-a988-596565102f4c/artifacts/ufyjexba_image.png",
+            "images": [],
             "created_at": utcnow(),
             "updated_at": utcnow(),
             "registrations": 0,

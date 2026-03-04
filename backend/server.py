@@ -306,6 +306,12 @@ api.include_router(proposals_router)
 
 app.include_router(api)
 
+# ==================== UPLOADS STATIC FILES ====================
+# Serve uploaded event images etc. from backend/uploads/
+_backend_uploads = Path(__file__).parent / "uploads"
+if _backend_uploads.exists():
+    app.mount("/uploads", StaticFiles(directory=str(_backend_uploads)), name="backend-uploads")
+
 # ==================== FRONTEND STATIC FILES ====================
 FRONTEND_DIR = Path(__file__).parent / "static_frontend"
 

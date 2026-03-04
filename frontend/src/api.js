@@ -231,9 +231,15 @@ export const getLanguages = () => api.get('/i18n');
 export const getReviews = (params) => api.get('/reviews', { params });
 export const createReview = (data) => api.post('/reviews', data);
 export const generateReviewResponse = (reviewId, tone) => api.post(`/reviews/${reviewId}/generate-response?tone=${tone}`);
+export const postReviewToGoogle = (reviewId) => api.post(`/reviews/${reviewId}/post-to-google`);
+export const syncGoogleReviews = () => api.post('/reviews/sync-google');
+export const getGoogleReviewConfig = () => api.get('/reviews/google-config');
 export const updateReview = (id, data) => api.patch(`/reviews/${id}`, data);
 export const deleteReview = (id) => api.delete(`/reviews/${id}`);
 export const getReviewStats = () => api.get('/reviews/stats');
+
+// ==================== INSTAGRAM TEST ====================
+export const sendInstagramWebhook = (data) => api.post('/instagram/webhook', data);
 
 // ==================== DYNAMIC PRICING ====================
 export const calculatePrice = (roomId, date) => api.get(`/pricing/calculate?room_id=${roomId}&date=${date}`);

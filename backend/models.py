@@ -102,6 +102,7 @@ class EventCreate(BaseModel):
     capacity: Optional[int] = None
     price_per_person: Optional[float] = None
     is_active: bool = True
+    images: List[str] = Field(default_factory=list)  # base64 or URL list (max 2)
 
 
 class HousekeepingCreate(BaseModel):
