@@ -3,10 +3,19 @@ FROM node:20-alpine AS frontend-builder
 
 WORKDIR /frontend
 
+# Copy package files first for caching
 COPY frontend/package.json frontend/yarn.lock* ./
+
+# Install dependencies
 RUN yarn install --frozen-lockfile 2>/dev/null || yarn install
 
+# Copy frontend source
 COPY frontend/ .
+
+# Build with CI=false so warnings don't fail the build
+ENV CI=false
+ENV REACT_APP_BACKEND_URL=""
+ENV NODE_OPTIONS="--max-old-space-size=1024"
 RUN yarn build
 
 
@@ -43,4 +52,4 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')" || exit 1
 
-CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD uvicorn server:app --host 0.0.0.0 --port ${PORT:-8000}
