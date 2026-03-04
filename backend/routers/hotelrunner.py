@@ -7,12 +7,12 @@ and live HotelRunner API client via service layer.
 from fastapi import APIRouter, Query, Request
 from pydantic import BaseModel
 from typing import Optional, List
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from database import db
 from helpers import utcnow, new_id
 from services.hotelrunner_service import (
     is_live, get_rooms, update_availability, get_transaction_details,
-    pull_reservations, confirm_reservation, get_hr_channels, full_hr_sync,
+    pull_reservations, confirm_reservation, get_hr_channels,
 )
 import logging
 

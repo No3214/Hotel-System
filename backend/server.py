@@ -309,7 +309,7 @@ app.add_middleware(
 
 async def sync_rooms():
     """Sync rooms in DB with hotel_data.py definitions. Upsert by room_id."""
-    from pymongo import UpdateOne, InsertOne
+    from pymongo import UpdateOne
 
     expected_ids = {r["room_id"] for r in ROOMS}
     db_rooms = await db.rooms.find({}, {"_id": 0, "room_id": 1}).to_list(100)
