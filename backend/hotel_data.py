@@ -15,4 +15,4 @@ HOTEL_INFO = {
         "whatsapp": "+90 532 234 26 86",
         "email": "info@kozbeylikonagi.com",
         "website": "https://kozbeylikonagi.com",
-        "menu_website": "https://www.kozbeylikonagi.com.tr/menu/
+        "menu_website": "https://www.kozbeylikonagi.com.tr/menu/"
