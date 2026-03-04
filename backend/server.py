@@ -242,10 +242,7 @@ async def seed_database():
     from hotel_data import HOTEL_POLICIES
     from helpers import new_id
 
-    rooms_count = await db.rooms.count_documents({})
-    if rooms_count == 0:
-        for room in ROOMS:
-            await db.rooms.insert_one({**room, "created_at": utcnow()})
+    await sync_rooms()
 
     knowledge_count = await db.knowledge.count_documents({})
     if knowledge_count == 0:
@@ -310,15 +307,35 @@ app.add_middleware(
 )
 
 
+async def sync_rooms():
+    """Sync rooms in DB with hotel_data.py definitions. Upsert by room_id."""
+    expected_ids = {r["room_id"] for r in ROOMS}
+    db_rooms = await db.rooms.find({}, {"_id": 0, "room_id": 1}).to_list(100)
+    db_ids = {r["room_id"] for r in db_rooms}
+
+    if db_ids == expected_ids and len(db_ids) == len(ROOMS):
+        # Same room IDs — update fields in case data changed
+        for room in ROOMS:
+            await db.rooms.update_one(
+                {"room_id": room["room_id"]},
+                {"$set": {**room, "updated_at": utcnow()}},
+            )
+        return "updated"
+
+    # Room IDs changed — drop old and insert fresh
+    await db.rooms.delete_many({})
+    for room in ROOMS:
+        await db.rooms.insert_one({**room, "status": "available", "created_at": utcnow()})
+    logger.info(f"Rooms re-seeded: {len(ROOMS)} room types")
+    return "reseeded"
+
+
 @app.on_event("startup")
 async def startup():
     logger.info(f"Kozbeyli Konagi API starting — env={ENVIRONMENT}, db={DB_NAME}")
 
-    rooms_count = await db.rooms.count_documents({})
-    if rooms_count == 0:
-        for room in ROOMS:
-            await db.rooms.insert_one({**room, "created_at": utcnow()})
-        logger.info("Rooms seeded successfully")
+    result = await sync_rooms()
+    logger.info(f"Rooms sync: {result}")
 
     # Database schema validation
     from database import apply_schema_validation
