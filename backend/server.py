@@ -45,6 +45,10 @@ from routers.hotelrunner import router as hotelrunner_router
 from routers.cache import router as cache_router
 from routers.notifications import router as notifications_router
 from routers.qr import router as qr_router
+from routers.pricing import router as pricing_router
+from routers.revenue import router as revenue_router
+from routers.financials import router as financials_router
+from routers.kitchen import router as kitchen_router
 from routers.webhooks import router as webhooks_router
 from routers.organization import router as organization_router
 from routers.proposals import router as proposals_router
@@ -292,6 +296,10 @@ api.include_router(hotelrunner_router)
 api.include_router(cache_router)
 api.include_router(notifications_router)
 api.include_router(qr_router)
+api.include_router(pricing_router)
+api.include_router(revenue_router)
+api.include_router(financials_router)
+api.include_router(kitchen_router)
 api.include_router(webhooks_router)
 api.include_router(organization_router)
 api.include_router(proposals_router)

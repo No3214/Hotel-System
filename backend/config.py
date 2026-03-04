@@ -35,8 +35,9 @@ _cors_raw = os.environ.get('CORS_ORIGINS', '')
 if _cors_raw and _cors_raw.strip() != '*':
     CORS_ORIGINS = [origin.strip() for origin in _cors_raw.split(',') if origin.strip()]
 elif ENVIRONMENT == 'production':
-    CORS_ORIGINS = []  # Must be explicitly configured in production
-    logger.warning("CORS_ORIGINS not set in production! Set CORS_ORIGINS env var.")
+    # Frontend served from same origin — allow same-origin by default
+    CORS_ORIGINS = ['*']
+    logger.info("CORS_ORIGINS not set — defaulting to allow all (frontend same-origin)")
 else:
     CORS_ORIGINS = ['http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:3000']
 
