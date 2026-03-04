@@ -5,7 +5,7 @@ import {
   LayoutDashboard, BedDouble, Users, MessageCircle, CheckSquare,
   Calendar, Sparkles, BookOpen, UtensilsCrossed, Menu, ChevronLeft,
   CalendarCheck, UserCog, Mail, MapPin, Settings, Star, TrendingUp, Heart, LogOut, QrCode, Share2,
-  Globe, Bell, DollarSign
+  Globe, Bell, DollarSign, PartyPopper, FileText
 } from 'lucide-react';
 
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -43,6 +43,8 @@ const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
 const AuditSecurityPage = lazy(() => import('./pages/AuditSecurityPage'));
 const HotelRunnerPage = lazy(() => import('./pages/HotelRunnerPage'));
 const FinancialsPage = lazy(() => import('./pages/FinancialsPage'));
+const OrganizationPage = lazy(() => import('./pages/OrganizationPage'));
+const ProposalsPage = lazy(() => import('./pages/ProposalsPage'));
 
 const NAV_CONFIG = [
   {
@@ -75,6 +77,8 @@ const NAV_CONFIG = [
     items: [
       { id: 'tasks', path: '/admin/tasks', nameKey: 'tasks', icon: CheckSquare },
       { id: 'events', path: '/admin/events', nameKey: 'events', icon: Calendar },
+      { id: 'organization', path: '/admin/organization', nameKey: 'organization', icon: PartyPopper },
+      { id: 'proposals', path: '/admin/proposals', nameKey: 'proposals', icon: FileText },
       { id: 'housekeeping', path: '/admin/housekeeping', nameKey: 'housekeeping', icon: BedDouble },
       { id: 'staff', path: '/admin/staff', nameKey: 'staff', icon: UserCog },
       { id: 'table_reservations', path: '/admin/table-reservations', nameKey: 'table_reservations', icon: UtensilsCrossed },
@@ -140,6 +144,8 @@ export default function App() {
                 <Route path="staff" element={<PageWrapper><StaffPage /></PageWrapper>} />
                 <Route path="table-reservations" element={<PageWrapper><TableReservationsPage /></PageWrapper>} />
                 <Route path="kitchen" element={<PageWrapper><KitchenPage /></PageWrapper>} />
+                <Route path="organization" element={<PageWrapper><OrganizationPage /></PageWrapper>} />
+                <Route path="proposals" element={<PageWrapper><ProposalsPage /></PageWrapper>} />
                 <Route path="hotelrunner" element={<PageWrapper><HotelRunnerPage /></PageWrapper>} />
                 <Route path="knowledge" element={<PageWrapper><KnowledgePage /></PageWrapper>} />
                 <Route path="menu" element={<PageWrapper><MenuPage /></PageWrapper>} />

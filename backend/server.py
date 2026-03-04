@@ -171,6 +171,8 @@ PUBLIC_PATHS = [
     "/api/openapi.json",
     "/api/kvkk",
     "/api/notifications/vapid-key",
+    "/api/organization/info",
+    "/api/organization/inquiry",
 ]
 
 
