@@ -401,10 +401,10 @@ async def startup():
     from services.database_optimizer import apply_indexes
     await apply_indexes()
 
-    # Celery beat baslat (background process)
-    from celery_app import start_celery_beat
-    start_celery_beat()
-    logger.info("Celery beat started")
+    # Scheduler baslat
+    from scheduler import start_scheduler
+    start_scheduler()
+    logger.info("Scheduler started")
 
     logger.info("Kozbeyli Konagi API ready")
 

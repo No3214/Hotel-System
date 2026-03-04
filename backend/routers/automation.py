@@ -4,12 +4,17 @@ from database import db
 from helpers import utcnow, new_id
 from datetime import datetime, timedelta, timezone
 from hotel_data import HOTEL_POLICIES
-from celery_tasks import (
-    breakfast_prep_task,
-    morning_reminders_task,
-    checkout_cleaning_task,
-    evening_room_check_task,
-)
+try:
+    from celery_tasks import (
+        breakfast_prep_task,
+        morning_reminders_task,
+        checkout_cleaning_task,
+        evening_room_check_task,
+    )
+    CELERY_AVAILABLE = True
+except ImportError:
+    CELERY_AVAILABLE = False
+    breakfast_prep_task = morning_reminders_task = checkout_cleaning_task = evening_room_check_task = None
 
 router = APIRouter(tags=["automation"])
 
@@ -222,52 +227,65 @@ async def automation_summary():
 
 @router.post("/automation/breakfast-notification")
 async def run_breakfast_notification():
-    """Kahvalti hazirligi bildirimini Celery ile tetikle"""
-    breakfast_prep_task.delay()
-    return {"success": True, "type": "breakfast_prep", "message": "Gorev kuyruga eklendi"}
+    """Kahvalti hazirligi bildirimini tetikle"""
+    if CELERY_AVAILABLE and breakfast_prep_task:
+        breakfast_prep_task.delay()
+        return {"success": True, "type": "breakfast_prep", "message": "Gorev kuyruga eklendi"}
+    return {"success": False, "message": "Celery kurulu degil — gorev kuyrugu devre disi"}
 
 
 @router.post("/automation/morning-reminders")
 async def run_morning_reminders():
-    """Sabah hatirlama mesajlarini Celery ile tetikle"""
-    morning_reminders_task.delay()
-    return {"success": True, "type": "morning_reminders", "message": "Gorev kuyruga eklendi"}
+    """Sabah hatirlama mesajlarini tetikle"""
+    if CELERY_AVAILABLE and morning_reminders_task:
+        morning_reminders_task.delay()
+        return {"success": True, "type": "morning_reminders", "message": "Gorev kuyruga eklendi"}
+    return {"success": False, "message": "Celery kurulu degil — gorev kuyrugu devre disi"}
 
 
 @router.post("/automation/cleaning-notification")
 async def run_cleaning_notification():
-    """Temizlik listesi bildirimini Celery ile tetikle"""
-    checkout_cleaning_task.delay()
-    return {"success": True, "type": "checkout_cleaning", "message": "Gorev kuyruga eklendi"}
+    """Temizlik listesi bildirimini tetikle"""
+    if CELERY_AVAILABLE and checkout_cleaning_task:
+        checkout_cleaning_task.delay()
+        return {"success": True, "type": "checkout_cleaning", "message": "Gorev kuyruga eklendi"}
+    return {"success": False, "message": "Celery kurulu degil — gorev kuyrugu devre disi"}
 
 
 @router.post("/automation/evening-room-check")
 async def run_evening_room_check():
-    """Aksam oda kontrolu bildirimini Celery ile tetikle"""
-    evening_room_check_task.delay()
-    return {"success": True, "type": "evening_room_check", "message": "Gorev kuyruga eklendi"}
+    """Aksam oda kontrolu bildirimini tetikle"""
+    if CELERY_AVAILABLE and evening_room_check_task:
+        evening_room_check_task.delay()
+        return {"success": True, "type": "evening_room_check", "message": "Gorev kuyruga eklendi"}
+    return {"success": False, "message": "Celery kurulu degil — gorev kuyrugu devre disi"}
 
 
 @router.get("/automation/scheduled-jobs")
 async def list_scheduled_jobs():
-    """Celery beat zamanli gorevlerini getir"""
-    from celery_app import celery_app as capp
-    beat_schedule = capp.conf.beat_schedule or {}
-    jobs = []
-    for name, config in beat_schedule.items():
-        schedule = config.get("schedule", {})
-        if hasattr(schedule, 'hour') and hasattr(schedule, 'minute'):
-            schedule_str = f"{schedule.hour}:{str(schedule.minute).zfill(2)}"
-        else:
-            schedule_str = str(schedule)
-        jobs.append({
-            "id": name,
-            "name": name,
-            "task": config.get("task", ""),
-            "schedule": schedule_str,
-            "status": "active",
-        })
-    return {"jobs": jobs, "total": len(jobs)}
+    """Zamanli gorevleri getir"""
+    if not CELERY_AVAILABLE:
+        return {"jobs": [], "total": 0, "message": "Celery kurulu degil"}
+    try:
+        from celery_app import celery_app as capp
+        beat_schedule = capp.conf.beat_schedule or {}
+        jobs = []
+        for name, config in beat_schedule.items():
+            schedule = config.get("schedule", {})
+            if hasattr(schedule, 'hour') and hasattr(schedule, 'minute'):
+                schedule_str = f"{schedule.hour}:{str(schedule.minute).zfill(2)}"
+            else:
+                schedule_str = str(schedule)
+            jobs.append({
+                "id": name,
+                "name": name,
+                "task": config.get("task", ""),
+                "schedule": schedule_str,
+                "status": "active",
+            })
+        return {"jobs": jobs, "total": len(jobs)}
+    except Exception:
+        return {"jobs": [], "total": 0}
 
 
 @router.get("/automation/group-notifications")
