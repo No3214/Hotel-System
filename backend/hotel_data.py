@@ -183,10 +183,10 @@ ROOMS = [
     },
     {
         "room_id": "superior",
-        "name_tr": "Superior Oda",
-        "name_en": "Superior Room",
-        "description_tr": "Genis ve konforlu superior oda. Oturma alani ve balkon.",
-        "description_en": "Spacious and comfortable superior room. Sitting area and balcony.",
+        "name_tr": "Superior 2 Kisilik Oda",
+        "name_en": "Superior Double Room",
+        "description_tr": "Genis ve konforlu superior 2 kisilik oda. Oturma alani ve balkon.",
+        "description_en": "Spacious and comfortable superior double room. Sitting area and balcony.",
         "capacity": 2,
         "min_capacity": 1,
         "size_m2": 35,
@@ -466,7 +466,7 @@ GEMINI_SYSTEM_PROMPT = f"""Sen Kozbeyli Konagi'nin dijital misafir asistani "Asl
 4. Uc Kisilik Oda (30m2): 5.000 TL - Kucuk aileler icin ideal (2 adet)
 5. Aile Odasi 4 Kisilik (50m2): 6.000 TL - 1 cift + 2 tek yatak, oturma alani (2 adet)
 6. Aile Odasi 4 Kisilik Balkonlu (55m2): 6.000 TL - 1 cift + 2 tek yatak, oturma alani, ozel balkon (2 adet)
-7. Superior Oda (35m2): 5.500 TL - Genis, oturma alani, balkon, deniz manzarasi (1 adet)
+7. Superior 2 Kisilik Oda (35m2): 5.500 TL - Genis, oturma alani, balkon, deniz manzarasi (1 adet)
 8. Superior 3 Kisilik Oda (35m2): 5.500 TL - 1 cift + 1 tek yatak, oturma alani, balkon (1 adet)
 
 ## ODA OZELLIKLERI

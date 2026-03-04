@@ -1,22 +1,29 @@
 """
-HotelRunner API Integration (Mock Mode)
+HotelRunner API Integration
 Two-way synchronization for reservations, availability, and pricing.
-Includes cancellation policy engine, webhook processing, and OTA channel management.
+Includes cancellation policy engine, webhook processing, OTA channel management,
+and live HotelRunner API client via service layer.
 """
 from fastapi import APIRouter, Query, Request
-from typing import Optional
+from pydantic import BaseModel
+from typing import Optional, List
 from datetime import datetime, timedelta, timezone
 from database import db
 from helpers import utcnow, new_id
+from services.hotelrunner_service import (
+    is_live, get_rooms, update_availability, get_transaction_details,
+    pull_reservations, confirm_reservation, get_hr_channels, full_hr_sync,
+)
 import logging
 import os
 
 router = APIRouter(tags=["hotelrunner"])
 logger = logging.getLogger(__name__)
 
+# Legacy env vars (kept for backward compatibility)
 HOTELRUNNER_API_KEY = os.environ.get("HOTELRUNNER_API_KEY", "")
 HOTELRUNNER_HOTEL_ID = os.environ.get("HOTELRUNNER_HOTEL_ID", "")
-MOCK_MODE = not (HOTELRUNNER_API_KEY and HOTELRUNNER_HOTEL_ID)
+MOCK_MODE = not is_live() and not (HOTELRUNNER_API_KEY and HOTELRUNNER_HOTEL_ID)
 
 # Kozbeyli Konagi special days
 SPECIAL_DATES = [
@@ -32,6 +39,21 @@ OTA_CHANNELS = [
     {"id": "trivago", "name": "Trivago", "commission": 10, "status": "pending"},
 ]
 
+
+# ==================== PYDANTIC MODELS ====================
+
+class AvailUpdate(BaseModel):
+    inv_code: str
+    start_date: str  # YYYY-MM-DD
+    end_date: str
+    availability: int
+    channel_codes: Optional[List[str]] = None
+    price: Optional[float] = None
+    min_stay: Optional[int] = None
+    stop_sale: Optional[bool] = None
+
+
+# ==================== HELPER FUNCTIONS ====================
 
 def is_special_day(d: datetime) -> bool:
     if d.weekday() in (5, 6):
@@ -112,29 +134,20 @@ def map_hr_reservation(hr_res: dict) -> dict:
     }
 
 
-# ==================== MOCK SYNC ====================
-
-async def mock_sync_reservations():
-    return {"synced": 0, "new_reservations": 0, "updated_reservations": 0, "mock": True,
-            "message": "Mock mod: API anahtarlari ayarlandiginda gercek senkronizasyon yapilacak"}
-
-async def mock_sync_availability():
-    return {"synced": 0, "rooms_updated": 0, "mock": True,
-            "message": "Mock mod: Musaitlik bilgisi HotelRunner'a gonderilecek"}
-
-async def mock_sync_rates():
-    return {"synced": 0, "rates_updated": 0, "mock": True,
-            "message": "Mock mod: Fiyat bilgisi HotelRunner'a gonderilecek"}
-
-
-# ==================== SYNC ENDPOINTS ====================
+# ==================== SYNC ENDPOINTS (Frontend-compatible) ====================
 
 @router.post("/hotelrunner/sync/reservations")
 async def sync_reservations():
-    result = await mock_sync_reservations()
+    if is_live():
+        result = await pull_reservations(per_page=50)
+        synced = len(result.get("reservations", []))
+    else:
+        result = {"synced": 0, "new_reservations": 0, "updated_reservations": 0,
+                  "mock": True, "message": "Mock mod: API anahtarlari ayarlandiginda gercek senkronizasyon yapilacak"}
+        synced = 0
     await db.sync_logs.insert_one({
         "id": new_id(), "timestamp": utcnow(), "sync_type": "reservations",
-        "status": "success", "items_processed": result.get("synced", 0),
+        "status": "success", "items_processed": synced,
         "items_failed": 0, "mock": MOCK_MODE, "duration_ms": 0,
     })
     return {"success": True, "type": "reservations", **result}
@@ -142,10 +155,16 @@ async def sync_reservations():
 
 @router.post("/hotelrunner/sync/availability")
 async def sync_availability():
-    result = await mock_sync_availability()
+    if is_live():
+        result = await get_rooms()
+        synced = len(result.get("rooms", []))
+    else:
+        result = {"synced": 0, "rooms_updated": 0, "mock": True,
+                  "message": "Mock mod: Musaitlik bilgisi HotelRunner'a gonderilecek"}
+        synced = 0
     await db.sync_logs.insert_one({
         "id": new_id(), "timestamp": utcnow(), "sync_type": "availability",
-        "status": "success", "items_processed": result.get("synced", 0),
+        "status": "success", "items_processed": synced,
         "items_failed": 0, "mock": MOCK_MODE, "duration_ms": 0,
     })
     return {"success": True, "type": "availability", **result}
@@ -153,7 +172,8 @@ async def sync_availability():
 
 @router.post("/hotelrunner/sync/rates")
 async def sync_rates():
-    result = await mock_sync_rates()
+    result = {"synced": 0, "rates_updated": 0, "mock": True,
+              "message": "Mock mod: Fiyat bilgisi HotelRunner'a gonderilecek"}
     await db.sync_logs.insert_one({
         "id": new_id(), "timestamp": utcnow(), "sync_type": "rates",
         "status": "success", "items_processed": result.get("synced", 0),
@@ -163,16 +183,24 @@ async def sync_rates():
 
 
 @router.post("/hotelrunner/sync/full")
-async def full_sync():
-    results = {
-        "reservations": await sync_reservations(),
-        "availability": await sync_availability(),
-        "rates": await sync_rates(),
-    }
+async def sync_full():
+    if is_live():
+        hr_result = await full_hr_sync()
+        results = {
+            "reservations": {"success": True, "type": "reservations", **hr_result.get("reservations", {})},
+            "availability": {"success": True, "type": "availability", **hr_result.get("rooms", {})},
+            "rates": await sync_rates(),
+        }
+    else:
+        results = {
+            "reservations": await sync_reservations(),
+            "availability": await sync_availability(),
+            "rates": await sync_rates(),
+        }
     return {"success": True, "type": "full_sync", "results": results, "mock": MOCK_MODE}
 
 
-# ==================== STATUS & LOGS ====================
+# ==================== STATUS & LOGS (Frontend-compatible) ====================
 
 @router.get("/hotelrunner/status")
 async def get_status():
@@ -181,10 +209,11 @@ async def get_status():
     failed_syncs = await db.sync_logs.count_documents({"status": "error"})
 
     return {
-        "connected": not MOCK_MODE,
+        "connected": is_live(),
         "mock_mode": MOCK_MODE,
-        "api_key_set": bool(HOTELRUNNER_API_KEY),
-        "hotel_id_set": bool(HOTELRUNNER_HOTEL_ID),
+        "mode": "live" if is_live() else "mock",
+        "api_key_set": is_live() or bool(HOTELRUNNER_API_KEY),
+        "hotel_id_set": is_live() or bool(HOTELRUNNER_HOTEL_ID),
         "last_sync": last_sync,
         "total_syncs": total_syncs,
         "failed_syncs": failed_syncs,
@@ -202,6 +231,41 @@ async def get_sync_logs(
         query["sync_type"] = sync_type
     logs = await db.sync_logs.find(query, {"_id": 0}).sort("timestamp", -1).limit(limit).to_list(limit)
     return {"logs": logs, "total": len(logs)}
+
+
+# ==================== HR API ENDPOINTS (New service-based) ====================
+
+@router.get("/hotelrunner/rooms")
+async def hr_rooms():
+    """Get rooms from HotelRunner API (live or mock)."""
+    return await get_rooms()
+
+
+@router.put("/hotelrunner/rooms/availability")
+async def hr_avail(u: AvailUpdate):
+    """Update room availability on HotelRunner."""
+    return await update_availability(
+        u.inv_code, u.start_date, u.end_date, u.availability,
+        u.channel_codes, u.price, u.min_stay, u.stop_sale,
+    )
+
+
+@router.get("/hotelrunner/transactions/{tid}")
+async def hr_txn(tid: str):
+    """Get transaction details from HotelRunner."""
+    return await get_transaction_details(tid)
+
+
+@router.get("/hotelrunner/reservations")
+async def hr_reservations(page: int = 1, per_page: int = 25):
+    """Pull reservations from HotelRunner API."""
+    return await pull_reservations(page, per_page)
+
+
+@router.put("/hotelrunner/reservations/{rid}/confirm")
+async def hr_confirm(rid: str):
+    """Confirm reservation delivery on HotelRunner."""
+    return await confirm_reservation(rid)
 
 
 # ==================== CANCELLATION POLICY ====================
@@ -267,7 +331,13 @@ async def hotelrunner_webhook(request: Request):
 
 @router.get("/hotelrunner/channels")
 async def get_channels():
-    return {"channels": OTA_CHANNELS, "mock_mode": MOCK_MODE}
+    hr_channels = await get_hr_channels()
+    return {
+        "channels": OTA_CHANNELS,
+        "hr_channels": hr_channels.get("channels", []),
+        "mock_mode": MOCK_MODE,
+        "live": hr_channels.get("live", False),
+    }
 
 
 # ==================== CONFIGURATION ====================
@@ -276,8 +346,9 @@ async def get_channels():
 async def get_config():
     return {
         "mock_mode": MOCK_MODE,
-        "api_key_set": bool(HOTELRUNNER_API_KEY),
-        "hotel_id_set": bool(HOTELRUNNER_HOTEL_ID),
+        "live_mode": is_live(),
+        "api_key_set": is_live() or bool(HOTELRUNNER_API_KEY),
+        "hotel_id_set": is_live() or bool(HOTELRUNNER_HOTEL_ID),
         "sync_interval_minutes": 15,
         "features": {
             "reservation_sync": True,
@@ -286,5 +357,7 @@ async def get_config():
             "webhook_handler": True,
             "cancellation_policy": True,
             "channel_management": True,
+            "hr_api_rooms": True,
+            "hr_api_transactions": True,
         },
     }

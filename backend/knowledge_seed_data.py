@@ -67,7 +67,7 @@ Konaklama fiyatlarimiz (serpme kahvalti dahil):
 * Uc Kisilik Oda: {uc_kisilik} TL
 * Aile Odasi (4 Kisilik): {aile_odasi} TL
 * Aile Odasi (4 Kisilik) Balkonlu: {aile_odasi_balkonlu} TL
-* Superior Oda: {superior} TL
+* Superior 2 Kisilik Oda: {superior} TL
 * Superior 3 Kisilik Oda: {superior_uc_kisilik} TL
 
 Tum oda fiyatlarimiza serpme kahvalti, sucuklu yumurta ve pisi dahildir.

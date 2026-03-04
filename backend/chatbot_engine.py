@@ -395,7 +395,7 @@ async def get_auto_reply(message: str, language: str = "tr") -> Optional[Dict[st
         return {
             "matched": True,
             "intent": intent,
-            "message": "Guncel Oda Fiyatlari (Gecelik, Kahvalti Dahil):\n\n1. Standart Oda (25m2): 3.500 TL\n2. Standart Bahce Manzarali (25m2): 3.500 TL\n3. Standart Deniz Manzarali (25m2): 3.500 TL\n4. Uc Kisilik Oda (30m2): 5.000 TL\n5. Aile Odasi 4 Kisilik (50m2): 6.000 TL\n6. Aile Odasi 4 Kisilik Balkonlu (55m2): 6.000 TL\n7. Superior Oda (35m2): 5.500 TL\n8. Superior 3 Kisilik Oda (35m2): 5.500 TL\n\nTum odalarda: Klima, TV, WiFi, mini buzdolabi, ozel banyo.\nHos geldin ikrami: Su, cay, Nescafe, cikolatali Berliner.\n\nOzel gun fiyatlari (14 Subat, Yilbasi, Bayramlar) farkli olabilir.\n\nRezervason icin: +90 532 234 26 86"
+            "message": "Guncel Oda Fiyatlari (Gecelik, Kahvalti Dahil):\n\n1. Standart Oda (25m2): 3.500 TL\n2. Standart Bahce Manzarali (25m2): 3.500 TL\n3. Standart Deniz Manzarali (25m2): 3.500 TL\n4. Uc Kisilik Oda (30m2): 5.000 TL\n5. Aile Odasi 4 Kisilik (50m2): 6.000 TL\n6. Aile Odasi 4 Kisilik Balkonlu (55m2): 6.000 TL\n7. Superior 2 Kisilik Oda (35m2): 5.500 TL\n8. Superior 3 Kisilik Oda (35m2): 5.500 TL\n\nTum odalarda: Klima, TV, WiFi, mini buzdolabi, ozel banyo.\nHos geldin ikrami: Su, cay, Nescafe, cikolatali Berliner.\n\nOzel gun fiyatlari (14 Subat, Yilbasi, Bayramlar) farkli olabilir.\n\nRezervason icin: +90 532 234 26 86"
         }
 
     if intent == "organization":

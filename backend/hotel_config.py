@@ -97,8 +97,8 @@ ROOM_TYPES = [
     },
     {
         "id": "superior",
-        "name": "Superior Oda",
-        "name_en": "Superior Room",
+        "name": "Superior 2 Kisilik Oda",
+        "name_en": "Superior Double Room",
         "capacity": 2,
         "count": 2,
         "description": "Konfor ve lukusun birlestigi, genis ve ferah oda.",
