@@ -59,9 +59,39 @@ api = APIRouter(prefix="/api")
 async def health():
     try:
         await db.command("ping")
-        return {"status": "healthy", "database": "connected", "hotel": "Kozbeyli Konagi"}
+        db_status = "connected"
     except Exception as e:
-        return {"status": "unhealthy", "error": str(e)}
+        db_status = f"error: {str(e)}"
+
+    # Collect system info
+    import os
+    checks = {
+        "database": db_status,
+        "google_api_key": "configured" if os.environ.get("GOOGLE_API_KEY") else "missing",
+        "meta_token": "configured" if os.environ.get("META_ACCESS_TOKEN") else "not_set",
+        "vapid_key": "configured" if os.environ.get("VAPID_PUBLIC_KEY") else "not_set",
+        "celery_broker": "configured" if os.environ.get("CELERY_BROKER_URL") else "using_default",
+    }
+
+    # Count collections
+    try:
+        collections_stats = {
+            "rooms": await db.rooms.count_documents({}),
+            "reservations": await db.reservations.count_documents({}),
+            "guests": await db.guests.count_documents({}),
+            "social_posts": await db.social_posts.count_documents({}),
+            "tasks": await db.tasks.count_documents({}),
+        }
+    except Exception:
+        collections_stats = {}
+
+    is_healthy = db_status == "connected"
+    return {
+        "status": "healthy" if is_healthy else "unhealthy",
+        "hotel": "Kozbeyli Konagi",
+        "checks": checks,
+        "collections": collections_stats,
+    }
 
 
 # ==================== SEED ====================

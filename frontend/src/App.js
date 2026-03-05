@@ -12,6 +12,7 @@ import { LanguageProvider, useLanguage } from './hooks/useLanguage';
 import LoginPage from './pages/LoginPage';
 import PublicMenuPage from './pages/PublicMenuPage';
 import Dashboard from './pages/Dashboard';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Lazy load all non-critical pages
 const RoomsPage = lazy(() => import('./pages/RoomsPage'));
@@ -399,9 +400,11 @@ function AdminApp() {
             transition={{ duration: 0.2 }}
             className="h-full"
           >
-            <Suspense fallback={LazyFallback}>
-              <PageComponent onNavigate={setPage} />
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={LazyFallback}>
+                <PageComponent onNavigate={setPage} />
+              </Suspense>
+            </ErrorBoundary>
           </motion.div>
         </AnimatePresence>
       </main>

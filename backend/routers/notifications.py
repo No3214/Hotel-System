@@ -146,3 +146,83 @@ async def get_subscriber_count():
     """Get push notification subscriber count."""
     count = await db.push_subscriptions.count_documents({})
     return {"count": count}
+
+
+# ==================== IN-APP NOTIFICATION HISTORY ====================
+
+@router.get("/notifications/history")
+async def get_notification_history(limit: int = 50, offset: int = 0, unread_only: bool = False):
+    """In-app bildirim gecmisi - tum bildirimler (push, sistem, olay)."""
+    query = {}
+    if unread_only:
+        query["read"] = False
+
+    total = await db.in_app_notifications.count_documents(query)
+    notifications = await db.in_app_notifications.find(
+        query, {"_id": 0}
+    ).sort("created_at", -1).skip(offset).limit(limit).to_list(limit)
+
+    unread_count = await db.in_app_notifications.count_documents({"read": False})
+
+    return {
+        "total": total,
+        "unread_count": unread_count,
+        "notifications": notifications,
+    }
+
+
+@router.post("/notifications/in-app")
+async def create_in_app_notification(request: Request):
+    """Yeni in-app bildirim olustur."""
+    body = await request.json()
+    notification = {
+        "id": new_id(),
+        "type": body.get("type", "info"),  # info, warning, success, error, checkin, checkout, task, system
+        "title": body.get("title", ""),
+        "body": body.get("body", ""),
+        "link": body.get("link"),  # optional: navigate to page
+        "read": False,
+        "created_at": utcnow(),
+    }
+    await db.in_app_notifications.insert_one(notification)
+    return {"success": True, "notification": {k: v for k, v in notification.items() if k != "_id"}}
+
+
+@router.patch("/notifications/{notification_id}/read")
+async def mark_notification_read(notification_id: str):
+    """Bildirimi okundu olarak isaretle."""
+    result = await db.in_app_notifications.update_one(
+        {"id": notification_id},
+        {"$set": {"read": True, "read_at": utcnow()}}
+    )
+    if result.matched_count == 0:
+        from fastapi import HTTPException
+        raise HTTPException(404, "Bildirim bulunamadi")
+    return {"success": True}
+
+
+@router.post("/notifications/mark-all-read")
+async def mark_all_notifications_read():
+    """Tum bildirimleri okundu olarak isaretle."""
+    result = await db.in_app_notifications.update_many(
+        {"read": False},
+        {"$set": {"read": True, "read_at": utcnow()}}
+    )
+    return {"success": True, "updated": result.modified_count}
+
+
+@router.delete("/notifications/{notification_id}")
+async def delete_notification(notification_id: str):
+    """Bildirimi sil."""
+    result = await db.in_app_notifications.delete_one({"id": notification_id})
+    if result.deleted_count == 0:
+        from fastapi import HTTPException
+        raise HTTPException(404, "Bildirim bulunamadi")
+    return {"success": True}
+
+
+@router.delete("/notifications/history/clear")
+async def clear_notification_history():
+    """Tum bildirim gecmisini temizle (okunmus olanlari sil)."""
+    result = await db.in_app_notifications.delete_many({"read": True})
+    return {"success": True, "deleted": result.deleted_count}

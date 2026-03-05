@@ -19,6 +19,9 @@ export const getLocalGuide = () => api.get('/hotel/guide');
 // Rooms
 export const getRooms = () => api.get('/rooms');
 export const getRoom = (id) => api.get(`/rooms/${id}`);
+export const updateRoomStatus = (id, data) => api.patch(`/rooms/${id}/status`, data);
+export const updateRoomPrice = (id, data) => api.patch(`/rooms/${id}/price`, data);
+export const getRoomAvailability = () => api.get('/rooms/availability/summary');
 
 // Menu
 export const getMenu = () => api.get('/menu');
@@ -246,6 +249,30 @@ if (savedToken) {
   api.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
 }
 
+// Global error interceptor
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error.response?.status;
+
+    if (status === 401) {
+      // Token expired or invalid - redirect to login
+      localStorage.removeItem('kozbeyli_token');
+      localStorage.removeItem('kozbeyli_user');
+      delete api.defaults.headers.common['Authorization'];
+      if (window.location.pathname.startsWith('/admin')) {
+        window.location.reload();
+      }
+    }
+
+    if (status >= 500) {
+      console.error('Server error:', error.response?.data?.detail || error.message);
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 // Revenue Management
 export const getRevenueRoomTypes = () => api.get('/revenue/room-types');
 export const calculateDynamicPrice = (roomType, targetDate, basePrice) => api.get('/revenue/pricing/calculate', { params: { room_type: roomType, target_date: targetDate, base_price: basePrice } });
@@ -291,6 +318,12 @@ export const sendTestNotification = () => api.post('/notifications/send-test');
 export const getVapidKey = () => api.get('/notifications/vapid-key');
 export const sendPushNotification = (title, body, tag) => api.post('/notifications/send-push', { title, body, tag });
 export const getSubscriberCount = () => api.get('/notifications/subscribers');
+export const getNotificationHistory = (params) => api.get('/notifications/history', { params });
+export const createInAppNotification = (data) => api.post('/notifications/in-app', data);
+export const markNotificationRead = (id) => api.patch(`/notifications/${id}/read`);
+export const markAllNotificationsRead = () => api.post('/notifications/mark-all-read');
+export const deleteNotification = (id) => api.delete(`/notifications/${id}`);
+export const clearNotificationHistory = () => api.delete('/notifications/history/clear');
 
 // Financials
 export const getFinancialCategories = () => api.get('/financials/categories');
