@@ -89,7 +89,7 @@ async def submit_inquiry(data: OrganizationInquiry):
     """Organizasyon bilgi formu gonderimi"""
     inquiry = {
         "id": new_id(),
-        **data.dict(),
+        **data.model_dump(),
         "status": "new",
         "assigned_to": "",
         "admin_notes": "",
@@ -147,7 +147,7 @@ class InquiryUpdate(BaseModel):
 @router.patch("/organization/inquiries/{inquiry_id}")
 async def update_inquiry(inquiry_id: str, data: InquiryUpdate):
     """Organizasyon talebi guncelle (admin)"""
-    update_data = {k: v for k, v in data.dict().items() if v is not None}
+    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
     update_data["updated_at"] = utcnow()
     await db.organization_inquiries.update_one(
         {"id": inquiry_id},

@@ -65,14 +65,19 @@ export default function EventsPage() {
       price_per_person: form.price_per_person ? parseFloat(form.price_per_person) : null,
       images: (form.images || []).filter(Boolean),
     };
-    if (editingEvent) {
-      await updateEvent(editingEvent.id, payload);
-    } else {
-      await createEvent(payload);
+    try {
+      if (editingEvent) {
+        await updateEvent(editingEvent.id, payload);
+      } else {
+        await createEvent(payload);
+      }
+      resetForm();
+      setOpen(false);
+      load();
+    } catch (err) {
+      const msg = err.response?.data?.detail || 'Etkinlik kaydedilemedi';
+      alert(msg);
     }
-    resetForm();
-    setOpen(false);
-    load();
   };
 
   const handleEdit = (event) => {

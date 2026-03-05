@@ -19,6 +19,24 @@ async def list_reservations(status: Optional[str] = None, limit: int = 50, skip:
 
 @router.post("/reservations")
 async def create_reservation(data: ReservationCreate):
+    # Validate check_out > check_in
+    if data.check_out <= data.check_in:
+        raise HTTPException(400, "Cikis tarihi giris tarihinden sonra olmalidir")
+
+    # Check for overlapping reservations on the same room
+    overlap_query = {
+        "room_type": data.room_type,
+        "status": {"$nin": [ReservationStatus.CANCELLED, ReservationStatus.CHECKED_OUT, ReservationStatus.NO_SHOW]},
+        "check_in": {"$lt": data.check_out},
+        "check_out": {"$gt": data.check_in},
+    }
+    existing = await db.reservations.find_one(overlap_query)
+    if existing:
+        raise HTTPException(
+            409,
+            f"Bu oda ({data.room_type}) secilen tarihler icin zaten rezerve edilmis ({existing.get('check_in')} - {existing.get('check_out')})"
+        )
+
     reservation = {
         "id": new_id(),
         **data.model_dump(),
@@ -39,8 +57,8 @@ async def get_reservation(res_id: str):
 
 
 @router.patch("/reservations/{res_id}/status")
-async def update_reservation_status(res_id: str, status: str):
-    update = {"status": status, "updated_at": utcnow()}
+async def update_reservation_status(res_id: str, status: ReservationStatus):
+    update = {"status": status.value, "updated_at": utcnow()}
     if status == ReservationStatus.CHECKED_OUT:
         update["checked_out_at"] = utcnow()
     result = await db.reservations.update_one({"id": res_id}, {"$set": update})

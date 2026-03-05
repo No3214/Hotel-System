@@ -274,7 +274,7 @@ export const getHolidays = () => api.get('/pricing/holidays');
 // ==================== TABLE RESERVATIONS ====================
 export const getTableReservations = (params) => api.get('/table-reservations', { params });
 export const createTableReservation = (data) => api.post('/table-reservations', data);
-export const updateTableReservationStatus = (id, status, tableNumber) => api.patch(`/table-reservations/${id}/status?status=${status}${tableNumber ? `&table_number=${tableNumber}` : ''}`);
+export const updateTableReservationStatus = (id, status, tableId) => api.patch(`/table-reservations/${id}/status?status=${status}${tableId ? `&table_id=${tableId}` : ''}`);
 export const deleteTableReservation = (id) => api.delete(`/table-reservations/${id}`);
 export const getTableAvailability = (date) => api.get(`/table-reservations/availability?date=${date}`);
 export const getTableStats = () => api.get('/table-reservations/stats');

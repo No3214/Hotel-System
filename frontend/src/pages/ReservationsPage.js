@@ -47,19 +47,38 @@ export default function ReservationsPage() {
       return;
     }
     setErrors({});
-    await createReservation({
-      ...data,
-      guests_count: parseInt(data.guests_count) || 1,
-      total_price: data.total_price ? parseFloat(data.total_price) : null,
-    });
-    setForm({ guest_id: '', room_type: '', check_in: '', check_out: '', guests_count: 1, notes: '', total_price: '' });
-    setOpen(false);
-    load();
+    try {
+      await createReservation({
+        ...data,
+        guests_count: parseInt(data.guests_count) || 1,
+        total_price: data.total_price ? parseFloat(data.total_price) : null,
+      });
+      setForm({ guest_id: '', room_type: '', check_in: '', check_out: '', guests_count: 1, notes: '', total_price: '' });
+      setOpen(false);
+      load();
+    } catch (err) {
+      const msg = err.response?.data?.detail || 'Rezervasyon olusturulamadi';
+      alert(msg);
+    }
   };
 
   const handleStatusChange = async (id, newStatus) => {
-    await updateReservation(id, { status: newStatus });
-    load();
+    try {
+      await updateReservation(id, { status: newStatus });
+      load();
+    } catch (err) {
+      const msg = err.response?.data?.detail || 'Durum guncellenemedi';
+      alert(msg);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await deleteReservation(id);
+      load();
+    } catch (err) {
+      alert('Rezervasyon silinemedi');
+    }
   };
 
   const guestMap = Object.fromEntries(guests.map(g => [g.id, g.name]));
@@ -170,7 +189,7 @@ export default function ReservationsPage() {
                     <Button size="sm" variant="outline" onClick={() => handleStatusChange(res.id, 'cancelled')}
                       className="text-xs border-red-500/30 text-red-400 hover:bg-red-500/10">Iptal</Button>
                   )}
-                  <button onClick={() => { deleteReservation(res.id).then(load); }} className="text-[#7e7e8a] hover:text-red-400">
+                  <button onClick={() => handleDelete(res.id)} className="text-[#7e7e8a] hover:text-red-400">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
