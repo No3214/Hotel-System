@@ -20,6 +20,7 @@ export default function Dashboard({ onNavigate }) {
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(false);
   const intervalRef = useRef(null);
   const { t } = useLanguage();
 
@@ -29,7 +30,11 @@ export default function Dashboard({ onNavigate }) {
       const r = await getDashboardStats();
       setStats(r.data);
       setLastUpdate(new Date());
-    } catch (e) { console.error(e); }
+      setError(false);
+    } catch (e) {
+      console.error(e);
+      if (!stats) setError(true);
+    }
     setLoading(false);
     if (isManual) setTimeout(() => setRefreshing(false), 500);
   };
@@ -48,6 +53,20 @@ export default function Dashboard({ onNavigate }) {
           {[...Array(8)].map((_, i) => (
             <div key={i} className="h-24 bg-white/5 rounded-xl animate-pulse" />
           ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !stats) {
+    return (
+      <div className="p-8 flex items-center justify-center h-full">
+        <div className="text-center">
+          <p className="text-[#7e7e8a] text-sm mb-3">Dashboard verileri yuklenemedi.</p>
+          <button onClick={() => { setLoading(true); fetchStats(true); }}
+            className="px-4 py-2 bg-[#C4972A] text-[#0a0a0f] rounded-lg text-sm font-medium hover:bg-[#d4a73a] transition-colors">
+            Tekrar Dene
+          </button>
         </div>
       </div>
     );
@@ -225,7 +244,7 @@ export default function Dashboard({ onNavigate }) {
                 }`} />
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-[#e5e5e8] truncate">{res.guest_name || 'Misafir'}</p>
-                  <p className="text-[10px] text-[#5a5a65]">{res.room_id} | {res.check_in}</p>
+                  <p className="text-[10px] text-[#5a5a65]">{res.room_id || '-'} | {res.check_in || '-'}</p>
                 </div>
                 <Badge className="text-[9px] bg-white/5 text-[#7e7e8a]">
                   {t(res.status) || res.status}

@@ -251,7 +251,7 @@ function AdminApp() {
     const saved = localStorage.getItem('kozbeyli_user');
     const token = localStorage.getItem('kozbeyli_token');
     if (saved && token) {
-      setUser(JSON.parse(saved));
+      try { setUser(JSON.parse(saved)); } catch { /* corrupted localStorage */ }
       getMe().then(r => {
         const u = r.data;
         setUser(u);

@@ -863,10 +863,12 @@ function AutoPublishPanel({ onRefresh }) {
       getAutoPublishSettings(),
       getAutoPublishHistory(10),
     ]).then(([settingsRes, historyRes]) => {
-      setSettings(settingsRes.data);
-      setHistory(historyRes.data.history || []);
-    }).catch(console.error)
-      .finally(() => setLoading(false));
+      setSettings(settingsRes.data || { enabled: false, interval_hours: 24, platforms: [], tone: 'warm' });
+      setHistory(historyRes.data?.history || []);
+    }).catch(err => {
+      console.error(err);
+      setSettings({ enabled: false, interval_hours: 24, platforms: [], tone: 'warm' });
+    }).finally(() => setLoading(false));
   }, []);
 
   const handleSave = async () => {
@@ -1202,7 +1204,7 @@ function BatchDrivePanel({ onComplete }) {
   const [platformStatus, setPlatformStatus] = useState(null);
 
   useEffect(() => {
-    getPlatformStatus().then(res => setPlatformStatus(res.data.platforms)).catch(() => {});
+    getPlatformStatus().then(res => setPlatformStatus(res.data?.platforms || null)).catch(() => {});
   }, []);
 
   const handleImport = async () => {

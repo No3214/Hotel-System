@@ -58,21 +58,27 @@ export default function EventLeadsPage() {
 
   const handleAddLead = async () => {
     if (!newLead.group_name || !newLead.group_type) return;
-    await createEventLead(newLead);
-    setNewLead({ group_name: '', group_type: '', platform: 'instagram', contact_info: '', notes: '', target_event: '' });
-    setShowAddLead(false);
-    loadData();
+    try {
+      await createEventLead(newLead);
+      setNewLead({ group_name: '', group_type: '', platform: 'instagram', contact_info: '', notes: '', target_event: '' });
+      setShowAddLead(false);
+      loadData();
+    } catch (err) { console.error('Lead eklenemedi:', err); }
   };
 
   const handleDeleteLead = async (id) => {
     if (!window.confirm('Bu lead silinsin mi?')) return;
-    await deleteEventLead(id);
-    loadData();
+    try {
+      await deleteEventLead(id);
+      loadData();
+    } catch (err) { console.error('Lead silinemedi:', err); }
   };
 
   const handleStatusChange = async (id, status) => {
-    await updateEventLead(id, { status });
-    loadData();
+    try {
+      await updateEventLead(id, { status });
+      loadData();
+    } catch (err) { console.error('Durum guncellenemedi:', err); }
   };
 
   const handleGenerateMessage = async (lead, eventId, platform) => {
@@ -87,8 +93,10 @@ export default function EventLeadsPage() {
   };
 
   const handleLogContact = async (leadId) => {
-    await logLeadContact(leadId);
-    loadData();
+    try {
+      await logLeadContact(leadId);
+      loadData();
+    } catch (err) { console.error('Iletisim loglanamadi:', err); }
   };
 
   const filteredIdeas = categoryFilter === 'all' ? ideas : ideas.filter(i => i.category === categoryFilter);
@@ -223,7 +231,7 @@ export default function EventLeadsPage() {
                         <div>
                           <span className="text-[#7e7e8a] block mb-1">En Iyi Aylar</span>
                           <div className="flex gap-1 flex-wrap">
-                            {(idea.best_months.includes('tum_yil') ? ['Tum Yil'] : idea.best_months.slice(0, 4)).map(m => <span key={m} className="px-2 py-0.5 rounded bg-white/5 text-[#a9a9b2] text-[10px]">{m}</span>)}
+                            {((idea.best_months || []).includes('tum_yil') ? ['Tum Yil'] : (idea.best_months || []).slice(0, 4)).map(m => <span key={m} className="px-2 py-0.5 rounded bg-white/5 text-[#a9a9b2] text-[10px]">{m}</span>)}
                           </div>
                         </div>
                         <div>
@@ -234,7 +242,7 @@ export default function EventLeadsPage() {
                       <div className="mt-3">
                         <span className="text-[#7e7e8a] text-xs block mb-1">Hedef Kitle</span>
                         <div className="flex gap-1 flex-wrap">
-                          {idea.target_audience.map(t => {
+                          {(idea.target_audience || []).map(t => {
                             const grp = groups.find(g => g.id === t);
                             return <span key={t} className="px-2 py-0.5 rounded bg-[#8FAA86]/10 text-[#8FAA86] text-[10px]">{grp?.name || t}</span>;
                           })}
