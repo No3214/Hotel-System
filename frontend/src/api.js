@@ -178,6 +178,7 @@ export const publishSocialPost = (id) => api.post(`/social/posts/${id}/publish`)
 export const getSocialTemplates = () => api.get('/social/templates');
 export const getSocialStats = () => api.get('/social/stats');
 export const convertImageLink = (url) => api.post('/social/convert-image-link', { url });
+export const checkDuplicateMedia = (url) => api.post('/social/check-duplicate-media', { url });
 
 // Kitchen Dashboard
 export const getKitchenOrders = (params) => api.get('/kitchen/orders', { params });

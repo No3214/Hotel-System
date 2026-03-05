@@ -103,8 +103,42 @@ async def list_posts(status: Optional[str] = None, post_type: Optional[str] = No
     return {"posts": posts}
 
 
+@router.post("/social/check-duplicate-media")
+async def check_duplicate_media(data: ImageLinkRequest):
+    """Check if a media URL has already been used in a post"""
+    if not data.url:
+        return {"duplicate": False}
+
+    # Normalize the URL for comparison
+    normalized = convert_drive_link(data.url)
+
+    existing = await db.social_posts.find_one(
+        {"image_url": normalized},
+        {"_id": 0, "id": 1, "title": 1, "status": 1, "created_at": 1, "platforms": 1}
+    )
+    if existing:
+        return {
+            "duplicate": True,
+            "existing_post": existing,
+            "message": f"Bu gorsel daha once '{existing.get('title', 'Basliksiz')}' gonderisinde kullanildi."
+        }
+    return {"duplicate": False}
+
+
 @router.post("/social/posts")
 async def create_post(data: PostCreate):
+    # Check for duplicate media before creating
+    if data.image_url:
+        existing = await db.social_posts.find_one(
+            {"image_url": data.image_url},
+            {"_id": 0, "id": 1, "title": 1}
+        )
+        if existing:
+            raise HTTPException(
+                409,
+                f"Bu gorsel daha once '{existing.get('title', 'Basliksiz')}' gonderisinde kullanildi. Ayni gorseli tekrar kullanamazsiniz."
+            )
+
     post = {
         "id": new_id(),
         **data.model_dump(),
@@ -128,6 +162,19 @@ async def update_post(post_id: str, data: PostUpdate):
     updates = {k: v for k, v in data.model_dump().items() if v is not None}
     if not updates:
         raise HTTPException(400, "Guncellenecek alan yok")
+
+    # Check for duplicate media when image is being changed
+    if "image_url" in updates and updates["image_url"]:
+        existing = await db.social_posts.find_one(
+            {"image_url": updates["image_url"], "id": {"$ne": post_id}},
+            {"_id": 0, "id": 1, "title": 1}
+        )
+        if existing:
+            raise HTTPException(
+                409,
+                f"Bu gorsel daha once '{existing.get('title', 'Basliksiz')}' gonderisinde kullanildi. Ayni gorseli tekrar kullanamazsiniz."
+            )
+
     updates["updated_at"] = utcnow()
     result = await db.social_posts.update_one({"id": post_id}, {"$set": updates})
     if result.matched_count == 0:

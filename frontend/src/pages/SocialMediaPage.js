@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getSocialPosts, createSocialPost, updateSocialPost, deleteSocialPost, publishSocialPost, getSocialTemplates, getSocialStats, convertImageLink } from '../api';
+import { getSocialPosts, createSocialPost, updateSocialPost, deleteSocialPost, publishSocialPost, getSocialTemplates, getSocialStats, convertImageLink, checkDuplicateMedia } from '../api';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Plus, Trash2, Edit2, Save, X, Send, Copy, Instagram, Facebook, Twitter, MessageCircle, Eye, BarChart3, FileText, Sparkles, Clock, Linkedin, Video, Image, Link, Loader2 } from 'lucide-react';
@@ -67,14 +67,31 @@ export default function SocialMediaPage() {
   };
 
   const [imageLink, setImageLink] = useState('');
+  const [duplicateWarning, setDuplicateWarning] = useState(null);
 
   const handleImageLink = async () => {
     if (!imageLink.trim()) return;
-    
+
     setUploading(true);
+    setDuplicateWarning(null);
     try {
+      // First convert the link
       const res = await convertImageLink(imageLink);
-      setEditPost({ ...editPost, image_url: res.data.image_url });
+      const directUrl = res.data.image_url;
+
+      // Then check for duplicates
+      const dupCheck = await checkDuplicateMedia(directUrl);
+      if (dupCheck.data.duplicate) {
+        const existing = dupCheck.data.existing_post;
+        setDuplicateWarning({
+          message: dupCheck.data.message,
+          existingPost: existing,
+        });
+        setUploading(false);
+        return; // Do not add the image
+      }
+
+      setEditPost({ ...editPost, image_url: directUrl });
       setImageLink('');
     } catch (err) {
       console.error('Gorsel linki cevirilmedi:', err);
@@ -92,8 +109,17 @@ export default function SocialMediaPage() {
       }
       setView('list');
       setEditPost(null);
+      setDuplicateWarning(null);
       loadData();
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      if (err.response?.status === 409) {
+        setDuplicateWarning({
+          message: err.response.data?.detail || 'Bu gorsel daha once kullanilmis.',
+        });
+      } else {
+        console.error(err);
+      }
+    }
   };
 
   const handleDelete = async (id) => {
@@ -383,6 +409,27 @@ export default function SocialMediaPage() {
                   <p className="text-[10px] text-[#5a5a65]">
                     Google Drive'da gorseli paylasa ac, linki yapistir
                   </p>
+                </div>
+              )}
+              {duplicateWarning && (
+                <div className="mt-2 p-3 rounded-lg border border-amber-500/30 bg-amber-500/10">
+                  <div className="flex items-start gap-2">
+                    <span className="text-amber-400 text-sm font-bold mt-0.5">⚠</span>
+                    <div className="flex-1">
+                      <p className="text-xs text-amber-300 font-medium">{duplicateWarning.message}</p>
+                      {duplicateWarning.existingPost && (
+                        <p className="text-[10px] text-amber-400/70 mt-1">
+                          Gonderi: "{duplicateWarning.existingPost.title || 'Basliksiz'}" — Durum: {STATUS_COLORS[duplicateWarning.existingPost.status]?.label || duplicateWarning.existingPost.status}
+                        </p>
+                      )}
+                      <button
+                        onClick={() => { setDuplicateWarning(null); setImageLink(''); }}
+                        className="text-[10px] text-amber-400 hover:text-amber-300 underline mt-1"
+                      >
+                        Tamam, farkli gorsel kullanacagim
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
