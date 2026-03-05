@@ -2,14 +2,16 @@ import React, { useState, useEffect, useRef } from 'react';
 import { getSocialPosts, createSocialPost, updateSocialPost, deleteSocialPost, publishSocialPost, getSocialTemplates, getSocialStats, convertImageLink } from '../api';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { Plus, Trash2, Edit2, Save, X, Send, Copy, Instagram, Facebook, Twitter, MessageCircle, Eye, BarChart3, FileText, Sparkles, Clock, Linkedin, Video, Image, Link, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Edit2, Save, X, Send, Copy, Instagram, Facebook, Twitter, MessageCircle, Eye, BarChart3, FileText, Sparkles, Clock, Linkedin, Video, Image, Link, Loader2, MapPin, Pin } from 'lucide-react';
 
 const PLATFORMS = [
   { id: 'instagram', name: 'Instagram', icon: Instagram, color: '#E1306C' },
   { id: 'facebook', name: 'Facebook', icon: Facebook, color: '#1877F2' },
-  { id: 'twitter', name: 'X (Twitter)', icon: Twitter, color: '#e5e5e8' },
+  { id: 'x', name: 'X (Twitter)', icon: Twitter, color: '#e5e5e8' },
   { id: 'tiktok', name: 'TikTok', icon: Video, color: '#00F2EA' },
   { id: 'linkedin', name: 'LinkedIn', icon: Linkedin, color: '#0A66C2' },
+  { id: 'pinterest', name: 'Pinterest', icon: Pin, color: '#E60023' },
+  { id: 'google_business', name: 'Google Business', icon: MapPin, color: '#4285F4' },
   { id: 'whatsapp', name: 'WhatsApp', icon: MessageCircle, color: '#25D366' },
 ];
 
@@ -427,8 +429,12 @@ export default function SocialMediaPage() {
                       </div>
                       <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: `${plat.color}20`, color: plat.color }}>
                         {platId === 'instagram' || platId === 'facebook' ? 'Meta API' :
-                         platId === 'twitter' ? 'X API' :
-                         platId === 'whatsapp' ? 'WhatsApp API' : 'Kopyala/Yapistir'}
+                         platId === 'x' ? 'X API v2' :
+                         platId === 'linkedin' ? 'LinkedIn API' :
+                         platId === 'tiktok' ? 'TikTok API' :
+                         platId === 'pinterest' ? 'Pinterest API' :
+                         platId === 'google_business' ? 'Google Business API' :
+                         platId === 'whatsapp' ? 'WhatsApp API' : 'API'}
                       </span>
                     </div>
                   );

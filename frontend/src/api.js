@@ -324,6 +324,7 @@ export const deleteSocialPost = (id) => api.delete(`/social/posts/${id}`);
 export const publishSocialPost = (id) => api.post(`/social/posts/${id}/publish`);
 export const getSocialTemplates = () => api.get('/social/templates');
 export const getSocialStats = () => api.get('/social/stats');
+export const getSocialPlatforms = () => api.get('/social/platforms');
 export const convertImageLink = (url) => api.post('/social/convert-image-link', { url });
 
 // ==================== KITCHEN ====================
