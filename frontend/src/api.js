@@ -180,6 +180,18 @@ export const getSocialStats = () => api.get('/social/stats');
 export const convertImageLink = (url) => api.post('/social/convert-image-link', { url });
 export const checkDuplicateMedia = (url) => api.post('/social/check-duplicate-media', { url });
 
+// Event Leads & Outreach
+export const getEventIdeas = (category) => api.get('/event-leads/ideas', { params: category ? { category } : {} });
+export const getTargetGroups = () => api.get('/event-leads/target-groups');
+export const getEventLeads = (params) => api.get('/event-leads/leads', { params });
+export const createEventLead = (data) => api.post('/event-leads/leads', data);
+export const updateEventLead = (id, data) => api.patch(`/event-leads/leads/${id}`, data);
+export const deleteEventLead = (id) => api.delete(`/event-leads/leads/${id}`);
+export const generateOutreachMessage = (data) => api.post('/event-leads/generate-message', data);
+export const logLeadContact = (id) => api.post(`/event-leads/leads/${id}/log-contact`);
+export const getEventLeadStats = () => api.get('/event-leads/stats');
+export const getEventSuggestions = () => api.get('/event-leads/suggestions');
+
 // Kitchen Dashboard
 export const getKitchenOrders = (params) => api.get('/kitchen/orders', { params });
 export const createKitchenOrder = (data) => api.post('/kitchen/orders', data);

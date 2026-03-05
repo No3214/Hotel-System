@@ -4,7 +4,7 @@ import {
   LayoutDashboard, BedDouble, Users, MessageCircle, CheckSquare,
   Calendar, Sparkles, BookOpen, UtensilsCrossed, Menu, ChevronLeft,
   CalendarCheck, UserCog, Mail, MapPin, Settings, Star, Heart, LogOut, QrCode, Share2,
-  Globe, Bell, FileText
+  Globe, Bell, FileText, Target
 } from 'lucide-react';
 
 import { setAuthToken, getMe } from './api';
@@ -38,6 +38,7 @@ const AuditSecurityPage = lazy(() => import('./pages/AuditSecurityPage'));
 const HotelRunnerPage = lazy(() => import('./pages/HotelRunnerPage'));
 const OrganizationPage = lazy(() => import('./pages/OrganizationPage'));
 const ProposalsPage = lazy(() => import('./pages/ProposalsPage'));
+const EventLeadsPage = lazy(() => import('./pages/EventLeadsPage'));
 
 const NAV_CONFIG = [
   {
@@ -72,6 +73,7 @@ const NAV_CONFIG = [
       { id: 'table_reservations', nameKey: 'table_reservations', icon: UtensilsCrossed },
       { id: 'organization', nameKey: 'organization', icon: Heart },
       { id: 'proposals', nameKey: 'proposals', icon: FileText },
+      { id: 'event_leads', nameKey: 'event_leads', icon: Target },
     ],
   },
   {
@@ -124,6 +126,7 @@ const PAGES = {
   hotelrunner: HotelRunnerPage,
   organization: OrganizationPage,
   proposals: ProposalsPage,
+  event_leads: EventLeadsPage,
 };
 
 export default function App() {
