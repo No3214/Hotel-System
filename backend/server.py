@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, RedirectResponse
 from starlette.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from pathlib import Path
@@ -159,3 +159,8 @@ async def startup():
 @app.on_event("shutdown")
 async def shutdown():
     client.close()
+
+
+@app.get("/")
+async def root():
+        return RedirectResponse(url="/admin", status_code=302)
