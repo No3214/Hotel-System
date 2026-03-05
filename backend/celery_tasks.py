@@ -312,3 +312,200 @@ def process_audit_alert(alert_type: str, details: dict):
         "created_at": utcnow(),
     })
     return {"status": "logged", "type": alert_type}
+
+
+# =====================================================
+# TASK 7: OTOMATIK SOSYAL MEDYA ICERIK URETIMI (10:00)
+# =====================================================
+
+CONTENT_TOPICS_LIST = [
+    "morning", "menu_highlight", "seasonal", "local",
+    "weekend", "guest_story", "behind_scenes", "event",
+]
+
+CONTENT_TOPICS_PROMPTS = {
+    "menu_highlight": "Restoranin gunun lezzeti veya ozel menusunu tanitici bir gonderi yaz",
+    "promo": "Otelin ozel teklif veya indirim kampanyasini duyuran bir gonderi yaz",
+    "event": "Otelde yaklasan etkinlik veya organizasyonu duyuran bir gonderi yaz",
+    "announcement": "Otel hakkinda genel bir duyuru gonderisi yaz",
+    "morning": "Otelin sabah atmosferi, kahvalti veya gunaydin temali bir gonderi yaz",
+    "seasonal": "Mevsime uygun otel deneyimini anlatan bir gonderi yaz",
+    "local": "Foca ve cevresindeki dogal/kulturel guzelliklerle oteli birlikte tanitan bir gonderi yaz",
+    "guest_story": "Misafir deneyimi veya misafirperverlik temali bir gonderi yaz",
+    "behind_scenes": "Otelin mutfak, bahce veya hazirliklariyla ilgili sahne arkasi gonderi yaz",
+    "weekend": "Hafta sonu kacamagi temali bir gonderi yaz",
+}
+
+AI_SYSTEM_PROMPT_CELERY = """Sen Kozbeyli Konagi'nin sosyal medya yoneticisisin.
+Kozbeyli Konagi, Foca/Izmir'de 14 yillik aile isletmesi olan butik bir tas otel ve restorandir.
+Dogayla ic ice, organik kahvalti, yerel lezzetler ve sicak misafirperverlik ile taninan bir mekandir.
+
+Gonderiler icin kurallarin:
+- Turkce yaz, samimi ama profesyonel bir dil kullan
+- Emoji kullan ama abartma (2-4 arasi)
+- Icerik 150-300 karakter arasi olsun
+- Hashtag onerilerini ayri ver
+
+Otel: Foca tasindan insa edilmis tarihi konak, 5 oda (Nar, Zeytin, Tas, Badem, Asma),
+organik bahce kahvaltisi, yerel Ege mutfagi, dugun/nisan alani, dogayla ic ice.
+
+Yanit formati:
+BASLIK: [baslik]
+ICERIK: [icerik]
+HASHTAGLER: [virgullerle ayrilmis, # olmadan]"""
+
+
+@celery_app.task(name='celery_tasks.auto_publish_content_task', bind=True, max_retries=2)
+def auto_publish_content_task(self):
+    """Otomatik AI icerik uretimi ve yayinlama"""
+    import random
+
+    try:
+        db = get_db()
+
+        # Check settings
+        settings = db.social_auto_publish_settings.find_one({"_id": "auto_publish"})
+        if not settings or not settings.get("enabled", False):
+            logger.info("Otomatik yayinlama devre disi, atlaniyor")
+            return {"status": "disabled"}
+
+        # Pick a topic from rotation
+        topics = settings.get("topics", CONTENT_TOPICS_LIST)
+        if not topics:
+            topics = CONTENT_TOPICS_LIST
+
+        # Get last used topic to avoid repetition
+        last_log = db.social_auto_publish_log.find_one(
+            {}, sort=[("created_at", -1)]
+        )
+        last_topic = last_log.get("topic", "") if last_log else ""
+
+        available_topics = [t for t in topics if t != last_topic]
+        if not available_topics:
+            available_topics = topics
+        topic = random.choice(available_topics)
+
+        topic_prompt = CONTENT_TOPICS_PROMPTS.get(topic, "Oteli tanitan genel bir gonderi yaz")
+
+        # Generate content using Gemini (sync wrapper)
+        GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY', '')
+        if not GOOGLE_API_KEY:
+            logger.warning("GOOGLE_API_KEY not set, skipping auto-publish")
+            db.social_auto_publish_log.insert_one({
+                "id": new_id(),
+                "status": "error",
+                "error": "API key not configured",
+                "topic": topic,
+                "created_at": utcnow(),
+            })
+            return {"status": "error", "message": "API key not configured"}
+
+        # Use emergentintegrations sync call
+        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        import asyncio
+
+        full_prompt = f"{topic_prompt}\n\nSicak ve samimi bir ton kullan."
+
+        chat = LlmChat(
+            api_key=GOOGLE_API_KEY,
+            session_id=f"auto_publish_{new_id()[:8]}",
+            system_message=AI_SYSTEM_PROMPT_CELERY,
+        ).with_model("gemini", "gemini-2.5-flash")
+
+        user_msg = UserMessage(text=full_prompt)
+
+        # Run async in sync context
+        loop = asyncio.new_event_loop()
+        try:
+            response = loop.run_until_complete(chat.send_message(user_msg))
+        finally:
+            loop.close()
+
+        # Parse response
+        title = ""
+        content = ""
+        hashtags = []
+
+        lines = response.strip().split("\n")
+        current_field = None
+        for line in lines:
+            line_stripped = line.strip()
+            if line_stripped.upper().startswith("BASLIK:"):
+                title = line_stripped[7:].strip()
+                current_field = "title"
+            elif line_stripped.upper().startswith("ICERIK:"):
+                content = line_stripped[7:].strip()
+                current_field = "content"
+            elif line_stripped.upper().startswith("HASHTAGLER:") or line_stripped.upper().startswith("HASHTAG:"):
+                tag_text = line_stripped.split(":", 1)[1].strip()
+                hashtags = [h.strip().lstrip("#") for h in tag_text.split(",") if h.strip()]
+                current_field = "hashtags"
+            elif current_field == "content" and line_stripped:
+                content += " " + line_stripped
+
+        if not content:
+            content = response.strip()
+        if not hashtags:
+            hashtags = ["KozbeyliKonagi", "FocaOtel", "ButikOtel"]
+
+        # Determine post status based on auto_approve
+        auto_approve = settings.get("auto_approve", False)
+        status = "published" if auto_approve else "draft"
+
+        # Map topic to post_type
+        topic_to_type = {
+            "morning": "text", "menu_highlight": "menu_highlight", "seasonal": "text",
+            "local": "text", "weekend": "promo", "guest_story": "text",
+            "behind_scenes": "text", "event": "event", "promo": "promo",
+            "announcement": "announcement",
+        }
+
+        post = {
+            "id": new_id(),
+            "title": title or "Kozbeyli Konagi",
+            "content": content,
+            "platforms": settings.get("platforms", ["instagram", "facebook"]),
+            "post_type": topic_to_type.get(topic, "text"),
+            "frame_style": "default",
+            "hashtags": hashtags,
+            "status": status,
+            "source": "ai_auto_publish",
+            "ai_topic": topic,
+            "created_at": utcnow(),
+            "updated_at": utcnow(),
+        }
+
+        if auto_approve:
+            post["published_at"] = utcnow()
+
+        db.social_posts.insert_one(post)
+
+        # Log the action
+        db.social_auto_publish_log.insert_one({
+            "id": new_id(),
+            "post_id": post["id"],
+            "topic": topic,
+            "status": status,
+            "auto_approved": auto_approve,
+            "title": post["title"],
+            "content_preview": content[:100],
+            "platforms": post["platforms"],
+            "created_at": utcnow(),
+        })
+
+        logger.info(f"Auto-publish: {topic} -> {status} (post: {post['id']})")
+        return {"status": "created", "post_id": post["id"], "topic": topic}
+
+    except Exception as e:
+        logger.error(f"Auto-publish hatasi: {e}")
+        try:
+            db = get_db()
+            db.social_auto_publish_log.insert_one({
+                "id": new_id(),
+                "status": "error",
+                "error": str(e),
+                "created_at": utcnow(),
+            })
+        except Exception:
+            pass
+        raise self.retry(exc=e, countdown=120)

@@ -65,6 +65,11 @@ celery_app.conf.update(
             'schedule': crontab(hour=14, minute=0),
             'options': {'queue': 'scheduled'},
         },
+        'auto-publish-content': {
+            'task': 'celery_tasks.auto_publish_content_task',
+            'schedule': crontab(hour=10, minute=0),
+            'options': {'queue': 'scheduled'},
+        },
     },
 )
 

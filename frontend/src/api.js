@@ -179,6 +179,13 @@ export const getSocialTemplates = () => api.get('/social/templates');
 export const getSocialStats = () => api.get('/social/stats');
 export const convertImageLink = (url) => api.post('/social/convert-image-link', { url });
 export const checkDuplicateMedia = (url) => api.post('/social/check-duplicate-media', { url });
+export const aiGenerateContent = (data) => api.post('/social/ai-generate', data);
+export const getAITopics = () => api.get('/social/ai-topics');
+export const getAutoPublishSettings = () => api.get('/social/auto-publish/settings');
+export const updateAutoPublishSettings = (data) => api.put('/social/auto-publish/settings', data);
+export const triggerAutoPublish = () => api.post('/social/auto-publish/trigger');
+export const getAutoPublishHistory = (limit) => api.get('/social/auto-publish/history', { params: { limit } });
+export const getContentCalendar = (days) => api.get('/social/content-calendar', { params: { days } });
 
 // Event Leads & Outreach
 export const getEventIdeas = (category) => api.get('/event-leads/ideas', { params: category ? { category } : {} });

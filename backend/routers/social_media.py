@@ -1,9 +1,13 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from database import db
 from helpers import utcnow, new_id, clean_doc
 import re
+import logging
+import os
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["social-media"])
 
@@ -252,6 +256,254 @@ async def convert_image_link(data: ImageLinkRequest):
     """Convert Google Drive share link to direct viewable URL"""
     if not data.url:
         raise HTTPException(400, "URL gerekli")
-    
+
     direct_url = convert_drive_link(data.url)
     return {"success": True, "image_url": direct_url}
+
+
+# ==================== AI ICERIK URETIMI ====================
+
+AI_CONTENT_SYSTEM_PROMPT = """Sen Kozbeyli Konagi'nin sosyal medya yoneticisisin.
+Kozbeyli Konagi, Foca/Izmir'de 14 yillik aile isletmesi olan butik bir tas otel ve restorandir.
+Dogayla ic ice, organik kahvalti, yerel lezzetler ve sicak misafirperverlik ile taninan bir mekandir.
+
+Gonderiler icin kurallarin:
+- Turkce yaz, samimi ama profesyonel bir dil kullan
+- Emoji kullan ama abartma (2-4 arasi)
+- Otel/restoran/bolge temasiyla uyumlu icerik uret
+- Instagram, Facebook, Twitter, LinkedIn gibi platformlara uygun icerikler olustur
+- Hashtag onerilerini ayri bir listede ver
+- Icerik 150-300 karakter arasi olsun (kisa ve etkili)
+
+Otel ozellikleri:
+- Foca tasindan insa edilmis tarihi konak
+- 5 benzersiz oda (Nar, Zeytin, Tas, Badem, Asma)
+- Organik bahce kahvaltisi
+- Yerel Ege mutfagi
+- Dugun/nisan/ozel etkinlik alani
+- Dogayla ic ice huzurlu ortam
+"""
+
+CONTENT_TOPICS = {
+    "menu_highlight": "Restoranin gunun lezzeti veya ozel menusunu tanitici bir gonderi yaz",
+    "promo": "Otelin ozel teklif veya indirim kampanyasini duyuran bir gonderi yaz",
+    "event": "Otelde yaklasan etkinlik veya organizasyonu duyuran bir gonderi yaz",
+    "announcement": "Otel hakkinda genel bir duyuru gonderisi yaz",
+    "morning": "Otelin sabah atmosferi, kahvalti veya gunaydin temali bir gonderi yaz",
+    "seasonal": "Mevsime uygun (ilkbahar/yaz/sonbahar/kis) otel deneyimini anlatan bir gonderi yaz",
+    "local": "Foca ve cevresindeki dogal/kulturel guzelliklerle oteli birlikte tanitan bir gonderi yaz",
+    "guest_story": "Misafir deneyimi veya misafirperverlik temali bir gonderi yaz",
+    "behind_scenes": "Otelin mutfak, bahce veya hazirliklariyla ilgili sahne arkasi gonderi yaz",
+    "weekend": "Hafta sonu kacamagi temali bir gonderi yaz",
+}
+
+
+class AIContentRequest(BaseModel):
+    post_type: str = "text"
+    topic: Optional[str] = None  # CONTENT_TOPICS key or free-form topic
+    platform: Optional[str] = None  # instagram, facebook, twitter, linkedin
+    custom_prompt: Optional[str] = None
+    tone: str = "warm"  # warm, professional, playful, elegant
+
+
+class AutoPublishSettingsModel(BaseModel):
+    enabled: bool = False
+    frequency: str = "daily"  # daily, weekly, twice_weekly
+    preferred_time: str = "10:00"  # HH:MM
+    platforms: List[str] = []
+    topics: List[str] = []  # rotation topics
+    auto_approve: bool = False  # if True, publishes directly; if False, creates as draft
+
+
+@router.post("/social/ai-generate")
+async def ai_generate_content(data: AIContentRequest):
+    """Gemini AI ile sosyal medya icerigi uret"""
+    from gemini_service import get_chat_response
+
+    topic_prompt = ""
+    if data.custom_prompt:
+        topic_prompt = data.custom_prompt
+    elif data.topic and data.topic in CONTENT_TOPICS:
+        topic_prompt = CONTENT_TOPICS[data.topic]
+    elif data.topic:
+        topic_prompt = data.topic
+    else:
+        topic_prompt = CONTENT_TOPICS.get(data.post_type, "Oteli tanitan genel bir gonderi yaz")
+
+    platform_hint = ""
+    if data.platform:
+        platform_hints = {
+            "instagram": "Instagram icin yaziyorsun - gorsel odakli, hashtag agirlikli, kisa ve cezbedici",
+            "facebook": "Facebook icin yaziyorsun - biraz daha detayli, topluluk odakli",
+            "twitter": "X (Twitter) icin yaziyorsun - 280 karakter siniri, cok kisa ve vurucu",
+            "linkedin": "LinkedIn icin yaziyorsun - profesyonel ton, B2B ve turizm sektoru odakli",
+        }
+        platform_hint = platform_hints.get(data.platform, "")
+
+    tone_hints = {
+        "warm": "Sicak, samimi ve davetkar bir ton kullan",
+        "professional": "Profesyonel ve guvenlir bir ton kullan",
+        "playful": "Eglenceli ve enerjik bir ton kullan",
+        "elegant": "Zarif ve sofistike bir ton kullan",
+    }
+
+    full_prompt = f"""{topic_prompt}
+
+{platform_hint}
+{tone_hints.get(data.tone, '')}
+
+Yanit formatini asagidaki gibi ver:
+BASLIK: [gonderi basligi]
+ICERIK: [gonderi icerigi]
+HASHTAGLER: [virgullerle ayrilmis hashtag listesi, # isareti olmadan]"""
+
+    try:
+        session_id = f"social_ai_{new_id()[:8]}"
+        response = await get_chat_response(full_prompt, session_id, AI_CONTENT_SYSTEM_PROMPT)
+
+        # Parse response
+        title = ""
+        content = ""
+        hashtags = []
+
+        lines = response.strip().split("\n")
+        current_field = None
+        for line in lines:
+            line_stripped = line.strip()
+            if line_stripped.upper().startswith("BASLIK:"):
+                title = line_stripped[7:].strip()
+                current_field = "title"
+            elif line_stripped.upper().startswith("ICERIK:"):
+                content = line_stripped[7:].strip()
+                current_field = "content"
+            elif line_stripped.upper().startswith("HASHTAGLER:") or line_stripped.upper().startswith("HASHTAG:"):
+                tag_text = line_stripped.split(":", 1)[1].strip()
+                hashtags = [h.strip().lstrip("#") for h in tag_text.split(",") if h.strip()]
+                current_field = "hashtags"
+            elif current_field == "content" and line_stripped:
+                content += " " + line_stripped
+
+        # Fallback if parsing failed
+        if not content:
+            content = response.strip()
+        if not hashtags:
+            hashtags = ["KozbeyliKonagi", "FocaOtel", "ButikOtel"]
+
+        return {
+            "success": True,
+            "generated": {
+                "title": title or "Kozbeyli Konagi",
+                "content": content,
+                "hashtags": hashtags,
+                "post_type": data.post_type,
+                "platform": data.platform,
+                "tone": data.tone,
+            },
+            "raw_response": response,
+        }
+
+    except Exception as e:
+        logger.error(f"AI content generation error: {e}")
+        raise HTTPException(500, f"AI icerik uretimi basarisiz: {str(e)}")
+
+
+@router.get("/social/ai-topics")
+async def get_ai_topics():
+    """Kullanilabilir AI icerik konularini getir"""
+    topics = [
+        {"id": k, "label": v.split(" yaz")[0] if " yaz" in v else v}
+        for k, v in CONTENT_TOPICS.items()
+    ]
+    tones = [
+        {"id": "warm", "label": "Sicak & Samimi"},
+        {"id": "professional", "label": "Profesyonel"},
+        {"id": "playful", "label": "Eglenceli"},
+        {"id": "elegant", "label": "Zarif"},
+    ]
+    return {"topics": topics, "tones": tones}
+
+
+# ==================== OTOMATIK YAYINLAMA ====================
+
+@router.get("/social/auto-publish/settings")
+async def get_auto_publish_settings():
+    """Otomatik yayinlama ayarlarini getir"""
+    settings = await db.social_auto_publish_settings.find_one(
+        {"_id": "auto_publish"}, {"_id": 0}
+    )
+    if not settings:
+        settings = {
+            "enabled": False,
+            "frequency": "daily",
+            "preferred_time": "10:00",
+            "platforms": ["instagram", "facebook"],
+            "topics": ["morning", "menu_highlight", "seasonal", "local", "weekend"],
+            "auto_approve": False,
+        }
+    return settings
+
+
+@router.put("/social/auto-publish/settings")
+async def update_auto_publish_settings(data: AutoPublishSettingsModel):
+    """Otomatik yayinlama ayarlarini guncelle"""
+    settings = {
+        **data.model_dump(),
+        "updated_at": utcnow(),
+    }
+    await db.social_auto_publish_settings.update_one(
+        {"_id": "auto_publish"},
+        {"$set": settings},
+        upsert=True,
+    )
+    return {"success": True, "settings": settings}
+
+
+@router.post("/social/auto-publish/trigger")
+async def trigger_auto_publish():
+    """Manuel olarak otomatik icerik uretimini tetikle"""
+    from celery_tasks import auto_publish_content_task
+    auto_publish_content_task.delay()
+    return {"success": True, "message": "Otomatik icerik uretimi kuyruga eklendi"}
+
+
+@router.get("/social/auto-publish/history")
+async def get_auto_publish_history(limit: int = 20):
+    """Otomatik yayinlama gecmisini getir"""
+    history = await db.social_auto_publish_log.find(
+        {}, {"_id": 0}
+    ).sort("created_at", -1).limit(limit).to_list(limit)
+    return {"history": history, "total": len(history)}
+
+
+@router.get("/social/content-calendar")
+async def get_content_calendar(days: int = 7):
+    """Yaklasan zamanlanan gonderileri takvim formatinda getir"""
+    from datetime import datetime, timedelta, timezone
+
+    now = datetime.now(timezone.utc)
+    calendar = []
+
+    for i in range(days):
+        date = (now + timedelta(days=i)).strftime("%Y-%m-%d")
+        day_name = ["Pzt", "Sal", "Car", "Per", "Cum", "Cmt", "Paz"][(now + timedelta(days=i)).weekday()]
+
+        # Find scheduled/published posts for this date
+        day_posts = await db.social_posts.find(
+            {
+                "$or": [
+                    {"scheduled_at": {"$regex": f"^{date}"}},
+                    {"published_at": {"$regex": f"^{date}"}},
+                    {"created_at": {"$regex": f"^{date}"}},
+                ]
+            },
+            {"_id": 0, "id": 1, "title": 1, "status": 1, "platforms": 1, "post_type": 1}
+        ).to_list(20)
+
+        calendar.append({
+            "date": date,
+            "day_name": day_name,
+            "posts": day_posts,
+            "post_count": len(day_posts),
+        })
+
+    return {"calendar": calendar, "days": days}
