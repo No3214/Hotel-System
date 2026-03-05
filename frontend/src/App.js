@@ -330,16 +330,20 @@ function AdminLayout() {
     <div className="flex h-screen bg-[#0a0a0f]" data-testid="app-root">
       <motion.aside
         animate={{ width: sidebarOpen ? 260 : 72 }}
-        className="bg-[#0f0f14] border-r border-[#C4972A]/10 flex flex-col relative z-20 overflow-hidden"
+        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        className="bg-[#0f0f14]/95 backdrop-blur-xl border-r border-[#C4972A]/10 flex flex-col relative z-20 overflow-hidden"
         data-testid="sidebar"
       >
         {/* Logo */}
         <div className="p-4 border-b border-[#C4972A]/10">
           <div className="flex items-center gap-3">
-            <img src="/logo.jpeg" alt="Kozbeyli Konagi"
-              className="w-10 h-10 rounded-lg flex-shrink-0 object-cover cursor-pointer"
-              onClick={() => navigate('/admin')}
-              data-testid="sidebar-logo" />
+            <div className="relative group">
+              <div className="absolute -inset-1 bg-[#C4972A]/15 rounded-xl blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <img src="/logo.jpeg" alt="Kozbeyli Konagi"
+                className="w-10 h-10 rounded-lg flex-shrink-0 object-cover cursor-pointer relative z-10 transition-transform duration-300 group-hover:scale-105"
+                onClick={() => navigate('/admin')}
+                data-testid="sidebar-logo" />
+            </div>
             <AnimatePresence>
               {sidebarOpen && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -375,14 +379,15 @@ function AdminLayout() {
                     <button
                       key={item.id}
                       onClick={() => navigate(item.path)}
-                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-300 relative group ${
                         active
                           ? 'bg-[#C4972A]/15 text-[#C4972A] gold-glow'
                           : 'text-[#a9a9b2] hover:bg-white/5 hover:text-[#e5e5e8]'
                       }`}
                       data-testid={`nav-${item.id}`}
                     >
-                      <Icon className="w-4.5 h-4.5 flex-shrink-0" style={{ width: 18, height: 18 }} />
+                      {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-[#C4972A] rounded-r-full" />}
+                      <Icon className={`w-4.5 h-4.5 flex-shrink-0 transition-transform duration-300 ${active ? '' : 'group-hover:scale-110'}`} style={{ width: 18, height: 18 }} />
                       <AnimatePresence>
                         {sidebarOpen && (
                           <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}

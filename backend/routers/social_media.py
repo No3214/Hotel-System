@@ -145,25 +145,115 @@ async def delete_post(post_id: str):
 
 @router.post("/social/posts/{post_id}/publish")
 async def publish_post(post_id: str):
-    """Mark post as published and log the action"""
+    """Publish post to selected platforms via API or mark as published"""
     post = await db.social_posts.find_one({"id": post_id}, {"_id": 0})
     if not post:
         raise HTTPException(404, "Gonderi bulunamadi")
 
+    platforms = post.get("platforms", [])
+    publish_results = {}
+
+    # Try auto-publishing to each platform
+    for platform in platforms:
+        try:
+            result = await _publish_to_platform(platform, post)
+            publish_results[platform] = result
+        except Exception as e:
+            publish_results[platform] = {"success": False, "error": str(e)}
+
     await db.social_posts.update_one(
         {"id": post_id},
-        {"$set": {"status": "published", "published_at": utcnow(), "updated_at": utcnow()}}
+        {"$set": {
+            "status": "published",
+            "published_at": utcnow(),
+            "updated_at": utcnow(),
+            "publish_results": publish_results,
+        }}
     )
 
     # Log publish history
     await db.social_publish_log.insert_one({
         "id": new_id(),
         "post_id": post_id,
-        "platforms": post.get("platforms", []),
+        "platforms": platforms,
+        "publish_results": publish_results,
         "published_at": utcnow(),
     })
 
-    return {"success": True, "message": "Gonderi yayinlandi olarak isaretlendi"}
+    return {"success": True, "message": "Gonderi yayinlandi", "results": publish_results}
+
+
+async def _publish_to_platform(platform: str, post: dict) -> dict:
+    """Publish content to a specific platform via its API"""
+    import os
+    content = f"{post.get('title', '')}\n\n{post.get('content', '')}"
+    hashtags = ' '.join(f"#{h}" for h in post.get('hashtags', []))
+    full_text = f"{content}\n\n{hashtags}".strip()
+    image_url = post.get("image_url")
+
+    if platform in ("instagram", "facebook"):
+        token = os.getenv("META_PAGE_ACCESS_TOKEN")
+        page_id = os.getenv("META_PAGE_ID")
+        ig_account_id = os.getenv("INSTAGRAM_BUSINESS_ACCOUNT_ID")
+
+        if not token:
+            return {"success": False, "error": "META_PAGE_ACCESS_TOKEN ayarlanmamis", "mode": "manual"}
+
+        import aiohttp
+        async with aiohttp.ClientSession() as session:
+            if platform == "facebook":
+                url = f"https://graph.facebook.com/v19.0/{page_id}/feed"
+                data = {"message": full_text, "access_token": token}
+                if image_url:
+                    url = f"https://graph.facebook.com/v19.0/{page_id}/photos"
+                    data["url"] = image_url
+                async with session.post(url, data=data) as resp:
+                    result = await resp.json()
+                    if "id" in result:
+                        return {"success": True, "post_id": result["id"]}
+                    return {"success": False, "error": result.get("error", {}).get("message", "Bilinmeyen hata")}
+
+            elif platform == "instagram":
+                if not ig_account_id:
+                    return {"success": False, "error": "INSTAGRAM_BUSINESS_ACCOUNT_ID ayarlanmamis", "mode": "manual"}
+                if not image_url:
+                    return {"success": False, "error": "Instagram icin gorsel gerekli"}
+                # Step 1: Create media container
+                url = f"https://graph.facebook.com/v19.0/{ig_account_id}/media"
+                data = {"image_url": image_url, "caption": full_text, "access_token": token}
+                async with session.post(url, data=data) as resp:
+                    result = await resp.json()
+                    container_id = result.get("id")
+                    if not container_id:
+                        return {"success": False, "error": result.get("error", {}).get("message", "Container olusturulamadi")}
+                # Step 2: Publish
+                url = f"https://graph.facebook.com/v19.0/{ig_account_id}/media_publish"
+                data = {"creation_id": container_id, "access_token": token}
+                async with session.post(url, data=data) as resp:
+                    result = await resp.json()
+                    if "id" in result:
+                        return {"success": True, "post_id": result["id"]}
+                    return {"success": False, "error": result.get("error", {}).get("message", "Yayin basarisiz")}
+
+    elif platform == "twitter":
+        bearer = os.getenv("TWITTER_BEARER_TOKEN")
+        api_key = os.getenv("TWITTER_API_KEY")
+        api_secret = os.getenv("TWITTER_API_SECRET")
+        access_token = os.getenv("TWITTER_ACCESS_TOKEN")
+        access_secret = os.getenv("TWITTER_ACCESS_SECRET")
+        if not all([bearer, api_key, api_secret, access_token, access_secret]):
+            return {"success": False, "error": "Twitter API anahtarlari ayarlanmamis", "mode": "manual"}
+        # Twitter OAuth 1.0a requires signing - simplified placeholder
+        return {"success": False, "error": "Twitter API entegrasyonu yaklasimda", "mode": "manual"}
+
+    elif platform == "whatsapp":
+        wa_token = os.getenv("WHATSAPP_ACCESS_TOKEN")
+        wa_phone_id = os.getenv("WHATSAPP_PHONE_NUMBER_ID")
+        if not wa_token or not wa_phone_id:
+            return {"success": False, "error": "WhatsApp API ayarlanmamis", "mode": "manual"}
+        return {"success": True, "mode": "broadcast_ready", "message": "WhatsApp broadcast hazir"}
+
+    return {"success": False, "error": f"{platform} icin API entegrasyonu henuz yapilanmamis", "mode": "manual"}
 
 
 @router.get("/social/templates")

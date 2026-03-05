@@ -387,16 +387,87 @@ export default function SocialMediaPage() {
               )}
             </div>
 
+            {/* Schedule */}
+            <div className="glass rounded-xl p-4">
+              <label className="text-xs text-[#7e7e8a] mb-2 block">Zamanlama (opsiyonel)</label>
+              <div className="flex gap-2">
+                <input
+                  type="datetime-local"
+                  value={editPost.scheduled_at || ''}
+                  onChange={e => setEditPost({ ...editPost, scheduled_at: e.target.value })}
+                  className="flex-1 p-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm outline-none focus:border-[#C4972A]/50"
+                  data-testid="schedule-datetime"
+                />
+                {editPost.scheduled_at && (
+                  <button onClick={() => setEditPost({ ...editPost, scheduled_at: null })} className="p-2 rounded-lg hover:bg-white/5 text-[#7e7e8a]" title="Zamani kaldir">
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+              {editPost.scheduled_at && (
+                <p className="text-[10px] text-[#C4972A] mt-1.5">
+                  Gonderi {new Date(editPost.scheduled_at).toLocaleString('tr-TR')} tarihinde otomatik yayinlanacak
+                </p>
+              )}
+            </div>
+
+            {/* Auto-Publish Settings */}
+            <div className="glass rounded-xl p-4">
+              <label className="text-xs text-[#7e7e8a] mb-2 block">Otomatik Yayinlama Ayarlari</label>
+              <div className="space-y-2">
+                {(editPost.platforms || []).map(platId => {
+                  const plat = PLATFORMS.find(p => p.id === platId);
+                  if (!plat) return null;
+                  const PIcon = plat.icon;
+                  return (
+                    <div key={platId} className="flex items-center justify-between p-2 bg-white/5 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <PIcon className="w-3.5 h-3.5" style={{ color: plat.color }} />
+                        <span className="text-xs text-[#a9a9b2]">{plat.name}</span>
+                      </div>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: `${plat.color}20`, color: plat.color }}>
+                        {platId === 'instagram' || platId === 'facebook' ? 'Meta API' :
+                         platId === 'twitter' ? 'X API' :
+                         platId === 'whatsapp' ? 'WhatsApp API' : 'Kopyala/Yapistir'}
+                      </span>
+                    </div>
+                  );
+                })}
+                {(editPost.platforms || []).length === 0 && (
+                  <p className="text-[10px] text-[#5a5a65] text-center py-2">Yukaridan platform secin</p>
+                )}
+              </div>
+            </div>
+
             {/* Save */}
             <div className="flex gap-2">
               <Button onClick={handleSave} className="bg-[#C4972A] hover:bg-[#a87a1f] text-white" data-testid="save-post-btn">
                 <Save className="w-4 h-4 mr-1" /> Kaydet
               </Button>
+              {editPost.scheduled_at ? (
+                <Button
+                  onClick={() => { setEditPost({ ...editPost, status: 'scheduled' }); setTimeout(handleSave, 100); }}
+                  variant="outline" className="border-[#C4972A]/30 text-[#C4972A]"
+                >
+                  <Clock className="w-4 h-4 mr-1" /> Planla ({new Date(editPost.scheduled_at).toLocaleDateString('tr-TR')})
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => { setEditPost({ ...editPost, status: 'scheduled' }); setTimeout(handleSave, 100); }}
+                  variant="outline" className="border-[#C4972A]/30 text-[#C4972A]"
+                >
+                  <Clock className="w-4 h-4 mr-1" /> Planla
+                </Button>
+              )}
               <Button
-                onClick={() => { setEditPost({ ...editPost, status: 'scheduled' }); setTimeout(handleSave, 100); }}
-                variant="outline" className="border-[#C4972A]/30 text-[#C4972A]"
+                onClick={async () => {
+                  setEditPost({ ...editPost, status: 'published' });
+                  setTimeout(handleSave, 100);
+                }}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                data-testid="publish-now-btn"
               >
-                <Clock className="w-4 h-4 mr-1" /> Planla
+                <Send className="w-4 h-4 mr-1" /> Simdi Yayinla
               </Button>
             </div>
           </div>

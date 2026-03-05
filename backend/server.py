@@ -200,14 +200,40 @@ async def auth_middleware(request: Request, call_next):
 
     try:
         token = auth_header.split(" ")[1]
-        verify_token(token)
+        payload = verify_token(token)
+        # Attach user info to request state for activity logging
+        request.state.user = payload
     except Exception:
         return JSONResponse(
             status_code=401,
             content={"detail": "Gecersiz veya suresi dolmus token — tekrar giris yapin"}
         )
 
-    return await call_next(request)
+    response = await call_next(request)
+
+    # Auto-log mutating operations (POST, PATCH, PUT, DELETE)
+    if request.method in ("POST", "PATCH", "PUT", "DELETE") and response.status_code < 400:
+        try:
+            user = getattr(request.state, "user", {})
+            # Skip noisy endpoints
+            skip_paths = ["/api/chatbot", "/api/auth/refresh", "/api/cache", "/api/audit"]
+            if not any(path.startswith(sp) for sp in skip_paths):
+                from routers.audit import log_audit
+                entity_type = path.split("/api/")[-1].split("/")[0] if "/api/" in path else "unknown"
+                action_map = {"POST": "CREATE", "PATCH": "UPDATE", "PUT": "UPDATE", "DELETE": "DELETE"}
+                await log_audit(
+                    action=action_map.get(request.method, request.method),
+                    entity_type=entity_type,
+                    user_id=user.get("user_id", "unknown"),
+                    user_email=user.get("username", "unknown"),
+                    ip_address=request.client.host if request.client else None,
+                    user_agent=request.headers.get("user-agent", "")[:200],
+                    metadata={"path": path, "method": request.method, "status": response.status_code},
+                )
+        except Exception as e:
+            logger.debug(f"Activity log error (non-critical): {e}")
+
+    return response
 
 
 # ==================== HEALTH ====================
