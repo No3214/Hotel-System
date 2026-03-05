@@ -361,6 +361,10 @@ HASHTAGLER: [virgullerle ayrilmis hashtag listesi, # isareti olmadan]"""
         session_id = f"social_ai_{new_id()[:8]}"
         response = await get_chat_response(full_prompt, session_id, AI_CONTENT_SYSTEM_PROMPT)
 
+        # Validate response
+        if not response or not isinstance(response, str) or len(response.strip()) < 10:
+            raise HTTPException(502, "AI servisi gecersiz veya bos yanit dondu. Lutfen tekrar deneyin.")
+
         # Parse response
         title = ""
         content = ""
@@ -620,6 +624,12 @@ async def publish_to_platforms(post_id: str, data: Optional[PlatformPublishReque
         raise HTTPException(404, "Gonderi bulunamadi")
 
     platforms_to_publish = (data.platforms if data and data.platforms else post.get("platforms", []))
+
+    # Validate image URL before publishing to platforms that require it
+    image_url = post.get("image_url", "")
+    if image_url and not image_url.startswith(("http://", "https://")):
+        raise HTTPException(400, f"Gecersiz gorsel URL'si: URL http:// veya https:// ile baslamali")
+
     publish_results = {}
 
     for platform in platforms_to_publish:

@@ -63,10 +63,33 @@ async def health():
     except Exception as e:
         db_status = f"error: {str(e)}"
 
+    # Redis check
+    try:
+        from services.cache_service import _get_redis
+        r = _get_redis()
+        if r:
+            r.ping()
+            redis_status = "connected"
+        else:
+            redis_status = "fallback_memory"
+    except Exception as e:
+        redis_status = f"error: {str(e)}"
+
+    # Celery worker check
+    try:
+        from celery_app import celery_app as _celery
+        inspect = _celery.control.inspect(timeout=2.0)
+        active = inspect.ping()
+        celery_status = "connected" if active else "no_workers"
+    except Exception as e:
+        celery_status = f"unreachable: {str(e)}"
+
     # Collect system info
     import os
     checks = {
         "database": db_status,
+        "redis": redis_status,
+        "celery": celery_status,
         "google_api_key": "configured" if os.environ.get("GOOGLE_API_KEY") else "missing",
         "meta_token": "configured" if os.environ.get("META_ACCESS_TOKEN") else "not_set",
         "vapid_key": "configured" if os.environ.get("VAPID_PUBLIC_KEY") else "not_set",

@@ -20,11 +20,17 @@ logger = logging.getLogger(__name__)
 MONGO_URL = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
 DB_NAME = os.environ.get('DB_NAME', 'vericevir_hotel')
 
+# Singleton MongoDB client to prevent connection leaks
+_mongo_client = None
+
 
 def get_db():
-    """Get synchronous MongoDB connection for Celery worker."""
-    client = MongoClient(MONGO_URL)
-    return client[DB_NAME]
+    """Get synchronous MongoDB connection for Celery worker (singleton)."""
+    global _mongo_client
+    if _mongo_client is None:
+        _mongo_client = MongoClient(MONGO_URL, maxPoolSize=10)
+        logger.info("Celery MongoDB client initialized")
+    return _mongo_client[DB_NAME]
 
 
 def utcnow():
@@ -420,6 +426,18 @@ def auto_publish_content_task(self):
             response = loop.run_until_complete(chat.send_message(user_msg))
         finally:
             loop.close()
+
+        # Validate response
+        if not response or not isinstance(response, str) or len(response.strip()) < 10:
+            logger.warning(f"Auto-publish: AI returned empty or invalid response: {repr(response)[:100]}")
+            db.social_auto_publish_log.insert_one({
+                "id": new_id(),
+                "status": "error",
+                "error": "AI returned empty or invalid response",
+                "topic": topic,
+                "created_at": utcnow(),
+            })
+            return {"status": "error", "message": "AI returned invalid response"}
 
         # Parse response
         title = ""
