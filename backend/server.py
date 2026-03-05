@@ -52,11 +52,25 @@ from routers.kitchen import router as kitchen_router
 from routers.webhooks import router as webhooks_router
 from routers.organization import router as organization_router
 from routers.proposals import router as proposals_router
+from routers.export import router as export_router
 
-logging.basicConfig(
-    level=getattr(logging, LOG_LEVEL, logging.INFO),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+from logging.handlers import RotatingFileHandler
+
+# Ensure logs directory exists
+Path("logs").mkdir(exist_ok=True)
+
+# Configure root logger with both console and file handlers
+_log_level = getattr(logging, LOG_LEVEL, logging.INFO)
+_log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+
+logging.basicConfig(level=_log_level, format=_log_format)
+
+# Rotating file handler: 5MB per file, keep 5 backups
+_file_handler = RotatingFileHandler("logs/app.log", maxBytes=5*1024*1024, backupCount=5, encoding="utf-8")
+_file_handler.setLevel(_log_level)
+_file_handler.setFormatter(logging.Formatter(_log_format))
+logging.getLogger().addHandler(_file_handler)
+
 logger = logging.getLogger(__name__)
 
 load_dotenv(Path(__file__).parent / '.env')
@@ -331,6 +345,7 @@ api.include_router(kitchen_router)
 api.include_router(webhooks_router)
 api.include_router(organization_router)
 api.include_router(proposals_router)
+api.include_router(export_router)
 
 app.include_router(api)
 

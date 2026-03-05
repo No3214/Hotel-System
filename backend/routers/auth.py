@@ -105,6 +105,10 @@ async def require_admin(request: Request) -> dict:
     return user
 
 
+MAX_LOGIN_ATTEMPTS = 5
+LOCKOUT_DURATION_SECONDS = 900  # 15 minutes
+
+
 @router.post("/auth/login")
 async def login(data: LoginRequest, request: Request):
     from rate_limiter import rate_limit_or_raise, get_client_identifier
@@ -113,8 +117,30 @@ async def login(data: LoginRequest, request: Request):
     rate_limit_or_raise(request, "login")
 
     user = await db.users.find_one({"username": data.username}, {"_id": 0})
+
+    # Check account lockout
+    if user:
+        failed_attempts = user.get("failed_login_attempts", 0)
+        locked_until = user.get("locked_until")
+        if locked_until and locked_until > utcnow():
+            logger.warning(f"Locked account login attempt: {data.username} from {identifier}")
+            raise HTTPException(423, "Hesabiniz gecici olarak kilitlendi. 15 dakika sonra tekrar deneyin.")
+        # Reset lockout if expired
+        if locked_until and locked_until <= utcnow():
+            await db.users.update_one({"id": user["id"]}, {"$set": {"failed_login_attempts": 0, "locked_until": None}})
+            failed_attempts = 0
+
     if not user or not pwd_context.verify(data.password, user["password_hash"]):
         logger.warning(f"Failed login attempt for username: {data.username} from {identifier}")
+        # Increment failed attempts
+        if user:
+            new_count = user.get("failed_login_attempts", 0) + 1
+            update = {"failed_login_attempts": new_count}
+            if new_count >= MAX_LOGIN_ATTEMPTS:
+                from datetime import datetime, timedelta, timezone
+                update["locked_until"] = (datetime.now(timezone.utc) + timedelta(seconds=LOCKOUT_DURATION_SECONDS)).isoformat()
+                logger.warning(f"Account locked due to {new_count} failed attempts: {data.username}")
+            await db.users.update_one({"id": user["id"]}, {"$set": update})
         raise HTTPException(401, "Kullanici adi veya sifre hatali")
 
     if not user.get("is_active", True):
@@ -125,7 +151,7 @@ async def login(data: LoginRequest, request: Request):
 
     await db.users.update_one(
         {"id": user["id"]},
-        {"$set": {"last_login": utcnow()}}
+        {"$set": {"last_login": utcnow(), "failed_login_attempts": 0, "locked_until": None}}
     )
 
     logger.info(f"Successful login: {data.username}")

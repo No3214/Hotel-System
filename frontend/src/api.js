@@ -399,4 +399,11 @@ export const deleteFinancialRecord = (id) => api.delete(`/financials/${id}`);
 export const getDailySummary = (dateStr) => api.get(`/financials/daily/${dateStr}`);
 export const getMonthlySummary = (year, month) => api.get('/financials/monthly', { params: { year, month } });
 
+// ==================== EXPORT / BACKUP ====================
+export const exportReservations = () => api.get('/export/reservations', { responseType: 'blob' });
+export const exportGuests = () => api.get('/export/guests', { responseType: 'blob' });
+export const exportFinancials = () => api.get('/export/financials', { responseType: 'blob' });
+export const exportTableReservations = () => api.get('/export/table-reservations', { responseType: 'blob' });
+export const exportFullBackup = () => api.get('/export/backup', { responseType: 'blob' });
+
 export default api;

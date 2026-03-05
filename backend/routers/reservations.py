@@ -9,7 +9,7 @@ router = APIRouter(tags=["reservations"])
 
 @router.get("/reservations")
 async def list_reservations(status: Optional[str] = None, limit: int = 50, skip: int = 0):
-    query = {}
+    query = {"deleted": {"$ne": True}}
     if status:
         query["status"] = status
     items = await db.reservations.find(query, {"_id": 0}).sort("check_in", -1).skip(skip).limit(limit).to_list(limit)
@@ -26,6 +26,7 @@ async def create_reservation(data: ReservationCreate):
     # Check for overlapping reservations on the same room
     overlap_query = {
         "room_type": data.room_type,
+        "deleted": {"$ne": True},
         "status": {"$nin": [ReservationStatus.CANCELLED, ReservationStatus.CHECKED_OUT, ReservationStatus.NO_SHOW]},
         "check_in": {"$lt": data.check_out},
         "check_out": {"$gt": data.check_in},
@@ -104,7 +105,11 @@ async def update_reservation(res_id: str, data: ReservationUpdate):
 
 @router.delete("/reservations/{res_id}")
 async def delete_reservation(res_id: str):
-    result = await db.reservations.delete_one({"id": res_id})
-    if result.deleted_count == 0:
+    # Soft delete: mark as deleted instead of removing
+    result = await db.reservations.update_one(
+        {"id": res_id},
+        {"$set": {"deleted": True, "deleted_at": utcnow(), "status": ReservationStatus.CANCELLED}}
+    )
+    if result.matched_count == 0:
         raise HTTPException(404, "Rezervasyon bulunamadi")
     return {"success": True}
