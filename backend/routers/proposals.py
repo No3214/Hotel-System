@@ -308,11 +308,15 @@ def _generate_proposal_pdf(p: dict) -> io.BytesIO:
     # --- Header with logo ---
     logo_path = Path(__file__).parent.parent / "uploads" / "logo.jpeg"
     header_data = []
+    s_logo = ParagraphStyle("Logo", parent=styles["Title"], fontSize=20, textColor=gold, alignment=TA_LEFT, spaceAfter=0)
+    s_tagline = ParagraphStyle("Tagline", parent=styles["Normal"], fontSize=9, textColor=gray, alignment=TA_LEFT)
+    logo_block = [Paragraph("KOZBEYLI KONAGI", s_logo), Paragraph("Tarihi Tas Otel &amp; Restoran | Foca, Izmir", s_tagline)]
+
     if logo_path.exists():
         img = Image(str(logo_path), width=2.2*cm, height=2.2*cm)
-        header_data = [[img, Paragraph("KOZBEYLI KONAGI", ParagraphStyle("Logo", parent=styles["Title"], fontSize=20, textColor=gold, alignment=TA_LEFT))]]
+        header_data = [[img, logo_block]]
     else:
-        header_data = [["", Paragraph("KOZBEYLI KONAGI", ParagraphStyle("Logo", parent=styles["Title"], fontSize=20, textColor=gold, alignment=TA_LEFT))]]
+        header_data = [["", logo_block]]
 
     ht = Table(header_data, colWidths=[3*cm, 14*cm])
     ht.setStyle(TableStyle([
@@ -492,13 +496,23 @@ def _generate_proposal_pdf(p: dict) -> io.BytesIO:
     elements.append(Spacer(1, 4*mm))
     elements.append(Paragraph(f"Bu teklif {validity} gun gecerlidir.", ParagraphStyle("Valid", parent=s_small, fontName="Helvetica-BoldOblique", textColor=gold)))
 
-    # --- Footer ---
+    # --- Kurumsal Kimlik Footer ---
     elements.append(Spacer(1, 8*mm))
-    foot_line = Table([[""]], colWidths=[17*cm], rowHeights=[1*mm])
+    foot_line = Table([[""]], colWidths=[17*cm], rowHeights=[1.5*mm])
     foot_line.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), gold)]))
     elements.append(foot_line)
     elements.append(Spacer(1, 3*mm))
-    elements.append(Paragraph("Kozbeyli Konagi | Foca, Izmir | www.kozbeylikonagi.com", ParagraphStyle("Foot", parent=s_small, alignment=TA_CENTER, textColor=gold)))
+
+    s_foot = ParagraphStyle("Foot", parent=s_small, alignment=TA_CENTER, textColor=gray, fontSize=8, leading=11)
+    s_foot_gold = ParagraphStyle("FootGold", parent=s_foot, textColor=gold, fontSize=9, fontName="Helvetica-Bold")
+
+    elements.append(Paragraph("KOZBEYLI KONAGI", s_foot_gold))
+    elements.append(Paragraph("Tarihi Tas Otel &amp; Restoran", s_foot))
+    elements.append(Spacer(1, 2*mm))
+    elements.append(Paragraph("Kozbeyli Mah. Foca, Izmir | Tel: +90 (232) 812 XX XX | info@kozbeylikonagi.com", s_foot))
+    elements.append(Paragraph("www.kozbeylikonagi.com | Instagram: @kozbeylikonagi | Facebook: /kozbeylikonagi", s_foot))
+    elements.append(Spacer(1, 2*mm))
+    elements.append(Paragraph("Bu belge Kozbeyli Konagi tarafindan olusturulmus resmi fiyat teklifidir.", ParagraphStyle("Legal", parent=s_foot, fontSize=7, textColor=HexColor("#999999"))))
 
     doc.build(elements)
     buf.seek(0)
