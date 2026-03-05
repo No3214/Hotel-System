@@ -186,6 +186,9 @@ export const updateAutoPublishSettings = (data) => api.put('/social/auto-publish
 export const triggerAutoPublish = () => api.post('/social/auto-publish/trigger');
 export const getAutoPublishHistory = (limit) => api.get('/social/auto-publish/history', { params: { limit } });
 export const getContentCalendar = (days) => api.get('/social/content-calendar', { params: { days } });
+export const batchDriveImport = (data) => api.post('/social/batch-drive', data);
+export const publishToPlatforms = (postId, platforms) => api.post(`/social/posts/${postId}/publish-to-platforms`, { post_id: postId, platforms });
+export const getPlatformStatus = () => api.get('/social/platform-status');
 
 // Event Leads & Outreach
 export const getEventIdeas = (category) => api.get('/event-leads/ideas', { params: category ? { category } : {} });

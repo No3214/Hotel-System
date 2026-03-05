@@ -3,7 +3,8 @@ import {
   getSocialPosts, createSocialPost, updateSocialPost, deleteSocialPost,
   publishSocialPost, getSocialTemplates, getSocialStats, convertImageLink,
   checkDuplicateMedia, aiGenerateContent, getAITopics, getAutoPublishSettings,
-  updateAutoPublishSettings, triggerAutoPublish, getAutoPublishHistory, getContentCalendar
+  updateAutoPublishSettings, triggerAutoPublish, getAutoPublishHistory, getContentCalendar,
+  batchDriveImport, publishToPlatforms, getPlatformStatus
 } from '../api';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -11,7 +12,7 @@ import {
   Plus, Trash2, Edit2, Save, X, Send, Copy, Instagram, Facebook, Twitter,
   MessageCircle, Eye, BarChart3, FileText, Sparkles, Clock, Linkedin, Video,
   Image, Link, Loader2, Wand2, Calendar, Settings, Zap, RotateCcw, CheckCircle2,
-  AlertCircle, Bot, ChevronRight
+  AlertCircle, Bot, ChevronRight, Upload, FolderOpen, ExternalLink, Wifi, WifiOff
 } from 'lucide-react';
 
 const PLATFORMS = [
@@ -44,7 +45,7 @@ export default function SocialMediaPage() {
   const [editPost, setEditPost] = useState(null);
   const [filter, setFilter] = useState('all');
   const [uploading, setUploading] = useState(false);
-  const [activeTab, setActiveTab] = useState('posts'); // posts, ai, autopublish, calendar
+  const [activeTab, setActiveTab] = useState('posts'); // posts, ai, batch, autopublish, calendar
   const previewRef = useRef(null);
 
   const loadData = async () => {
@@ -138,9 +139,24 @@ export default function SocialMediaPage() {
     loadData();
   };
 
+  const [publishing, setPublishing] = useState(null);
+  const [publishResult, setPublishResult] = useState(null);
+
   const handlePublish = async (id) => {
-    await publishSocialPost(id);
-    loadData();
+    setPublishing(id);
+    setPublishResult(null);
+    try {
+      const res = await publishToPlatforms(id);
+      setPublishResult({ postId: id, results: res.data.results });
+      loadData();
+      // Clear result after 5 seconds
+      setTimeout(() => setPublishResult(null), 5000);
+    } catch (err) {
+      // Fallback to simple publish
+      await publishSocialPost(id);
+      loadData();
+    }
+    setPublishing(null);
   };
 
   const copyContent = (post) => {
@@ -183,6 +199,7 @@ export default function SocialMediaPage() {
           {[
             { id: 'posts', label: 'Gonderiler', icon: FileText },
             { id: 'ai', label: 'AI Icerik', icon: Wand2 },
+            { id: 'batch', label: 'Toplu Yukle', icon: Upload },
             { id: 'autopublish', label: 'Oto-Yayinla', icon: Zap },
             { id: 'calendar', label: 'Takvim', icon: Calendar },
           ].map(tab => (
@@ -254,6 +271,35 @@ export default function SocialMediaPage() {
             ))}
           </div>
 
+          {/* Publish Result Feedback */}
+          {publishResult && (
+            <div className="mb-4 p-4 rounded-xl border border-[#8FAA86]/30 bg-[#8FAA86]/10">
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle2 className="w-4 h-4 text-[#8FAA86]" />
+                <span className="text-sm text-[#8FAA86] font-medium">Yayinlama Sonuclari</span>
+              </div>
+              <div className="flex gap-3">
+                {Object.entries(publishResult.results).map(([platform, result]) => {
+                  const plat = PLATFORMS.find(p => p.id === platform);
+                  const PIcon = plat?.icon || FileText;
+                  const isSuccess = result.status === 'published' || result.status === 'mock_published';
+                  return (
+                    <div key={platform} className="flex items-center gap-1.5 text-xs">
+                      <PIcon className="w-3.5 h-3.5" style={{ color: plat?.color || '#7e7e8a' }} />
+                      <span className={isSuccess ? 'text-[#8FAA86]' : 'text-red-400'}>
+                        {result.status === 'published' ? 'Yayinlandi' :
+                         result.status === 'mock_published' ? 'Mock OK' :
+                         result.status === 'not_supported' ? 'Manuel' :
+                         'Hata'}
+                      </span>
+                      {result.mock && <WifiOff className="w-3 h-3 text-amber-400" title="Mock mod" />}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Posts List */}
           <div className="space-y-3">
             {filteredPosts.length === 0 && (
@@ -307,7 +353,19 @@ export default function SocialMediaPage() {
                       <button onClick={() => copyContent(post)} className="p-1.5 rounded-lg hover:bg-white/5 text-[#7e7e8a]" title="Kopyala"><Copy className="w-3.5 h-3.5" /></button>
                       <button onClick={() => { setEditPost({ ...post }); setView('edit'); }} className="p-1.5 rounded-lg hover:bg-white/5 text-[#7e7e8a]" title="Duzenle"><Edit2 className="w-3.5 h-3.5" /></button>
                       {post.status !== 'published' && (
-                        <button onClick={() => handlePublish(post.id)} className="p-1.5 rounded-lg hover:bg-[#8FAA86]/10 text-[#8FAA86]" title="Yayinla"><Send className="w-3.5 h-3.5" /></button>
+                        <button
+                          onClick={() => handlePublish(post.id)}
+                          disabled={publishing === post.id}
+                          className="p-1.5 rounded-lg hover:bg-[#8FAA86]/10 text-[#8FAA86] disabled:opacity-50"
+                          title="Platformlara Yayinla"
+                        >
+                          {publishing === post.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                        </button>
+                      )}
+                      {post.publish_results && (
+                        <span className="text-[9px] text-[#8FAA86]" title={JSON.stringify(post.publish_results)}>
+                          <Wifi className="w-3 h-3 inline" />
+                        </span>
                       )}
                       <button onClick={() => handleDelete(post.id)} className="p-1.5 rounded-lg hover:bg-red-400/10 text-red-400" title="Sil"><Trash2 className="w-3.5 h-3.5" /></button>
                     </div>
@@ -337,6 +395,11 @@ export default function SocialMediaPage() {
             setActiveTab('posts');
           }}
         />
+      )}
+
+      {/* BATCH DRIVE IMPORT TAB */}
+      {activeTab === 'batch' && view === 'list' && (
+        <BatchDrivePanel onComplete={() => { setActiveTab('posts'); loadData(); }} />
       )}
 
       {/* AUTO-PUBLISH TAB */}
@@ -1121,6 +1184,322 @@ function ContentCalendarPanel() {
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+
+/* ─── Batch Drive Import Panel ─── */
+function BatchDrivePanel({ onComplete }) {
+  const [driveLinks, setDriveLinks] = useState('');
+  const [platforms, setPlatforms] = useState(['instagram', 'facebook']);
+  const [tone, setTone] = useState('warm');
+  const [autoCaption, setAutoCaption] = useState(true);
+  const [importing, setImporting] = useState(false);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
+  const [platformStatus, setPlatformStatus] = useState(null);
+
+  useEffect(() => {
+    getPlatformStatus().then(res => setPlatformStatus(res.data.platforms)).catch(() => {});
+  }, []);
+
+  const handleImport = async () => {
+    const links = driveLinks.split('\n').map(l => l.trim()).filter(Boolean);
+    if (links.length === 0) return;
+
+    setImporting(true);
+    setError(null);
+    setResult(null);
+
+    try {
+      const res = await batchDriveImport({
+        drive_links: links,
+        platforms,
+        tone,
+        auto_caption: autoCaption,
+        post_type: 'text',
+      });
+      setResult(res.data);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Toplu yukleme basarisiz oldu');
+    }
+    setImporting(false);
+  };
+
+  const toneOptions = [
+    { id: 'warm', label: 'Sicak & Samimi' },
+    { id: 'professional', label: 'Profesyonel' },
+    { id: 'playful', label: 'Eglenceli' },
+    { id: 'elegant', label: 'Zarif' },
+  ];
+
+  const linkCount = driveLinks.split('\n').map(l => l.trim()).filter(Boolean).length;
+
+  return (
+    <div className="space-y-6">
+      <div className="glass rounded-xl p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
+            <Upload className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-[#e5e5e8]">Toplu Drive Yukleme</h2>
+            <p className="text-xs text-[#7e7e8a]">Google Drive linklerini yapistirin, AI otomatik caption uretsin</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-12 gap-6">
+          {/* Left: Input */}
+          <div className="col-span-7 space-y-4">
+            {/* Drive Links */}
+            <div>
+              <label className="text-xs text-[#7e7e8a] mb-2 block flex items-center gap-2">
+                <FolderOpen className="w-3.5 h-3.5" />
+                Google Drive Linkleri (her satira bir link)
+              </label>
+              <textarea
+                value={driveLinks}
+                onChange={e => setDriveLinks(e.target.value)}
+                className="w-full min-h-[200px] p-3 rounded-lg bg-white/5 border border-white/10 text-white text-sm resize-y outline-none focus:border-green-500/50 font-mono"
+                placeholder={`https://drive.google.com/file/d/.../view\nhttps://drive.google.com/file/d/.../view\nhttps://drive.google.com/file/d/.../view`}
+                data-testid="batch-drive-input"
+              />
+              <div className="flex items-center justify-between mt-1">
+                <p className="text-[10px] text-[#5a5a65]">
+                  Drive'da gorselleri "Linke sahip olan herkes gorebilir" yapmayi unutmayin
+                </p>
+                <span className={`text-xs font-medium ${linkCount > 0 ? 'text-green-400' : 'text-[#7e7e8a]'}`}>
+                  {linkCount} gorsel
+                </span>
+              </div>
+            </div>
+
+            {/* Tone */}
+            <div>
+              <label className="text-xs text-[#7e7e8a] mb-2 block">AI Caption Tonu</label>
+              <div className="flex gap-2">
+                {toneOptions.map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => setTone(t.id)}
+                    className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
+                      tone === t.id
+                        ? 'bg-[#C4972A]/15 text-[#C4972A]'
+                        : 'text-[#7e7e8a] hover:bg-white/5'
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Platforms */}
+            <div>
+              <label className="text-xs text-[#7e7e8a] mb-2 block">Hedef Platformlar</label>
+              <div className="flex gap-2">
+                {PLATFORMS.map(p => {
+                  const PIcon = p.icon;
+                  const selected = platforms.includes(p.id);
+                  const status = platformStatus?.[p.id];
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => {
+                        setPlatforms(selected
+                          ? platforms.filter(x => x !== p.id)
+                          : [...platforms, p.id]
+                        );
+                      }}
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs transition-all border ${
+                        selected ? 'border-white/20' : 'border-transparent hover:bg-white/5'
+                      }`}
+                      style={{
+                        background: selected ? `${p.color}15` : 'transparent',
+                        color: selected ? p.color : '#7e7e8a',
+                      }}
+                    >
+                      <PIcon className="w-3.5 h-3.5" />
+                      {p.name}
+                      {status && (
+                        status.configured
+                          ? <Wifi className="w-2.5 h-2.5 text-green-400" />
+                          : <WifiOff className="w-2.5 h-2.5 text-amber-400" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Auto Caption Toggle */}
+            <div className="flex items-center justify-between p-3 rounded-lg bg-white/5">
+              <div>
+                <p className="text-xs text-[#e5e5e8] flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                  AI Otomatik Caption
+                </p>
+                <p className="text-[10px] text-[#7e7e8a]">Her gorsel icin AI baslik, icerik ve hashtag uretir</p>
+              </div>
+              <button
+                onClick={() => setAutoCaption(!autoCaption)}
+                className={`relative w-10 h-5 rounded-full transition-all ${autoCaption ? 'bg-purple-500' : 'bg-white/10'}`}
+              >
+                <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${autoCaption ? 'left-5' : 'left-0.5'}`} />
+              </button>
+            </div>
+
+            {/* Import Button */}
+            <Button
+              onClick={handleImport}
+              disabled={importing || linkCount === 0}
+              className="w-full bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white py-3"
+              data-testid="batch-import-btn"
+            >
+              {importing ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {linkCount} Gorsel Isleniyor...</>
+              ) : (
+                <><Upload className="w-4 h-4 mr-2" /> {linkCount} Gorseli Yukle & Caption Uret</>
+              )}
+            </Button>
+          </div>
+
+          {/* Right: Results / Info */}
+          <div className="col-span-5 space-y-4">
+            {/* Platform Status */}
+            {platformStatus && (
+              <div className="glass rounded-xl p-4">
+                <h3 className="text-xs font-medium text-[#e5e5e8] mb-3 flex items-center gap-2">
+                  <Settings className="w-3.5 h-3.5 text-[#C4972A]" /> Platform Durumu
+                </h3>
+                <div className="space-y-2">
+                  {Object.entries(platformStatus).map(([key, status]) => {
+                    const plat = PLATFORMS.find(p => p.id === key);
+                    if (!plat) return null;
+                    const PIcon = plat.icon;
+                    return (
+                      <div key={key} className="flex items-center justify-between p-2 rounded-lg bg-white/5">
+                        <div className="flex items-center gap-2">
+                          <PIcon className="w-3.5 h-3.5" style={{ color: plat.color }} />
+                          <span className="text-xs text-[#c5c5ce]">{plat.name}</span>
+                        </div>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full ${
+                          status.mode === 'live'
+                            ? 'bg-green-500/15 text-green-400'
+                            : status.mode === 'mock'
+                            ? 'bg-amber-500/15 text-amber-400'
+                            : 'bg-white/5 text-[#7e7e8a]'
+                        }`}>
+                          {status.mode === 'live' ? 'Aktif' : status.mode === 'mock' ? 'Mock' : 'Manuel'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* How to use */}
+            {!result && !error && (
+              <div className="glass rounded-xl p-4">
+                <h3 className="text-xs font-medium text-[#e5e5e8] mb-3">Nasil Kullanilir?</h3>
+                <ol className="space-y-2 text-[11px] text-[#7e7e8a]">
+                  <li className="flex gap-2">
+                    <span className="text-[#C4972A] font-bold">1.</span>
+                    Google Drive'a gorselleri yukleyin
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="text-[#C4972A] font-bold">2.</span>
+                    Her gorseli "Linke sahip olan herkes" ile paylasin
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="text-[#C4972A] font-bold">3.</span>
+                    Paylasim linklerini kopyalayip buraya yapistirin
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="text-[#C4972A] font-bold">4.</span>
+                    AI otomatik caption/hashtag uretir
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="text-[#C4972A] font-bold">5.</span>
+                    Taslak olarak kaydedilir, tek tikla yayinlayin
+                  </li>
+                </ol>
+              </div>
+            )}
+
+            {/* Error */}
+            {error && (
+              <div className="p-4 rounded-xl border border-red-500/30 bg-red-500/10">
+                <div className="flex items-center gap-2 text-red-400 text-sm">
+                  <AlertCircle className="w-4 h-4" />
+                  {error}
+                </div>
+              </div>
+            )}
+
+            {/* Result */}
+            {result && (
+              <div className="space-y-3">
+                <div className="p-4 rounded-xl border border-green-500/20 bg-green-500/5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <CheckCircle2 className="w-5 h-5 text-green-400" />
+                    <span className="text-sm text-green-400 font-medium">
+                      {result.created} Gonderi Olusturuldu
+                    </span>
+                  </div>
+
+                  {result.errors > 0 && (
+                    <div className="mb-3 p-2 rounded-lg bg-red-500/10 border border-red-500/20">
+                      <span className="text-xs text-red-400">{result.errors} gorsel yuklenemedi</span>
+                      {result.error_details?.map((e, i) => (
+                        <p key={i} className="text-[10px] text-red-400/70 mt-1">{e.error}</p>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Created posts preview */}
+                  <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                    {result.posts?.map((post, i) => (
+                      <div key={i} className="p-3 rounded-lg bg-white/5">
+                        <div className="flex items-start gap-3">
+                          {post.image_url && (
+                            <img
+                              src={post.image_url}
+                              alt=""
+                              className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
+                              onError={(e) => { e.target.style.display = 'none'; }}
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-[#e5e5e8] font-medium truncate">{post.title}</p>
+                            <p className="text-[10px] text-[#7e7e8a] line-clamp-2">{post.content}</p>
+                            {post.hashtags?.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {post.hashtags.slice(0, 4).map((h, j) => (
+                                  <span key={j} className="text-[9px] text-[#C4972A]">#{h}</span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <Button
+                    onClick={onComplete}
+                    className="w-full mt-3 bg-[#C4972A] hover:bg-[#a87a1f] text-white text-xs"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5 mr-1" /> Gonderilere Git & Yayinla
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

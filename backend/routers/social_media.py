@@ -475,6 +475,322 @@ async def get_auto_publish_history(limit: int = 20):
     return {"history": history, "total": len(history)}
 
 
+# ==================== TOPLU DRIVE ICERIK ISLEME ====================
+
+class BatchDriveRequest(BaseModel):
+    drive_links: List[str]  # List of Google Drive share links
+    platforms: List[str] = ["instagram", "facebook"]
+    tone: str = "warm"
+    auto_caption: bool = True  # Generate AI caption for each image
+    post_type: str = "text"
+
+
+@router.post("/social/batch-drive")
+async def batch_drive_import(data: BatchDriveRequest):
+    """Birden fazla Drive linkinden toplu gonderi olustur + AI caption uret"""
+    from gemini_service import get_chat_response
+
+    if not data.drive_links:
+        raise HTTPException(400, "En az bir Drive linki gerekli")
+    if len(data.drive_links) > 20:
+        raise HTTPException(400, "Tek seferde en fazla 20 gorsel yuklenebilir")
+
+    results = []
+    errors = []
+
+    for idx, link in enumerate(data.drive_links):
+        try:
+            # Convert Drive link
+            direct_url = convert_drive_link(link.strip())
+
+            # Check duplicate
+            existing = await db.social_posts.find_one(
+                {"image_url": direct_url},
+                {"_id": 0, "id": 1, "title": 1}
+            )
+            if existing:
+                errors.append({
+                    "index": idx,
+                    "link": link,
+                    "error": f"Bu gorsel daha once '{existing.get('title', 'Basliksiz')}' gonderisinde kullanildi.",
+                })
+                continue
+
+            # Generate AI caption if enabled
+            title = ""
+            content = ""
+            hashtags = ["KozbeyliKonagi", "FocaOtel", "ButikOtel"]
+
+            if data.auto_caption:
+                try:
+                    tone_hints = {
+                        "warm": "Sicak, samimi ve davetkar bir ton kullan",
+                        "professional": "Profesyonel ve guvenlir bir ton kullan",
+                        "playful": "Eglenceli ve enerjik bir ton kullan",
+                        "elegant": "Zarif ve sofistike bir ton kullan",
+                    }
+
+                    prompt = f"""Bu bir otel/restoran gorseli icin sosyal medya gonderisi yaz.
+Instagram ve Facebook icin uygun olsun.
+{tone_hints.get(data.tone, '')}
+Gorsel sira numarasi: {idx + 1}
+
+Yanit formatini asagidaki gibi ver:
+BASLIK: [gonderi basligi]
+ICERIK: [gonderi icerigi - 150-300 karakter]
+HASHTAGLER: [virgullerle ayrilmis hashtag listesi, # isareti olmadan]"""
+
+                    session_id = f"batch_ai_{new_id()[:8]}"
+                    response = await get_chat_response(prompt, session_id, AI_CONTENT_SYSTEM_PROMPT)
+
+                    # Parse AI response
+                    lines = response.strip().split("\n")
+                    current_field = None
+                    for line in lines:
+                        line_stripped = line.strip()
+                        if line_stripped.upper().startswith("BASLIK:"):
+                            title = line_stripped[7:].strip()
+                            current_field = "title"
+                        elif line_stripped.upper().startswith("ICERIK:"):
+                            content = line_stripped[7:].strip()
+                            current_field = "content"
+                        elif line_stripped.upper().startswith("HASHTAGLER:") or line_stripped.upper().startswith("HASHTAG:"):
+                            tag_text = line_stripped.split(":", 1)[1].strip()
+                            hashtags = [h.strip().lstrip("#") for h in tag_text.split(",") if h.strip()]
+                            current_field = "hashtags"
+                        elif current_field == "content" and line_stripped:
+                            content += " " + line_stripped
+
+                    if not content:
+                        content = response.strip()[:300]
+                except Exception as e:
+                    logger.warning(f"AI caption generation failed for link {idx}: {e}")
+                    title = f"Kozbeyli Konagi #{idx + 1}"
+                    content = "Kozbeyli Konagi'ndan bir kare..."
+
+            if not title:
+                title = f"Kozbeyli Konagi #{idx + 1}"
+
+            # Create post
+            post = {
+                "id": new_id(),
+                "title": title,
+                "content": content,
+                "platforms": data.platforms,
+                "post_type": data.post_type,
+                "frame_style": "default",
+                "hashtags": hashtags,
+                "status": "draft",
+                "image_url": direct_url,
+                "source": "batch_drive_import",
+                "created_at": utcnow(),
+                "updated_at": utcnow(),
+            }
+            await db.social_posts.insert_one(post)
+            results.append(clean_doc(post))
+
+        except Exception as e:
+            errors.append({
+                "index": idx,
+                "link": link,
+                "error": str(e),
+            })
+
+    return {
+        "success": True,
+        "created": len(results),
+        "errors": len(errors),
+        "posts": results,
+        "error_details": errors,
+    }
+
+
+# ==================== GERCEK PLATFORM YAYINLAMA ====================
+
+class PlatformPublishRequest(BaseModel):
+    post_id: str
+    platforms: Optional[List[str]] = None  # Override post platforms
+
+
+@router.post("/social/posts/{post_id}/publish-to-platforms")
+async def publish_to_platforms(post_id: str, data: Optional[PlatformPublishRequest] = None):
+    """Gonderiyi gercek platformlara yayin - Instagram/Facebook Graph API"""
+    post = await db.social_posts.find_one({"id": post_id}, {"_id": 0})
+    if not post:
+        raise HTTPException(404, "Gonderi bulunamadi")
+
+    platforms_to_publish = (data.platforms if data and data.platforms else post.get("platforms", []))
+    publish_results = {}
+
+    for platform in platforms_to_publish:
+        try:
+            if platform == "instagram":
+                result = await _publish_to_instagram(post)
+                publish_results["instagram"] = result
+            elif platform == "facebook":
+                result = await _publish_to_facebook(post)
+                publish_results["facebook"] = result
+            else:
+                publish_results[platform] = {
+                    "status": "not_supported",
+                    "message": f"{platform} API entegrasyonu henuz aktif degil. Icerik kopyalanarak manuel paylasim yapilabilir."
+                }
+        except Exception as e:
+            logger.error(f"Platform publish error ({platform}): {e}")
+            publish_results[platform] = {"status": "error", "message": str(e)}
+
+    # Update post status
+    update_data = {
+        "status": "published",
+        "published_at": utcnow(),
+        "updated_at": utcnow(),
+        "publish_results": publish_results,
+    }
+    await db.social_posts.update_one({"id": post_id}, {"$set": update_data})
+
+    # Log publish
+    await db.social_publish_log.insert_one({
+        "id": new_id(),
+        "post_id": post_id,
+        "platforms": platforms_to_publish,
+        "results": publish_results,
+        "published_at": utcnow(),
+    })
+
+    return {
+        "success": True,
+        "post_id": post_id,
+        "results": publish_results,
+    }
+
+
+async def _publish_to_instagram(post: dict) -> dict:
+    """Instagram Graph API ile gorsel/carousel paylasimi"""
+    access_token = os.environ.get("META_ACCESS_TOKEN", "")
+    ig_account_id = os.environ.get("INSTAGRAM_BUSINESS_ACCOUNT_ID", "")
+
+    if not access_token or not ig_account_id:
+        # Mock mode - return simulated success
+        return {
+            "status": "mock_published",
+            "message": "Instagram API kimlik bilgileri yapilandirilmamis. Mock modda calisiliyor.",
+            "mock": True,
+        }
+
+    import httpx
+
+    caption = f"{post.get('title', '')}\n\n{post.get('content', '')}"
+    if post.get("hashtags"):
+        caption += "\n\n" + " ".join(f"#{h}" for h in post["hashtags"])
+
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        # Step 1: Create media container
+        if post.get("image_url"):
+            container_resp = await client.post(
+                f"https://graph.facebook.com/v18.0/{ig_account_id}/media",
+                params={
+                    "image_url": post["image_url"],
+                    "caption": caption,
+                    "access_token": access_token,
+                }
+            )
+            container_data = container_resp.json()
+
+            if "id" not in container_data:
+                return {"status": "error", "message": container_data.get("error", {}).get("message", "Container olusturulamadi")}
+
+            container_id = container_data["id"]
+
+            # Step 2: Publish the container
+            publish_resp = await client.post(
+                f"https://graph.facebook.com/v18.0/{ig_account_id}/media_publish",
+                params={
+                    "creation_id": container_id,
+                    "access_token": access_token,
+                }
+            )
+            publish_data = publish_resp.json()
+
+            if "id" in publish_data:
+                return {"status": "published", "media_id": publish_data["id"], "platform": "instagram"}
+            else:
+                return {"status": "error", "message": publish_data.get("error", {}).get("message", "Yayinlama basarisiz")}
+        else:
+            return {"status": "skipped", "message": "Instagram icin gorsel gerekli"}
+
+
+async def _publish_to_facebook(post: dict) -> dict:
+    """Facebook Graph API ile sayfa paylasimi"""
+    access_token = os.environ.get("META_ACCESS_TOKEN", "")
+    page_id = os.environ.get("FACEBOOK_PAGE_ID", "")
+
+    if not access_token or not page_id:
+        return {
+            "status": "mock_published",
+            "message": "Facebook API kimlik bilgileri yapilandirilmamis. Mock modda calisiliyor.",
+            "mock": True,
+        }
+
+    import httpx
+
+    message = f"{post.get('title', '')}\n\n{post.get('content', '')}"
+    if post.get("hashtags"):
+        message += "\n\n" + " ".join(f"#{h}" for h in post["hashtags"])
+
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        params = {
+            "message": message,
+            "access_token": access_token,
+        }
+
+        if post.get("image_url"):
+            # Photo post
+            params["url"] = post["image_url"]
+            resp = await client.post(
+                f"https://graph.facebook.com/v18.0/{page_id}/photos",
+                params=params,
+            )
+        else:
+            # Text-only post
+            resp = await client.post(
+                f"https://graph.facebook.com/v18.0/{page_id}/feed",
+                params=params,
+            )
+
+        data = resp.json()
+        if "id" in data or "post_id" in data:
+            return {"status": "published", "post_id": data.get("id") or data.get("post_id"), "platform": "facebook"}
+        else:
+            return {"status": "error", "message": data.get("error", {}).get("message", "Yayinlama basarisiz")}
+
+
+@router.get("/social/platform-status")
+async def get_platform_status():
+    """Hangi platformlarin API'si aktif, hangisi mock modda"""
+    meta_token = os.environ.get("META_ACCESS_TOKEN", "")
+    ig_account = os.environ.get("INSTAGRAM_BUSINESS_ACCOUNT_ID", "")
+    fb_page = os.environ.get("FACEBOOK_PAGE_ID", "")
+
+    return {
+        "platforms": {
+            "instagram": {
+                "configured": bool(meta_token and ig_account),
+                "mode": "live" if (meta_token and ig_account) else "mock",
+                "env_vars": ["META_ACCESS_TOKEN", "INSTAGRAM_BUSINESS_ACCOUNT_ID"],
+            },
+            "facebook": {
+                "configured": bool(meta_token and fb_page),
+                "mode": "live" if (meta_token and fb_page) else "mock",
+                "env_vars": ["META_ACCESS_TOKEN", "FACEBOOK_PAGE_ID"],
+            },
+            "twitter": {"configured": False, "mode": "manual", "message": "Manuel paylasim - icerik kopyalanabilir"},
+            "tiktok": {"configured": False, "mode": "manual", "message": "Manuel paylasim - icerik kopyalanabilir"},
+            "linkedin": {"configured": False, "mode": "manual", "message": "Manuel paylasim - icerik kopyalanabilir"},
+            "whatsapp": {"configured": False, "mode": "manual", "message": "WhatsApp Business API ayri moduldedir"},
+        }
+    }
+
+
 @router.get("/social/content-calendar")
 async def get_content_calendar(days: int = 7):
     """Yaklasan zamanlanan gonderileri takvim formatinda getir"""
