@@ -96,6 +96,30 @@ api.interceptors.response.use(
       console.warn(`Rate limited. Retry after ${retryAfter}s`);
     }
 
+    // Network error auto-retry (connection lost, timeout, etc.)
+    if (!error.response && error.code !== 'ERR_CANCELED') {
+      const retryCount = originalRequest._retryCount || 0;
+      if (retryCount < 3) {
+        originalRequest._retryCount = retryCount + 1;
+        const delay = Math.min(1000 * Math.pow(2, retryCount), 8000);
+        console.warn(`Network error, retrying in ${delay}ms (attempt ${retryCount + 1}/3)`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return api(originalRequest);
+      }
+    }
+
+    // Server error auto-retry (502, 503, 504)
+    if ([502, 503, 504].includes(error.response?.status)) {
+      const retryCount = originalRequest._serverRetry || 0;
+      if (retryCount < 2) {
+        originalRequest._serverRetry = retryCount + 1;
+        const delay = 2000 * (retryCount + 1);
+        console.warn(`Server error ${error.response.status}, retrying in ${delay}ms`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return api(originalRequest);
+      }
+    }
+
     return Promise.reject(error);
   }
 );

@@ -214,6 +214,150 @@ async def evening_room_check_job():
 
 
 # =====================================================
+# JOB 5: SOSYAL MEDYA OTOMATIK YAYIN (Her 5 dk)
+# =====================================================
+
+async def publish_scheduled_posts_job():
+    """Zamanlanmis sosyal medya gonderilerini otomatik yayinla"""
+    try:
+        from database import db
+        now = datetime.now(timezone.utc).isoformat()
+
+        # scheduled_at zamani gecmis ve hala "scheduled" durumunda olan gonderileri bul
+        posts = await db.social_posts.find({
+            "status": "scheduled",
+            "scheduled_at": {"$lte": now},
+        }, {"_id": 0}).to_list(20)
+
+        if not posts:
+            return
+
+        for post in posts:
+            try:
+                from routers.social_media import _publish_to_platform
+                publish_results = {}
+                for platform in post.get("platforms", []):
+                    try:
+                        result = await _publish_to_platform(platform, post)
+                        publish_results[platform] = result
+                    except Exception as e:
+                        publish_results[platform] = {"success": False, "error": str(e)}
+
+                await db.social_posts.update_one(
+                    {"id": post["id"]},
+                    {"$set": {
+                        "status": "published",
+                        "published_at": now,
+                        "updated_at": now,
+                        "publish_results": publish_results,
+                    }}
+                )
+                logger.info(f"Zamanlanmis gonderi yayinlandi: {post['id']}")
+            except Exception as e:
+                logger.error(f"Gonderi yayinlama hatasi {post.get('id')}: {e}")
+
+    except Exception as e:
+        logger.error(f"Sosyal medya auto-publish hatasi: {e}")
+
+
+# =====================================================
+# JOB 6: SELF-HEALING HEALTH CHECK (Her 10 dk)
+# =====================================================
+
+async def health_check_job():
+    """Sistem saglik kontrolu ve otomatik iyilestirme"""
+    try:
+        from database import db
+
+        # 1. DB baglanti kontrolu
+        try:
+            await db.command("ping")
+        except Exception as e:
+            logger.error(f"DB baglanti hatasi, yeniden baglaniliyor: {e}")
+            # Motor driver otomatik reconnect yapar, sadece logluyoruz
+
+        # 2. Stuck reservation'lari kontrol et (7+ gun checked_in ama check_out gecmis)
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).strftime("%Y-%m-%d")
+        stuck = await db.reservations.count_documents({
+            "status": "checked_in",
+            "check_out": {"$lt": cutoff},
+        })
+        if stuck > 0:
+            logger.warning(f"Self-healing: {stuck} adet stuck rezervasyon bulundu (7+ gun gecmis check-out)")
+            # Auto-fix: mark as checked_out
+            await db.reservations.update_many(
+                {"status": "checked_in", "check_out": {"$lt": cutoff}},
+                {"$set": {"status": "checked_out", "auto_fixed": True, "auto_fixed_at": datetime.now(timezone.utc).isoformat()}}
+            )
+            logger.info(f"Self-healing: {stuck} stuck rezervasyon otomatik checked_out yapildi")
+
+        # 3. Stuck tasks (30+ gun completed olmamis urgent task)
+        task_cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+        stuck_tasks = await db.tasks.count_documents({
+            "status": {"$in": ["pending", "in_progress"]},
+            "created_at": {"$lt": task_cutoff},
+        })
+        if stuck_tasks > 0:
+            logger.warning(f"Self-healing: {stuck_tasks} adet 30+ gunluk tamamlanmamis gorev var")
+
+        # 4. Room status consistency check
+        occupied_rooms = await db.reservations.distinct("room_id", {
+            "status": {"$in": ["checked_in"]},
+        })
+        if occupied_rooms:
+            await db.rooms.update_many(
+                {"room_id": {"$in": occupied_rooms}, "status": {"$ne": "occupied"}},
+                {"$set": {"status": "occupied"}}
+            )
+
+        logger.debug("Health check tamamlandi")
+
+    except Exception as e:
+        logger.error(f"Health check hatasi: {e}")
+
+
+# =====================================================
+# JOB 7: STALE DATA TEMIZLIGI (Her gece 03:00)
+# =====================================================
+
+async def cleanup_stale_data_job():
+    """Eski log'lari ve gecici verileri temizle"""
+    try:
+        from database import db
+
+        cutoff_90d = (datetime.now(timezone.utc) - timedelta(days=90)).isoformat()
+        cutoff_30d = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+
+        # 90 gunden eski audit log'larini sil
+        result = await db.audit_logs.delete_many({"timestamp": {"$lt": cutoff_90d}})
+        if result.deleted_count:
+            logger.info(f"Cleanup: {result.deleted_count} eski audit log silindi")
+
+        # 30 gunden eski automation log'larini sil
+        result = await db.automation_logs.delete_many({"created_at": {"$lt": cutoff_30d}})
+        if result.deleted_count:
+            logger.info(f"Cleanup: {result.deleted_count} eski automation log silindi")
+
+        # 30 gunden eski cozulmus security alert'leri sil
+        result = await db.security_alerts.delete_many({
+            "resolved": True,
+            "timestamp": {"$lt": cutoff_30d},
+        })
+        if result.deleted_count:
+            logger.info(f"Cleanup: {result.deleted_count} eski security alert silindi")
+
+        # 90 gunden eski group notification'lari sil
+        result = await db.group_notifications.delete_many({"created_at": {"$lt": cutoff_90d}})
+        if result.deleted_count:
+            logger.info(f"Cleanup: {result.deleted_count} eski bildirim silindi")
+
+        logger.info("Gece temizligi tamamlandi")
+
+    except Exception as e:
+        logger.error(f"Stale data cleanup hatasi: {e}")
+
+
+# =====================================================
 # SCHEDULER BASLATMA
 # =====================================================
 
@@ -258,8 +402,37 @@ def start_scheduler():
         replace_existing=True,
     )
 
+    # Her 5 dk - Sosyal medya zamanlanmis gonderi yayinla
+    scheduler.add_job(
+        publish_scheduled_posts_job,
+        'interval',
+        minutes=5,
+        id="social_auto_publish",
+        name="Sosyal Medya Otomatik Yayin",
+        replace_existing=True,
+    )
+
+    # Her 10 dk - Self-healing: DB baglanti kontrolu
+    scheduler.add_job(
+        health_check_job,
+        'interval',
+        minutes=10,
+        id="health_check",
+        name="Sistem Saglik Kontrolu",
+        replace_existing=True,
+    )
+
+    # Her gece 03:00 - Stale data temizligi
+    scheduler.add_job(
+        cleanup_stale_data_job,
+        CronTrigger(hour=3, minute=0),
+        id="stale_cleanup",
+        name="Eski Veri Temizligi",
+        replace_existing=True,
+    )
+
     scheduler.start()
-    logger.info("Scheduler baslatildi - 4 zamanli gorev aktif")
+    logger.info("Scheduler baslatildi - 7 zamanli gorev aktif")
 
 
 def get_scheduled_jobs():

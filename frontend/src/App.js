@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { ErrorBoundary } from './components/ErrorBoundary';
+import { ErrorBoundary, NetworkStatusMonitor } from './components/ErrorBoundary';
 import { LanguageProvider, useLanguage } from './hooks/useLanguage';
 import LoginPage from './pages/LoginPage';
 import PublicMenuPage from './pages/PublicMenuPage';
@@ -112,6 +112,7 @@ const NAV_CONFIG = [
 export default function App() {
   return (
     <ErrorBoundary>
+      <NetworkStatusMonitor />
       <BrowserRouter>
         <AuthProvider>
           <LanguageProvider>

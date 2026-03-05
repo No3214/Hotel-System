@@ -243,14 +243,41 @@ export default function TableReservationsPage() {
             })}
           </div>
 
-          {/* Ara + Bar */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {floorPlan.zones.filter(z => ['ara', 'bar'].includes(z.id)).map(zone => {
+          {/* Bar (solda, kapi yaninda) + KAPI + Ara Bolge (sagda) */}
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-start">
+            {/* Bar Bolgesi - Sol (Kapi girisi yaninda) */}
+            {floorPlan.zones.filter(z => z.id === 'bar').map(zone => {
               const ZIcon = ZONE_ICONS[zone.id];
               return (
                 <div key={zone.id} className={`border rounded-xl p-4 ${ZONE_COLORS[zone.id]}`} data-testid={`zone-${zone.id}`}>
                   <div className="flex items-center gap-2 mb-3">
-                    <ZIcon className="w-5 h-5" />
+                    <ZIcon className="w-5 h-5 text-amber-400" />
+                    <h3 className="font-semibold text-[#e5e5e8]">{zone.name}</h3>
+                    <Badge className="ml-auto bg-white/10 text-[#a9a9b2]">{zone.occupied_count}/{zone.total_count}</Badge>
+                  </div>
+                  <div className="flex flex-wrap gap-3 justify-center">
+                    {zone.tables.map(t => <TableCard key={t.id} table={t} onClick={handleTableClick} />)}
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* KAPI indicator - Ortada */}
+            <div className="flex flex-col items-center justify-center py-4">
+              <div className="w-px h-8 bg-white/10" />
+              <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-xs text-[#7e7e8a] flex items-center gap-2 my-2">
+                <MapPin className="w-3 h-3" /> KAPI
+              </div>
+              <div className="w-px h-8 bg-white/10" />
+            </div>
+
+            {/* Ara Bolge - Sag */}
+            {floorPlan.zones.filter(z => z.id === 'ara').map(zone => {
+              const ZIcon = ZONE_ICONS[zone.id];
+              return (
+                <div key={zone.id} className={`border rounded-xl p-4 ${ZONE_COLORS[zone.id]}`} data-testid={`zone-${zone.id}`}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <ZIcon className="w-5 h-5 text-green-400" />
                     <h3 className="font-semibold text-[#e5e5e8]">{zone.name}</h3>
                     <Badge className="ml-auto bg-white/10 text-[#a9a9b2]">{zone.occupied_count}/{zone.total_count}</Badge>
                   </div>
@@ -262,7 +289,7 @@ export default function TableReservationsPage() {
             })}
           </div>
 
-          {/* KAPI indicator */}
+          {/* Ana Giris etiketi */}
           <div className="flex justify-center">
             <div className="bg-white/5 border border-white/10 rounded-lg px-6 py-2 text-xs text-[#7e7e8a] flex items-center gap-2">
               <MapPin className="w-3 h-3" /> KAPI (Ana Giris)
