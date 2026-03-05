@@ -172,6 +172,9 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup():
     logger.info(f"Kozbeyli Konagi API starting - DB: {DB_NAME}")
+    from database import verify_connection
+    if not await verify_connection():
+        logger.error("MongoDB connection failed - check MONGO_URL")
     rooms_count = await db.rooms.count_documents({})
     if rooms_count == 0:
         for room in ROOMS:

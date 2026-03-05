@@ -12,6 +12,10 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["social-media"])
 
 
+class ImageLinkRequest(BaseModel):
+    url: str
+
+
 def convert_drive_link(url: str) -> str:
     """Convert Google Drive share link to direct image URL"""
     # Pattern 1: https://drive.google.com/file/d/FILE_ID/view
@@ -245,10 +249,6 @@ async def get_stats():
         "scheduled": scheduled,
         "platforms": platform_counts,
     }
-
-
-class ImageLinkRequest(BaseModel):
-    url: str
 
 
 @router.post("/social/convert-image-link")
