@@ -222,6 +222,32 @@ export const getPsychologyTriggers = () => api.get('/marketing/psychology-trigge
 export const getSequenceTypes = () => api.get('/marketing/sequence-types');
 export const getPinterestBoards = () => api.get('/marketing/pinterest-boards');
 
+// Meta Ads Manager
+export const generateAdCopy = (data) => api.post('/meta-ads/generate-copy', data);
+export const getAdAudiences = () => api.get('/meta-ads/audiences');
+export const getAdTemplates = () => api.get('/meta-ads/templates');
+export const getAdPerformance = (campaignId) => api.get('/meta-ads/performance', { params: campaignId ? { campaign_id: campaignId } : {} });
+export const createAdCampaign = (data) => api.post('/meta-ads/campaigns', data);
+export const getAdCampaigns = (params) => api.get('/meta-ads/campaigns', { params });
+export const updateAdCampaignStatus = (data) => api.put('/meta-ads/campaigns/status', data);
+export const getBudgetSuggestions = () => api.get('/meta-ads/budget-suggestions');
+
+// Reputation Management
+export const getReputationOverview = () => api.get('/reputation/overview');
+export const getReputationPlatforms = () => api.get('/reputation/platforms');
+export const analyzeReview = (data) => api.post('/reputation/analyze', data);
+export const addReputationReview = (data) => api.post('/reputation/reviews', data);
+export const getReputationReviews = (params) => api.get('/reputation/reviews', { params });
+export const getCompetitorComparison = () => api.get('/reputation/competitors');
+export const getSentimentKeywords = () => api.get('/reputation/sentiment-keywords');
+export const quickSentiment = (data) => api.post('/reputation/quick-sentiment', data);
+
+// Marketing Analytics
+export const getMarketingOverview = () => api.get('/marketing-analytics/overview');
+export const getChannelPerformance = (period) => api.get('/marketing-analytics/channel-performance', { params: { period } });
+export const getConversionFunnel = () => api.get('/marketing-analytics/conversion-funnel');
+export const getROIReport = () => api.get('/marketing-analytics/roi-report');
+
 // Event Leads & Outreach
 export const getEventIdeas = (category) => api.get('/event-leads/ideas', { params: category ? { category } : {} });
 export const getTargetGroups = () => api.get('/event-leads/target-groups');

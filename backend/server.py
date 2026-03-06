@@ -45,6 +45,9 @@ from routers.proposals import router as proposals_router
 from routers.event_leads import router as event_leads_router
 from routers.escalation import router as escalation_router
 from routers.marketing import router as marketing_router
+from routers.meta_ads import router as meta_ads_router
+from routers.reputation import router as reputation_router
+from routers.marketing_analytics import router as marketing_analytics_router
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -184,6 +187,9 @@ api.include_router(proposals_router)
 api.include_router(event_leads_router)
 api.include_router(escalation_router)
 api.include_router(marketing_router)
+api.include_router(meta_ads_router)
+api.include_router(reputation_router)
+api.include_router(marketing_analytics_router)
 
 app.include_router(api)
 

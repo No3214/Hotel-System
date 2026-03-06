@@ -36,6 +36,7 @@ const FALLBACK_TR = {
   today: "Bugun", this_month: "Bu Ay",
   revenue: "Gelir Yonetimi", analytics: "Analitik", audit: "Guvenlik",
   hotelrunner: "HotelRunner", integrations: "Entegrasyonlar",
+  marketing_hub: "Pazarlama", event_leads: "Etkinlik Leadleri",
 };
 
 export function LanguageProvider({ children }) {
