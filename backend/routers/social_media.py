@@ -3,7 +3,9 @@ from pydantic import BaseModel
 from typing import Optional
 from database import db
 from helpers import utcnow, new_id, clean_doc
+from gemini_service import get_chat_response
 import re
+import json
 
 router = APIRouter(tags=["social-media"])
 
@@ -208,3 +210,44 @@ async def convert_image_link(data: ImageLinkRequest):
     
     direct_url = convert_drive_link(data.url)
     return {"success": True, "image_url": direct_url}
+
+class AIGenerateRequest(BaseModel):
+    topic: str
+    tone: Optional[str] = "professional" # professional, fun, romantic, urgent
+
+@router.post("/social/generate-post")
+async def generate_ai_post(req: AIGenerateRequest):
+    """Gemini kullanarak sosyal medya icerigi uretir"""
+    try:
+        system_prompt = f"""
+        Sen yaraticilik ve SEO konusunda uzman bir sosyal medya yoneticisisin. Kozbeyli Konagi adli otel ve restoran hesabi icin icerik ureteceksin.
+        Kullanicinin istegine gore secilen ton: {req.tone}
+        
+        Senden asagidaki JSON formatinda sonuc uretmen bekleniyor (sadece JSON dondur, ektra yazi yazma):
+        {{
+            "title": "Ilgi cekici, kisa bir baslik",
+            "content": "Emojiler barindiran, akici ve SEO uyumlu gonderi metni",
+            "hashtags": ["KozbeyliKonagi", "hashtag2", "hashtag3"]
+        }}
+        """
+        
+        response_text = await get_chat_response(
+            message=f"Su konu hakkinda bir gonderi uret: {req.topic}",
+            session_id=new_id(),
+            system_prompt=system_prompt,
+            context=""
+        )
+        
+        # Parse JSON
+        # Response might have ```json ... ``` wrapper
+        clean_json = response_text.replace("```json", "").replace("```", "").strip()
+        data = json.loads(clean_json)
+        
+        return {
+            "success": True, 
+            "title": data.get("title", ""),
+            "content": data.get("content", ""),
+            "hashtags": data.get("hashtags", []),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Mevcut AI servisinde hata: {str(e)}")

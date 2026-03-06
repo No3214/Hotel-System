@@ -50,6 +50,7 @@ export const deleteEvent = (id) => api.delete(`/events/${id}`);
 export const getHousekeeping = (params) => api.get('/housekeeping', { params });
 export const createHousekeeping = (data) => api.post('/housekeeping', data);
 export const updateHousekeepingStatus = (id, status) => api.patch(`/housekeeping/${id}/status?status=${status}`);
+export const getHousekeepingAIRouting = () => api.get('/housekeeping/ai-routing');
 
 // Staff
 export const getStaff = () => api.get('/staff');
@@ -64,6 +65,9 @@ export const deleteKnowledge = (id) => api.delete(`/knowledge/${id}`);
 export const sendChatMessage = (data) => api.post('/chatbot', data);
 export const getChatHistory = (sessionId) => api.get(`/chatbot/history/${sessionId}`);
 export const clearChat = (sessionId) => api.delete(`/chatbot/session/${sessionId}`);
+
+// Manager AI
+export const sendManagerCommand = (data) => api.post('/manager-ai/chat', data);
 
 // Messages (WhatsApp/Instagram)
 export const getMessages = (params) => api.get('/messages', { params });
@@ -116,6 +120,7 @@ export const generateReviewResponse = (reviewId, tone) => api.post(`/reviews/${r
 export const updateReview = (id, data) => api.patch(`/reviews/${id}`, data);
 export const deleteReview = (id) => api.delete(`/reviews/${id}`);
 export const getReviewStats = () => api.get('/reviews/stats');
+export const getReviewAIAnalytics = () => api.get('/reviews/ai-analytics');
 
 // Dynamic Pricing
 export const calculatePrice = (roomId, date) => api.get(`/pricing/calculate?room_id=${roomId}&date=${date}`);
@@ -178,6 +183,7 @@ export const publishSocialPost = (id) => api.post(`/social/posts/${id}/publish`)
 export const getSocialTemplates = () => api.get('/social/templates');
 export const getSocialStats = () => api.get('/social/stats');
 export const convertImageLink = (url) => api.post('/social/convert-image-link', { url });
+export const generateSocialPost = (data) => api.post('/social/generate-post', data);
 
 // Kitchen Dashboard
 export const getKitchenOrders = (params) => api.get('/kitchen/orders', { params });
@@ -187,6 +193,7 @@ export const updateKitchenOrderStatus = (id, data) => api.put(`/kitchen/orders/$
 export const cancelKitchenOrder = (id) => api.delete(`/kitchen/orders/${id}`);
 export const getKitchenSummary = () => api.get('/kitchen/summary');
 export const getKitchenNotifications = () => api.get('/kitchen/notifications');
+export const getKitchenAIForecast = () => api.get('/kitchen/ai-forecast');
 
 // Auth
 export const login = (data) => api.post('/auth/login', data);
@@ -231,6 +238,7 @@ export const updateAllPrices = (daysAhead) => api.post(`/revenue/pricing/update-
 export const getRevenueForecast = (dateFrom, dateTo) => api.get('/revenue/forecast', { params: { date_from: dateFrom, date_to: dateTo } });
 export const getRevenueKPI = (dateFrom, dateTo) => api.get('/revenue/kpi', { params: { date_from: dateFrom, date_to: dateTo } });
 export const getPricingRules = () => api.get('/revenue/pricing/rules');
+export const getRevenueAIInsights = () => api.get('/revenue/ai-insights');
 
 // Analytics
 export const getAnalyticsKPI = (dateFrom, dateTo) => api.get('/analytics/dashboard/kpi', { params: { date_from: dateFrom, date_to: dateTo } });

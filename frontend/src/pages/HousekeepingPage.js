@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { getHousekeeping, createHousekeeping, updateHousekeepingStatus } from '../api';
+import { getHousekeeping, createHousekeeping, updateHousekeepingStatus, getHousekeepingAIRouting } from '../api';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { BedDouble, Plus, CheckCircle, Clock, Loader2 } from 'lucide-react';
+import { BedDouble, Plus, CheckCircle, Clock, Loader2, Sparkles, Map, MapPin } from 'lucide-react';
 
 const STATUS_CONFIG = {
   pending: { label: 'Bekliyor', color: 'bg-yellow-500/20 text-yellow-400', icon: Clock },
@@ -17,8 +17,11 @@ const STATUS_CONFIG = {
 export default function HousekeepingPage() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ room_number: '', task_type: 'standard_clean', priority: 'normal', assigned_to: '', notes: '' });
+  const [aiRouting, setAiRouting] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
   const load = () => {
     getHousekeeping().then(r => setLogs(r.data.logs)).catch(console.error).finally(() => setLoading(false));
@@ -38,6 +41,20 @@ export default function HousekeepingPage() {
     load();
   };
 
+  const loadAiRouting = async () => {
+    setAiLoading(true);
+    try {
+      const res = await getHousekeepingAIRouting();
+      if (res.data.success) {
+        setAiRouting(res.data.routing);
+      }
+    } catch (e) {
+      console.error(e);
+      alert('AI Rotalama kullanilamiyor.');
+    }
+    setAiLoading(false);
+  };
+
   return (
     <div className="p-6 lg:p-8 space-y-6 max-w-[1400px]" data-testid="housekeeping-page">
       <div className="flex items-center justify-between">
@@ -45,12 +62,17 @@ export default function HousekeepingPage() {
           <h1 className="text-2xl lg:text-3xl font-bold text-[#C4972A]">Kat Hizmetleri</h1>
           <p className="text-[#7e7e8a] text-sm mt-1">{logs.length} kayit</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-[#C4972A] hover:bg-[#a87a1f] text-white" data-testid="add-housekeeping-btn">
-              <Plus className="w-4 h-4 mr-2" /> Temizlik Ekle
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Button onClick={loadAiRouting} disabled={aiLoading} className="bg-sky-600 hover:bg-sky-500 text-white border-none shadow-md" data-testid="ai-routing-btn">
+            {aiLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Map className="w-4 h-4 mr-2" />}
+            AI Rota Optimizasyonu
+          </Button>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-[#C4972A] hover:bg-[#a87a1f] text-white" data-testid="add-housekeeping-btn">
+                <Plus className="w-4 h-4 mr-2" /> Temizlik Ekle
+              </Button>
+            </DialogTrigger>
           <DialogContent className="bg-[#1a1a22] border-[#C4972A]/20">
             <DialogHeader><DialogTitle className="text-[#C4972A]">Yeni Temizlik Gorevi</DialogTitle></DialogHeader>
             <div className="space-y-3">
@@ -73,7 +95,46 @@ export default function HousekeepingPage() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
+
+      {/* AI Routing Panel */}
+      {aiRouting && (
+        <div className="bg-sky-900/10 border border-sky-500/20 rounded-xl p-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-sky-500/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
+          <div className="flex items-center justify-between mb-4 relative z-10">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-sky-500/10 flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-sky-400" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-sky-400">{aiRouting.plan_name || 'Optimize Rota'}</h2>
+                <p className="text-sm text-[#c8c8d0] mt-1 pr-4">{aiRouting.summary}</p>
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
+            {aiRouting.optimized_route?.map((step, idx) => (
+              <div key={idx} className="bg-[#12121a] border border-white/5 rounded-lg p-3 flex gap-4">
+                <div className="w-10 flex-shrink-0 flex flex-col items-center">
+                  <div className="w-8 h-8 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center font-bold text-sm">
+                    {idx + 1}
+                  </div>
+                  {idx < aiRouting.optimized_route.length - 1 && <div className="w-0.5 h-full bg-sky-500/20 mt-2" />}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-white text-lg">{step.room_number?.toUpperCase()}</span>
+                    <Badge variant="outline" className="border-sky-500/30 text-sky-400 text-[10px]">{step.task}</Badge>
+                    <span className="text-xs text-[#7e7e8a] flex items-center gap-1"><Clock className="w-3 h-3" /> ~{step.estimated_mins} dk</span>
+                  </div>
+                  <p className="text-xs text-[#a9a9b2] mt-1">{step.reason}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="space-y-3">
         {logs.map(log => {

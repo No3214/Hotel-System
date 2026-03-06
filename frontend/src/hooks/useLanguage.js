@@ -4,7 +4,7 @@ import { getTranslations, getLanguages } from '../api';
 const LanguageContext = createContext();
 
 const FALLBACK_TR = {
-  dashboard: "Dashboard", rooms: "Odalar", guests: "Misafirler",
+  dashboard: "Dashboard", manager_ai: "Manager AI", rooms: "Odalar", guests: "Misafirler",
   chatbot: "AI Asistan", messages: "Mesajlar", tasks: "Gorevler",
   events: "Etkinlikler", housekeeping: "Kat Hizmetleri",
   knowledge: "Bilgi Bankasi", menu: "QR Menu",

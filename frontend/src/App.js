@@ -38,12 +38,14 @@ const AuditSecurityPage = lazy(() => import('./pages/AuditSecurityPage'));
 const HotelRunnerPage = lazy(() => import('./pages/HotelRunnerPage'));
 const OrganizationPage = lazy(() => import('./pages/OrganizationPage'));
 const ProposalsPage = lazy(() => import('./pages/ProposalsPage'));
+const ManagerAIPage = lazy(() => import('./pages/ManagerAIPage'));
 
 const NAV_CONFIG = [
   {
     labelKey: 'general',
     items: [
       { id: 'dashboard', nameKey: 'dashboard', icon: LayoutDashboard },
+      { id: 'manager_ai', nameKey: 'manager_ai', icon: Sparkles },
       { id: 'reservations', nameKey: 'reservations', icon: CalendarCheck },
       { id: 'rooms', nameKey: 'rooms', icon: BedDouble },
       { id: 'guests', nameKey: 'guests', icon: Users },
@@ -124,6 +126,7 @@ const PAGES = {
   hotelrunner: HotelRunnerPage,
   organization: OrganizationPage,
   proposals: ProposalsPage,
+  manager_ai: ManagerAIPage,
 };
 
 export default function App() {

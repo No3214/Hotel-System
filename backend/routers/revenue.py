@@ -5,6 +5,7 @@ from database import db
 from helpers import utcnow, new_id
 from hotel_data import ROOMS
 from services.cache_service import cache_get, cache_set
+from gemini_service import get_chat_response
 
 router = APIRouter(tags=["revenue"])
 
@@ -204,6 +205,14 @@ async def update_all_prices(days_ahead: int = Query(default=90)):
                 upsert=True,
             )
             updated += 1
+            
+    # Asenkron olarak HotelRunner'a fiyatlari gonder (FAZ 4 - Hedef 1)
+    try:
+        from routers.hotelrunner import sync_rates
+        await sync_rates()
+    except Exception as e:
+        print(f"HotelRunner fiyat senkronizasyonu tetiklenemedi: {e}")
+        
     return {"success": True, "updated": updated, "days_ahead": days_ahead, "room_types": len(BASE_RATES)}
 
 
@@ -242,6 +251,46 @@ async def delete_pricing_rule(rule_id: str):
     if result.deleted_count == 0:
         raise HTTPException(404, "Kural bulunamadi")
     return {"success": True}
+
+@router.get("/revenue/ai-insights")
+async def get_ai_revenue_insights():
+    """Gemini 3.1 tabanli yapay zeka fiyatlandirma onerileri sunar."""
+    try:
+        # Son 7 gunluk pace(hiz) ve doluluk oranini hesapla
+        today = datetime.now()
+        thirty_days = today + timedelta(days=30)
+        
+        forecast = await get_revenue_forecast(date.today(), (date.today() + timedelta(days=14)))
+        
+        context = f"""
+        Onumuzdeki 14 gunun gelir tahmini ve doluluk ozeti:
+        Toplam Beklenen Gelir: {forecast.get('total_predicted_revenue')} TL
+        Gunluk Ortalama Gelir: {forecast.get('average_daily_revenue')} TL
+        
+        Detayli Gunluk Tahminler:
+        """
+        for day in forecast.get('daily_forecasts', [])[:5]:
+            context += f"- Tarih: {day['date']}, Tahmini Doluluk: %{day['predicted_occupancy']}, Ortalama Fiyat: {day['avg_rate']} TL\n"
+            
+        system_prompt = """
+        Sen Kozbeyli Konagi'nin ileri duzey 'Revenue Management' (Gelir Yonetimi) Yapay Zekasisin.
+        Gorevin: Yaklasan gunlerin tahmini doluluk oranlari ve pazar talebi verilerine bakarak otel yoneticisine 'Aksiyon Alinabilir Fiyatlama Onerileri' sunmak.
+        
+        Tavsiyelerin analitik, stratejik ve kisa olmali. (Maksimum 3-4 kisa madde).
+        Ornegin: 'Cuma gunu doluluk %80 uzeri cikacak gibi gorunuyor, Superior odalarin fiyatini %10 artirabilirsiniz.'
+        """
+        
+        response_text = await get_chat_response(
+            message="Onumuzdeki haftalar icin fiyatlandirma stratejisi onerisi alabilir miyim?",
+            session_id=new_id(),
+            system_prompt=system_prompt,
+            context=context
+        )
+        
+        return {"success": True, "insights": response_text}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI analiz hatasi: {str(e)}")
+
 
 
 # ==================== FORECAST ====================

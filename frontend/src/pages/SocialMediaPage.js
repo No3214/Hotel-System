@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getSocialPosts, createSocialPost, updateSocialPost, deleteSocialPost, publishSocialPost, getSocialTemplates, getSocialStats, convertImageLink } from '../api';
+import { getSocialPosts, createSocialPost, updateSocialPost, deleteSocialPost, publishSocialPost, getSocialTemplates, getSocialStats, convertImageLink, generateSocialPost } from '../api';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Plus, Trash2, Edit2, Save, X, Send, Copy, Instagram, Facebook, Twitter, MessageCircle, Eye, BarChart3, FileText, Sparkles, Clock, Linkedin, Video, Image, Link, Loader2 } from 'lucide-react';
@@ -34,6 +34,8 @@ export default function SocialMediaPage() {
   const [editPost, setEditPost] = useState(null);
   const [filter, setFilter] = useState('all');
   const [uploading, setUploading] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [generatingAI, setGeneratingAI] = useState(false);
   const previewRef = useRef(null);
 
   const loadData = async () => {
@@ -81,6 +83,27 @@ export default function SocialMediaPage() {
       alert('Gorsel linki gecersiz. Lutfen Google Drive paylasim linkini kontrol edin.');
     }
     setUploading(false);
+  };
+
+  const handleGenerateAI = async () => {
+    if (!aiPrompt.trim()) return;
+    setGeneratingAI(true);
+    try {
+      const res = await generateSocialPost({ topic: aiPrompt });
+      if (res.data.success) {
+        setEditPost(prev => ({
+          ...prev,
+          title: res.data.title,
+          content: res.data.content,
+          hashtags: res.data.hashtags,
+        }));
+        setAiPrompt('');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('AI uretimi sirasinda hata olustu.');
+    }
+    setGeneratingAI(false);
   };
 
   const handleSave = async () => {
@@ -273,6 +296,31 @@ export default function SocialMediaPage() {
                     {label}
                   </button>
                 ))}
+              </div>
+            </div>
+
+            {/* AI Generator Box */}
+            <div className="glass rounded-xl p-4 border border-[#C4972A]/30 bg-gradient-to-r from-[#1a1a22] to-[#221f18]">
+              <div className="flex items-start justify-between mb-2">
+                <label className="text-xs text-[#C4972A] font-semibold flex items-center gap-1">
+                  <Sparkles className="w-3.5 h-3.5" /> Gemini ile Otomatik Uret
+                </label>
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  value={aiPrompt}
+                  onChange={e => setAiPrompt(e.target.value)}
+                  placeholder="Orn: Sevgililer gunu icin ozel romantik aksam yemegi duyurusu"
+                  className="bg-black/20 border-[#C4972A]/20 focus:border-[#C4972A]/50 text-white text-sm"
+                />
+                <Button 
+                  onClick={handleGenerateAI}
+                  disabled={generatingAI || !aiPrompt.trim()}
+                  className="bg-[#C4972A] hover:bg-[#a87a1f] text-[#0a0a0f] whitespace-nowrap"
+                >
+                  {generatingAI ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Sparkles className="w-4 h-4 mr-1" />}
+                  Uret
+                </Button>
               </div>
             </div>
 

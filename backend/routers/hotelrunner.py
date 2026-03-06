@@ -235,6 +235,59 @@ async def hotelrunner_webhook(request: Request):
         mapped["source"] = event_data.get("channel", "hotelrunner")
         mapped["hotelrunner_id"] = event_data.get("reservation", {}).get("id", "")
         mapped["created_at"] = utcnow()
+        
+        # FAZ 4 - Hedef 1 & 2: AI Guest Profiling & Welcome Journey
+        try:
+            from gemini_service import get_chat_response
+            
+            # Prompt for Guest Profiling & Upsell
+            profile_prompt = f"""
+            Sen Kozbeyli Konagi'nin AI Misafir Profilleme (Guest Profiling) Motorusun.
+            Su OTA rezervasyon verilerine bakarak (JSON formatinda DONDUR):
+            1. 'guest_persona': Misafirin turunu tahmin et (Örn: 'Planli Cift', 'Son Dakikaci Seygin Turist', 'Is Seyahati').
+            2. 'upsell_suggestion': Bu misafire otele giriste ne satmaliyiz? (Örn: 'Aksam Yemegi Paketi - %20 İndirimli', 'Havalimani Transferi').
+            3. 'welcome_message': Misafirin diline ve verisine uygun, Kozbeyli Konagi adina (WhatsApp/Email) 2-3 cumlelik cok sicak bir hosgeldin mesaji yaz.
+            
+            Rezervasyon: {mapped.get('guest_name')} {mapped.get('guest_surname')}
+            Ulke/Kaynak: {mapped.get('source')}
+            Giris: {mapped.get('check_in')}, Gece Sayisi: {mapped.get('nights')}, Yetiskin: {mapped.get('adults')}, Cocuk: {mapped.get('children')}
+            """
+            
+            ai_data_str = await get_chat_response(message="Profili cikar", session_id=new_id(), system_prompt=profile_prompt)
+            
+            # Parse the JSON if possible (assuming Gemini returns valid JSON based on prompt)
+            import json
+            import re
+            
+            # Extract JSON from markdown if present
+            json_match = re.search(r'```(?:json)?(.*?)```', ai_data_str, re.DOTALL)
+            if json_match:
+                json_str = json_match.group(1).strip()
+            else:
+                json_str = ai_data_str
+                
+            try:
+                ai_data_json = json.loads(json_str)
+            except json.JSONDecodeError:
+                # Fallback if Gemini didn't return perfect JSON
+                ai_data_json = {
+                    "guest_persona": "Standart Misafir",
+                    "upsell_suggestion": "Standart oda yukseltme onerisi sunun.",
+                    "welcome_message": f"Kozbeyli Konagi'na hos geldiniz {mapped.get('guest_name')}!"
+                }
+                
+            mapped["ai_guest_profile"] = {
+                "persona": ai_data_json.get("guest_persona", ""),
+                "upsell_suggestion": ai_data_json.get("upsell_suggestion", ""),
+                "welcome_message_draft": ai_data_json.get("welcome_message", ""),
+                "analyzed_at": utcnow()
+            }
+            logger.info(f"AI Profiling completed for new HR reservation: {mapped.get('guest_name')}")
+            
+        except Exception as e:
+            logger.error(f"AI Profiling & Welcome Journey failed: {e}")
+            mapped["ai_guest_profile"] = {"error": str(e)}
+
         await db.reservations.insert_one(mapped)
         webhook_log["processed"] = True
         logger.info(f"New HR reservation: {mapped.get('guest_name')}")
@@ -247,6 +300,16 @@ async def hotelrunner_webhook(request: Request):
                 {"$set": {"status": "cancelled", "cancelled_at": utcnow()}},
             )
             webhook_log["processed"] = True
+            
+            # FAZ 4 - Hedef 3: Akilli Iptal Yonetimi
+            # Iptal edilen odanin oldugu gunler icin yapay zeka fiyat islemcisini tetikle
+            try:
+                from routers.revenue import update_all_prices
+                # Gelecek 14 gunun fiyatlarini sadece 1 adimda hizlica guncelleyelim
+                await update_all_prices(days_ahead=14)
+                logger.info(f"Smart Cancellation: Iptal ({hr_id}) uzerine 14 gunluk fiyatlar AI ile optimize edildi ve OTA'ya gonderildi.")
+            except Exception as e:
+                logger.error(f"Smart Cancellation tetikleme hatasi: {e}")
 
     elif event_type == "reservation.modified":
         hr_id = event_data.get("reservation", {}).get("id", "")

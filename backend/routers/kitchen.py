@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException
 from typing import Optional, List
 from database import db
 from helpers import utcnow, new_id, clean_doc
+from gemini_service import get_chat_response
 from pydantic import BaseModel
 from enum import Enum
 from datetime import datetime, timedelta
@@ -241,3 +242,58 @@ async def get_notifications():
         "urgent_count": len(urgent_orders),
         "delayed_count": len(delayed_orders),
     }
+
+@router.get("/kitchen/ai-forecast")
+async def get_kitchen_ai_forecast():
+    """Gemini ile mutfak tahminlemesi (AI Kitchen Predictor)"""
+    try:
+        # Son 7 gunun siparis ozetini al (Gercek uygulamada gecmis DB sorgusu yapilir)
+        pipeline = [
+            {"$match": {"created_at": {"$gte": (datetime.now() - timedelta(days=7)).isoformat()}}},
+            {"$unwind": "$items"},
+            {"$group": {
+                "_id": "$items.name",
+                "count": {"$sum": "$items.quantity"}
+            }},
+            {"$sort": {"count": -1}}
+        ]
+        
+        recent_items = await db.kitchen_orders.aggregate(pipeline).to_list(20)
+        
+        context = "Son 7 gunun en cok satan urunleri:\n"
+        for item in recent_items:
+            context += f"- {item['_id']}: {item['count']} porsiyon\n"
+            
+        system_prompt = """
+        Sen Kozbeyli Konagi'nin yapay zeka destekli Executive Chef'i ve Envanter Yöneticisisin (Smart Kitchen).
+        Görevlerin:
+        1. Gecmis siparis verilerine bakarak yarin yasanacak talebi tahmin etmek.
+        2. Tedarik edilmesi gereken kritik malzemeler icin porsiyon hesabina gore (yumurta, kahve vb.) oneri sunmak.
+        3. Gıda israfini azaltacak (Waste Management) 1-2 klink tavsiye vermek.
+        
+        Senden JSON formatinda kisa bir rapor donmeni istiyorum: 
+        {
+          "summary": "Mutfak ekibi icin genel yarin ozeti...",
+          "top_predicted": ["Urun A", "Urun B"],
+          "prep_suggestions": "Yarina hazirlik onerileri..."
+        }
+        """
+        
+        response_text = await get_chat_response(
+            message="Yarin icin mutfak taleplerini tahmin et ve hazirlik onerileri sun.",
+            session_id=new_id(),
+            system_prompt=system_prompt,
+            context=context
+        )
+        
+        import json
+        clean_json = response_text.replace("```json", "").replace("```", "").strip()
+        data = json.loads(clean_json)
+        
+        return {
+            "success": True, 
+            "forecast": data
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI analiz hatasi: {str(e)}")
+

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   getKitchenOrders, createKitchenOrder, updateKitchenOrderStatus, 
-  cancelKitchenOrder, getKitchenSummary, getKitchenNotifications 
+  cancelKitchenOrder, getKitchenSummary, getKitchenNotifications, getKitchenAIForecast 
 } from '../api';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { 
   ChefHat, Plus, Clock, AlertTriangle, CheckCircle, 
   XCircle, Play, Bell, Package, Users, Utensils, 
-  Coffee, Moon, RefreshCw, Trash2, Eye
+  Coffee, Moon, RefreshCw, Trash2, Eye, Sparkles, Loader2
 } from 'lucide-react';
 
 const STATUS_CONFIG = {
@@ -41,6 +41,8 @@ export default function KitchenPage() {
   const [stats, setStats] = useState({});
   const [notifications, setNotifications] = useState({ urgent: [], delayed: [] });
   const [loading, setLoading] = useState(true);
+  const [aiForecast, setAiForecast] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
   const [filter, setFilter] = useState('active');
   const [open, setOpen] = useState(false);
   const [detailOrder, setDetailOrder] = useState(null);
@@ -112,6 +114,20 @@ export default function KitchenPage() {
     }
   };
 
+  const loadAiForecast = async () => {
+    setAiLoading(true);
+    try {
+      const res = await getKitchenAIForecast();
+      if (res.data.success) {
+        setAiForecast(res.data.forecast);
+      }
+    } catch (e) {
+      console.error(e);
+      alert('AI Tahminlemesi su an kullanilamiyor.');
+    }
+    setAiLoading(false);
+  };
+
   const addItem = () => {
     setForm({ ...form, items: [...form.items, { name: '', quantity: 1, notes: '' }] });
   };
@@ -147,6 +163,10 @@ export default function KitchenPage() {
         <div className="flex items-center gap-3">
           <Button onClick={load} variant="outline" className="border-[#C4972A]/30 text-[#C4972A]" data-testid="refresh-btn">
             <RefreshCw className="w-4 h-4 mr-2" /> Yenile
+          </Button>
+          <Button onClick={loadAiForecast} disabled={aiLoading} className="bg-emerald-600 hover:bg-emerald-500 text-white" data-testid="ai-forecast-btn">
+            {aiLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
+            AI Tahmin
           </Button>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -307,6 +327,51 @@ export default function KitchenPage() {
           </div>
         </motion.div>
       )}
+
+      {/* AI Forecast Panel */}
+      <AnimatePresence>
+        {aiForecast && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="bg-emerald-900/10 border border-emerald-500/20 rounded-xl p-6 overflow-hidden relative"
+          >
+            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl -mr-10 -mt-10" />
+            
+            <div className="flex justify-between items-start mb-4 relative z-10">
+              <div className="flex items-center gap-2 text-emerald-400">
+                <Sparkles className="w-5 h-5" />
+                <h3 className="font-semibold text-lg">Smart Kitchen : Yarin Icin Ozet</h3>
+              </div>
+              <button onClick={() => setAiForecast(null)} className="text-[#7e7e8a] hover:text-white">
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10 text-sm">
+              <div className="space-y-2">
+                <h4 className="text-emerald-500 font-medium">Genel Tahmin</h4>
+                <p className="text-[#e5e5e8] leading-relaxed">{aiForecast.summary}</p>
+              </div>
+              <div className="space-y-2">
+                <h4 className="text-emerald-500 font-medium">En Cok İstenmesi Beklenenler</h4>
+                <div className="flex flex-wrap gap-2">
+                  {aiForecast.top_predicted?.map((item, i) => (
+                    <Badge key={i} className="bg-emerald-500/10 text-emerald-400 border-none">
+                      {item}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <h4 className="text-emerald-500 font-medium">Hazırlık & İsrafı Önleme</h4>
+                <p className="text-[#e5e5e8] leading-relaxed">{aiForecast.prep_suggestions}</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

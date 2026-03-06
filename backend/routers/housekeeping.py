@@ -1,8 +1,11 @@
 from fastapi import APIRouter, HTTPException
 from typing import Optional
 from database import db
+from database import db
 from helpers import utcnow, new_id, clean_doc
 from models import HousekeepingCreate, HousekeepingStatus, ReservationStatus
+from gemini_service import get_chat_response
+import json
 
 router = APIRouter(tags=["housekeeping"])
 
@@ -67,3 +70,54 @@ async def auto_schedule_housekeeping():
             created += 1
 
     return {"success": True, "created": created}
+
+@router.get("/housekeeping/ai-routing")
+async def get_ai_routing():
+    """Gemini ile Kat Hizmetleri Rota Optimizasyonu"""
+    
+    # Bekleyen gorevleri cek
+    pending_tasks = await db.housekeeping.find(
+        {"status": {"$in": [HousekeepingStatus.PENDING, HousekeepingStatus.IN_PROGRESS]}}, 
+        {"_id": 0}
+    ).to_list(100)
+    
+    if not pending_tasks:
+        return {"success": True, "routing": {"plan_name": "Rutin Kontrol", "summary": "Su an bekleyen acil temizlik gorevi bulunmuyor. Genel alan kontrolleri yapilabilir.", "optimized_route": []}}
+    
+    # Ozetle
+    context = "SU ANKI TEMIZLIK BEKLEYEN ODALAR VE GOREVLER:\n"
+    for t in pending_tasks:
+        context += f"- Oda: {t.get('room_number', '?')} | Tur: {t.get('task_type', '')} | Not: {t.get('notes', '')}\n"
+        
+    system_prompt = """
+    Sen Kozbeyli Konagi'nin Kat Hizmetleri Sefisin (Housekeeping AI).
+    Onundeki temizlik listesini en optimize sekilde siralaman gerekiyor. 
+    Genel kurallar:
+    1. Check-out (checkout_clean) odalar onceliklidir.
+    2. Ayni kattaki/yan yanaki odalari pes pese sirala (Orn: 101, 102, 103).
+    3. Normal temizlikler (standard_clean) daha az onceliklidir.
+    
+    Senden sadece asagidaki JSON formatinda sonuc uretmeni istiyorum:
+    {
+      "plan_name": "Sabah Hizli Plan",
+      "summary": "Bu rotayi neden sectigini kisaca acikla (2 cumle)",
+      "optimized_route": [
+        {"room_number": "101", "task": "Check-out Temizligi", "reason": "Yeni misafir girisi ihtimaline karsi en oncelikli", "estimated_mins": 30},
+        {"room_number": "102", "task": "Standart Temizlik", "reason": "Ayni koridorda oldugu icin pesine eklendi", "estimated_mins": 15}
+      ]
+    }
+    """
+    
+    try:
+        response_text = await get_chat_response(
+            message="Bekleyen gorevleri sirala ve optimize bir rota ver.",
+            session_id=new_id(),
+            system_prompt=system_prompt,
+            context=context
+        )
+        clean_json = response_text.replace("```json", "").replace("```", "").strip()
+        data = json.loads(clean_json)
+        
+        return {"success": True, "routing": data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI Rotalama hatasi: {str(e)}")

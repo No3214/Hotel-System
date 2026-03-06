@@ -140,8 +140,21 @@ export default function ReservationsPage() {
                     {res.total_price && <span className="text-[#C4972A]">| {res.total_price} TL</span>}
                   </div>
                   {res.notes && <p className="text-xs text-[#a9a9b2] mt-1">{res.notes}</p>}
+                  
+                  {res.ai_guest_profile && !res.ai_guest_profile.error && (
+                    <div className="mt-3 p-3 bg-[#1a1a22]/50 border border-[#C4972A]/20 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs font-semibold text-[#C4972A] bg-[#C4972A]/10 px-2 py-0.5 rounded">
+                          AI Profil: {res.ai_guest_profile.persona}
+                        </span>
+                      </div>
+                      <p className="text-xs text-[#a9a9b2]"><strong className="text-gray-300">Ek Satis Önerisi:</strong> {res.ai_guest_profile.upsell_suggestion}</p>
+                      <p className="text-xs text-[#a9a9b2] mt-1"><strong className="text-gray-300">Hoşgeldin Mesajı:</strong> {res.ai_guest_profile.welcome_message_draft}</p>
+                    </div>
+                  )}
+                  
                 </div>
-                <div className="flex gap-1.5">
+                <div className="flex gap-1.5 flex-col items-end">
                   {nextStatus && (
                     <Button size="sm" variant="outline" onClick={() => handleStatusChange(res.id, nextStatus)}
                       className="text-xs border-[#C4972A]/30 text-[#C4972A] hover:bg-[#C4972A]/10">

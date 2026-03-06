@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getReviews, createReview, generateReviewResponse, updateReview, deleteReview, getReviewStats } from '../api';
+import { getReviews, createReview, generateReviewResponse, updateReview, deleteReview, getReviewStats, getReviewAIAnalytics } from '../api';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
-import { Star, Plus, Trash2, Sparkles, Copy, Check, RefreshCw, MessageSquare, TrendingUp } from 'lucide-react';
+import { Star, Plus, Trash2, Sparkles, Copy, Check, RefreshCw, MessageSquare, TrendingUp, ThumbsUp, ThumbsDown, Loader2 } from 'lucide-react';
 
 const TONES = [
   { value: 'professional', label: 'Profesyonel' },
@@ -164,6 +164,8 @@ export default function ReviewsPage() {
   const [generating, setGenerating] = useState(null);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ reviewer_name: '', rating: 5, review_text: '', platform: 'google', review_date: '' });
+  const [aiAnalytics, setAiAnalytics] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
   const load = useCallback(() => {
     Promise.all([
@@ -196,6 +198,20 @@ export default function ReviewsPage() {
   const handleDelete = async (id) => {
     await deleteReview(id).catch(console.error);
     load();
+  };
+
+  const loadAiAnalytics = async () => {
+    setAiLoading(true);
+    try {
+      const res = await getReviewAIAnalytics();
+      if (res.data.success) {
+        setAiAnalytics(res.data.analytics);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("AI Analiz olusturulurken hata olustu.");
+    }
+    setAiLoading(false);
   };
 
   if (loading) {
@@ -285,6 +301,83 @@ export default function ReviewsPage() {
           </div>
         </div>
       )}
+
+      {/* AI Analytics Button/Panel */}
+      <div className="bg-[#12121a] border border-emerald-500/20 rounded-xl p-5 mb-6 relative overflow-hidden group">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none transition-opacity opacity-50 group-hover:opacity-100" />
+        
+        <div className="flex items-center justify-between mb-4 relative z-10">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-emerald-400" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-emerald-400">Gemini CX: Duygu Analizi & Ozet</h2>
+              <p className="text-xs text-[#7e7e8a]">Son 50 yorumu analiz ederek genel musteri memnuniyetini olcer</p>
+            </div>
+          </div>
+          <Button 
+            onClick={loadAiAnalytics} 
+            disabled={aiLoading}
+            className="bg-emerald-600 hover:bg-emerald-500 text-white"
+          >
+            {aiLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
+            {aiAnalytics ? 'Yeniden Analiz Et' : 'Analizi Baslat'}
+          </Button>
+        </div>
+
+        {aiLoading && (
+          <div className="flex items-center gap-3 text-[#7e7e8a] py-4 text-sm relative z-10">
+             <span className="flex gap-1">
+                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              </span>
+              Gemini son misafir yorumlarini okuyor ve duygu analizi yapiyor...
+          </div>
+        )}
+
+        {aiAnalytics && !aiLoading && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10 pt-4 border-t border-white/5">
+            {/* Score & Summary */}
+            <div className="space-y-3">
+              <div className="flex items-end gap-2">
+                <span className="text-4xl font-bold text-white">{aiAnalytics.sentiment_score}</span>
+                <span className="text-sm text-[#7e7e8a] mb-1">/ 100</span>
+              </div>
+              <p className="text-sm text-[#c8c8d0] leading-relaxed">{aiAnalytics.summary}</p>
+            </div>
+            
+            {/* Positives */}
+            <div className="space-y-2 relative">
+              <h4 className="text-sm font-medium flex items-center gap-2 text-emerald-400">
+                <ThumbsUp className="w-4 h-4" /> En Cok Begenilenler
+              </h4>
+              <ul className="space-y-2">
+                {aiAnalytics.positives?.map((item, i) => (
+                  <li key={i} className="text-xs text-[#7e7e8a] flex items-start gap-2">
+                    <span className="text-emerald-500 mt-0.5">•</span> {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Negatives */}
+            <div className="space-y-2 relative">
+              <h4 className="text-sm font-medium flex items-center gap-2 text-red-400">
+                <ThumbsDown className="w-4 h-4" /> Gelistirilmesi Gerekenler
+              </h4>
+              <ul className="space-y-2">
+                {aiAnalytics.negatives?.map((item, i) => (
+                  <li key={i} className="text-xs text-[#7e7e8a] flex items-start gap-2">
+                    <span className="text-red-500 mt-0.5">•</span> {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Reviews List */}
       {reviews.length === 0 ? (

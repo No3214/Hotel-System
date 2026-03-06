@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, TrendingDown, DollarSign, Calendar, BarChart3, RefreshCw, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
-import { getRevenueRoomTypes, calculateDynamicPrice, getPricingCalendar, getRevenueKPI, getRevenueForecast, updateAllPrices } from '../api';
+import { TrendingUp, TrendingDown, DollarSign, Calendar, BarChart3, RefreshCw, ChevronLeft, ChevronRight, Loader2, Sparkles } from 'lucide-react';
+import { getRevenueRoomTypes, calculateDynamicPrice, getPricingCalendar, getRevenueKPI, getRevenueForecast, updateAllPrices, getRevenueAIInsights } from '../api';
 
 const ROOM_TYPE_LABELS = {
   standart_deniz: 'Standart (Deniz)',
@@ -21,6 +21,8 @@ export default function RevenueManagementPage() {
   const [forecast, setForecast] = useState(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [aiInsights, setAiInsights] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
   const [calMonth, setCalMonth] = useState(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -69,6 +71,18 @@ export default function RevenueManagementPage() {
     setUpdating(false);
   };
 
+  const loadAiInsights = async () => {
+    setAiLoading(true);
+    try {
+      const res = await getRevenueAIInsights();
+      setAiInsights(res.data.insights);
+    } catch (e) {
+      console.error(e);
+      setAiInsights("Yapay zeka analizine su an ulasilamiyor.");
+    }
+    setAiLoading(false);
+  };
+
   const shiftMonth = (dir) => {
     const [y, m] = calMonth.split('-').map(Number);
     const d = new Date(y, m - 1 + dir, 1);
@@ -109,6 +123,46 @@ export default function RevenueManagementPage() {
           <KPICard title="RevPAR" value={`${fmt(kpi.revpar)} TL`} change={0} icon={Calendar} />
         </div>
       )}
+
+      {/* AI Insights Section */}
+      <div className="bg-[#12121a] border border-[#2A9D8F]/20 rounded-xl p-6 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-[#2A9D8F]/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
+        <div className="flex items-center justify-between mb-4 relative z-10">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-[#2A9D8F]/20 flex items-center justify-center">
+              <Sparkles className="w-4 h-4 text-[#2A9D8F]" />
+            </div>
+            <h2 className="text-lg font-semibold text-[#2A9D8F]">Gemini AI Fiyatlandirma Onerileri</h2>
+          </div>
+          <button
+            onClick={loadAiInsights}
+            disabled={aiLoading}
+            className="text-sm px-4 py-1.5 rounded-lg bg-[#2A9D8F]/10 text-[#2A9D8F] hover:bg-[#2A9D8F]/20 transition-colors flex items-center gap-2 disabled:opacity-50"
+          >
+            {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            {aiInsights ? 'Yeniden Analiz Et' : 'Analizi Baslat'}
+          </button>
+        </div>
+        
+        <div className="relative z-10 text-sm">
+          {aiLoading ? (
+            <div className="flex items-center gap-3 text-[#7e7e8a] py-4">
+              <span className="flex gap-1">
+                <span className="w-2 h-2 bg-[#2A9D8F] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-2 h-2 bg-[#2A9D8F] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-2 h-2 bg-[#2A9D8F] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              </span>
+              Gemini verilerinizi inceliyor ve stratejik oneriler uretiyor...
+            </div>
+          ) : aiInsights ? (
+            <div className="p-4 bg-[#1a1a22] rounded-lg border border-[#2A9D8F]/10 text-[#e5e5e8] whitespace-pre-wrap leading-relaxed">
+              {aiInsights}
+            </div>
+          ) : (
+            <p className="text-[#7e7e8a] italic">Satislarinizi maksimize etmek icin 'Analizi Baslat' butonuna basin.</p>
+          )}
+        </div>
+      </div>
 
       {/* Room Type Selector */}
       <div className="flex flex-wrap gap-2" data-testid="room-type-selector">

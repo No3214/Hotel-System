@@ -3,6 +3,7 @@ from typing import Optional
 from database import db
 from helpers import utcnow, new_id, clean_doc
 from models import ReviewCreate
+import json
 
 router = APIRouter(tags=["reviews"])
 
@@ -132,3 +133,45 @@ async def review_stats():
         "avg_rating": avg_rating,
         "by_rating": by_rating,
     }
+
+@router.get("/reviews/ai-analytics")
+async def get_review_ai_analytics():
+    """Misafir yorumlarini NLP ile analiz edip genel musteri memnuniyeti raporu sunar"""
+    from gemini_service import get_chat_response
+    
+    # Get last 50 reviews to analyze
+    reviews = await db.reviews.find({}, {"_id": 0, "rating": 1, "review_text": 1}).sort("created_at", -1).limit(50).to_list(50)
+    
+    if not reviews:
+        return {"success": True, "analytics": {"summary": "Yeterli veri yok.", "positives": [], "negatives": []}}
+        
+    context = "Son Yorumlar:\n"
+    for r in reviews:
+        context += f"- Puan: {r['rating']}/5, Yorum: {r['review_text']}\n"
+        
+    system_prompt = """
+    Sen Kozbeyli Konagi'nin Duygu Analizi (Sentiment Analysis) ve Musteri Deneyimi (CX) yapay zekasisin.
+    Gorevin, son misafir yorumlarina bakarak genel bir izlenim, duygu analizi ve ozet cikartmak.
+    
+    Senden sadece asagidaki JSON formatinda sonuc uretmeni istiyorum:
+    {
+      "sentiment_score": "1 ile 100 arasi genel duygu skoru (orn: 85)",
+      "summary": "Musterilerin genel hissiyatini ve onemli egilimleri ozetleyen 2-3 cumle",
+      "positives": ["En cok begenilen 1. detay", "En cok begenilen 2. detay", "En cok begenilen 3. detay"],
+      "negatives": ["En cok sikayet edilen veya gelistirilmesi gereken 1. detay", "2. detay", "3. detay"]
+    }
+    """
+    
+    try:
+        response_text = await get_chat_response(
+            message="Son misafir yorumlarini analiz edip raporla.",
+            session_id=new_id(),
+            system_prompt=system_prompt,
+            context=context
+        )
+        clean_json = response_text.replace("```json", "").replace("```", "").strip()
+        data = json.loads(clean_json)
+        
+        return {"success": True, "analytics": data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI Analytics hatasi: {str(e)}")
