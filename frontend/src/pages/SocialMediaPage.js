@@ -7,7 +7,9 @@ import {
   batchDriveImport, publishToPlatforms, getPlatformStatus,
   getContentQueue, addToQueue, removeFromQueue, getOptimalTime, getRecyclablePosts,
   recyclePost, getWeeklyPlan, getPostScore, getEscalations, resolveEscalation,
-  getEscalationStats, publishScheduledPosts
+  getEscalationStats, publishScheduledPosts,
+  generateAICopy, optimizeCTA, rewriteCopy, generateWASequence,
+  generatePinterestPins, generateContentStrategy, getPsychologyTips
 } from '../api';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -26,6 +28,7 @@ const PLATFORMS = [
   { id: 'tiktok', name: 'TikTok', icon: Video, color: '#00F2EA' },
   { id: 'linkedin', name: 'LinkedIn', icon: Linkedin, color: '#0A66C2' },
   { id: 'whatsapp', name: 'WhatsApp', icon: MessageCircle, color: '#25D366' },
+  { id: 'pinterest', name: 'Pinterest', icon: Image, color: '#E60023' },
 ];
 
 const POST_TYPE_LABELS = {
@@ -210,6 +213,7 @@ export default function SocialMediaPage() {
             { id: 'planner', label: 'Haftalik Plan', icon: Calendar },
             { id: 'recycle', label: 'Geri Donusum', icon: RefreshCw },
             { id: 'escalation', label: 'Escalation', icon: AlertTriangle },
+            { id: 'marketing', label: 'Pazarlama', icon: TrendingUp },
           ].map(tab => (
             <button
               key={tab.id}
@@ -438,6 +442,11 @@ export default function SocialMediaPage() {
       {/* ESCALATION TAB */}
       {activeTab === 'escalation' && view === 'list' && (
         <EscalationPanel />
+      )}
+
+      {/* MARKETING TAB */}
+      {activeTab === 'marketing' && view === 'list' && (
+        <MarketingPanel onRefresh={loadData} />
       )}
 
       {/* CREATE / EDIT VIEW */}
@@ -2177,6 +2186,235 @@ function EscalationPanel() {
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+
+// ==================== MARKETING PANEL ====================
+function MarketingPanel({ onRefresh }) {
+  const [activeSection, setActiveSection] = useState('copy');
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+
+  const [copyTopic, setCopyTopic] = useState('');
+  const [copyPlatform, setCopyPlatform] = useState('instagram');
+  const [copyPsychology, setCopyPsychology] = useState('');
+  const [copyTone, setCopyTone] = useState('warm');
+  const [waType, setWaType] = useState('welcome');
+  const [waAudience, setWaAudience] = useState('new_guest');
+  const [pinCategory, setPinCategory] = useState('wedding');
+  const [pinCount, setPinCount] = useState(5);
+  const [stratPeriod, setStratPeriod] = useState('weekly');
+  const [stratFocus, setStratFocus] = useState('');
+  const [rewriteText, setRewriteText] = useState('');
+  const [rewritePlatform, setRewritePlatform] = useState('instagram');
+  const [rewriteGoal, setRewriteGoal] = useState('reservation');
+
+  const handleGenerateCopy = async () => {
+    if (!copyTopic.trim()) return;
+    setLoading(true);
+    try {
+      const res = await generateAICopy({ topic: copyTopic, platform: copyPlatform, psychology: copyPsychology || undefined, tone: copyTone });
+      setResult({ type: 'copy', data: res.data });
+    } catch (err) { console.error(err); }
+    setLoading(false);
+  };
+
+  const handleWASequence = async () => {
+    setLoading(true);
+    try {
+      const res = await generateWASequence({ sequence_type: waType, target_audience: waAudience });
+      setResult({ type: 'whatsapp', data: res.data });
+    } catch (err) { console.error(err); }
+    setLoading(false);
+  };
+
+  const handlePinterest = async () => {
+    setLoading(true);
+    try {
+      const res = await generatePinterestPins({ category: pinCategory, count: pinCount });
+      setResult({ type: 'pinterest', data: res.data });
+    } catch (err) { console.error(err); }
+    setLoading(false);
+  };
+
+  const handleStrategy = async () => {
+    setLoading(true);
+    try {
+      const res = await generateContentStrategy({ period: stratPeriod, focus: stratFocus || undefined, platforms: ['instagram', 'facebook', 'pinterest'] });
+      setResult({ type: 'strategy', data: res.data });
+    } catch (err) { console.error(err); }
+    setLoading(false);
+  };
+
+  const handleRewrite = async () => {
+    if (!rewriteText.trim()) return;
+    setLoading(true);
+    try {
+      const res = await rewriteCopy({ original_text: rewriteText, platform: rewritePlatform, goal: rewriteGoal });
+      setResult({ type: 'rewrite', data: res.data });
+    } catch (err) { console.error(err); }
+    setLoading(false);
+  };
+
+  const SECTIONS = [
+    { id: 'copy', label: 'AI Metin', icon: Sparkles },
+    { id: 'rewrite', label: 'Metin Iyilestir', icon: Edit2 },
+    { id: 'whatsapp', label: 'WhatsApp Dizisi', icon: MessageCircle },
+    { id: 'pinterest', label: 'Pinterest', icon: Image },
+    { id: 'strategy', label: 'Strateji', icon: TrendingUp },
+  ];
+  const PLAT_LIST = ['instagram', 'facebook', 'twitter', 'linkedin', 'whatsapp', 'pinterest'];
+  const TONES = [{ id: 'warm', label: 'Sicak' }, { id: 'professional', label: 'Profesyonel' }, { id: 'playful', label: 'Eglenceli' }, { id: 'elegant', label: 'Zarif' }];
+  const PSYCH = [{ id: '', label: 'Yok' }, { id: 'social_proof', label: 'Sosyal Kanit' }, { id: 'scarcity', label: 'Kitlik' }, { id: 'fomo', label: 'FOMO' }, { id: 'urgency', label: 'Aciliyet' }, { id: 'authority', label: 'Otorite' }, { id: 'reciprocity', label: 'Karsiliklilik' }];
+  const WA_TYPES = [{ id: 'welcome', label: 'Hosgeldin' }, { id: 'pre_arrival', label: 'Check-in Oncesi' }, { id: 'during_stay', label: 'Konaklama' }, { id: 'post_stay', label: 'Sonrasi' }, { id: 'win_back', label: 'Geri Kazan' }, { id: 'seasonal', label: 'Mevsimsel' }, { id: 'wedding', label: 'Dugun' }, { id: 'loyalty', label: 'Sadakat' }];
+  const PIN_CATS = [{ id: 'wedding', label: 'Dugun' }, { id: 'food', label: 'Yemek' }, { id: 'venue', label: 'Mekan' }, { id: 'local', label: 'Yerel' }, { id: 'decor', label: 'Dekorasyon' }];
+  const GOALS = [{ id: 'reservation', label: 'Rezervasyon' }, { id: 'engagement', label: 'Etkilesim' }, { id: 'awareness', label: 'Bilinirlik' }, { id: 'event', label: 'Etkinlik' }, { id: 'review', label: 'Yorum' }];
+
+  const OptionRow = ({ items, value, onChange, activeColor = '#C4972A' }) => (
+    <div className="flex gap-1 flex-wrap">
+      {items.map(i => (
+        <button key={i.id} onClick={() => onChange(i.id)}
+          className={`px-2 py-1 rounded text-[10px] transition-all ${value === i.id ? `text-[${activeColor}]` : 'text-[#7e7e8a] hover:bg-white/5'}`}
+          style={value === i.id ? { background: `${activeColor}15`, color: activeColor } : {}}>
+          {i.label}
+        </button>
+      ))}
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-lg font-bold text-white">Pazarlama Ajansi</h2>
+        <p className="text-xs text-[#7e7e8a]">AI destekli donusum odakli icerik - WhatsApp, Instagram, Facebook, Pinterest</p>
+      </div>
+
+      <div className="flex gap-1 p-1 bg-white/5 rounded-xl w-fit">
+        {SECTIONS.map(s => (
+          <button key={s.id} onClick={() => { setActiveSection(s.id); setResult(null); }}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+              activeSection === s.id ? 'bg-[#C4972A]/15 text-[#C4972A]' : 'text-[#7e7e8a] hover:bg-white/5'
+            }`}>
+            <s.icon className="w-3.5 h-3.5" />{s.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-12 gap-6">
+        <div className="col-span-5 space-y-4">
+          {activeSection === 'copy' && (
+            <div className="glass rounded-xl p-4 space-y-3">
+              <h3 className="text-sm font-bold text-white">AI Donusum Metni</h3>
+              <div><label className="text-xs text-[#7e7e8a] mb-1 block">Konu</label>
+                <Input value={copyTopic} onChange={e => setCopyTopic(e.target.value)} placeholder="Hafta sonu kacamagi, Dugun mekani..." className="bg-white/5 border-white/10 text-white" /></div>
+              <div><label className="text-xs text-[#7e7e8a] mb-1 block">Platform</label><OptionRow items={PLAT_LIST.map(p => ({ id: p, label: p }))} value={copyPlatform} onChange={setCopyPlatform} /></div>
+              <div><label className="text-xs text-[#7e7e8a] mb-1 block">Ton</label><OptionRow items={TONES} value={copyTone} onChange={setCopyTone} /></div>
+              <div><label className="text-xs text-[#7e7e8a] mb-1 block">Psikoloji</label><OptionRow items={PSYCH} value={copyPsychology} onChange={setCopyPsychology} activeColor="#8b5cf6" /></div>
+              <Button onClick={handleGenerateCopy} disabled={loading || !copyTopic.trim()} className="w-full bg-gradient-to-r from-purple-600 to-pink-500 text-white">
+                {loading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Sparkles className="w-4 h-4 mr-1" />} Metin Uret
+              </Button>
+            </div>
+          )}
+
+          {activeSection === 'rewrite' && (
+            <div className="glass rounded-xl p-4 space-y-3">
+              <h3 className="text-sm font-bold text-white">Metin Iyilestirici</h3>
+              <div><label className="text-xs text-[#7e7e8a] mb-1 block">Orijinal Metin</label>
+                <textarea value={rewriteText} onChange={e => setRewriteText(e.target.value)} placeholder="Iyilestirilecek metni yapistirin..."
+                  className="w-full min-h-[120px] p-3 rounded-lg bg-white/5 border border-white/10 text-white text-sm resize-y outline-none" /></div>
+              <div><label className="text-xs text-[#7e7e8a] mb-1 block">Platform</label><OptionRow items={PLAT_LIST.map(p => ({ id: p, label: p }))} value={rewritePlatform} onChange={setRewritePlatform} /></div>
+              <div><label className="text-xs text-[#7e7e8a] mb-1 block">Hedef</label><OptionRow items={GOALS} value={rewriteGoal} onChange={setRewriteGoal} /></div>
+              <Button onClick={handleRewrite} disabled={loading || !rewriteText.trim()} className="w-full bg-[#C4972A] hover:bg-[#a87a1f] text-white">
+                {loading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Edit2 className="w-4 h-4 mr-1" />} Iyilestir
+              </Button>
+            </div>
+          )}
+
+          {activeSection === 'whatsapp' && (
+            <div className="glass rounded-xl p-4 space-y-3">
+              <h3 className="text-sm font-bold text-white">WhatsApp Mesaj Dizisi</h3>
+              <div><label className="text-xs text-[#7e7e8a] mb-1 block">Dizi Turu</label><OptionRow items={WA_TYPES} value={waType} onChange={setWaType} activeColor="#25D366" /></div>
+              <div><label className="text-xs text-[#7e7e8a] mb-1 block">Hedef Kitle</label>
+                <OptionRow items={[{ id: 'new_guest', label: 'Yeni Misafir' }, { id: 'returning', label: 'Donen Misafir' }, { id: 'wedding', label: 'Dugun Cifti' }, { id: 'corporate', label: 'Kurumsal' }]} value={waAudience} onChange={setWaAudience} activeColor="#25D366" /></div>
+              <Button onClick={handleWASequence} disabled={loading} className="w-full bg-green-600/80 hover:bg-green-600 text-white">
+                {loading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <MessageCircle className="w-4 h-4 mr-1" />} Dizi Olustur
+              </Button>
+            </div>
+          )}
+
+          {activeSection === 'pinterest' && (
+            <div className="glass rounded-xl p-4 space-y-3">
+              <h3 className="text-sm font-bold text-white" style={{ color: '#E60023' }}>Pinterest Pin Olusturucu</h3>
+              <div><label className="text-xs text-[#7e7e8a] mb-1 block">Kategori</label><OptionRow items={PIN_CATS} value={pinCategory} onChange={setPinCategory} activeColor="#E60023" /></div>
+              <div><label className="text-xs text-[#7e7e8a] mb-1 block">Pin Sayisi</label>
+                <OptionRow items={[{ id: 3, label: '3' }, { id: 5, label: '5' }, { id: 10, label: '10' }]} value={pinCount} onChange={setPinCount} activeColor="#E60023" /></div>
+              <Button onClick={handlePinterest} disabled={loading} className="w-full text-white" style={{ background: '#E60023' }}>
+                {loading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Image className="w-4 h-4 mr-1" />} Pin Aciklamalari Uret
+              </Button>
+            </div>
+          )}
+
+          {activeSection === 'strategy' && (
+            <div className="glass rounded-xl p-4 space-y-3">
+              <h3 className="text-sm font-bold text-white">Icerik Stratejisi</h3>
+              <div><label className="text-xs text-[#7e7e8a] mb-1 block">Donem</label>
+                <OptionRow items={[{ id: 'weekly', label: 'Haftalik' }, { id: 'monthly', label: 'Aylik' }]} value={stratPeriod} onChange={setStratPeriod} /></div>
+              <div><label className="text-xs text-[#7e7e8a] mb-1 block">Odak (opsiyonel)</label>
+                <Input value={stratFocus} onChange={e => setStratFocus(e.target.value)} placeholder="Dugun sezonu, Yaz kampanyasi..." className="bg-white/5 border-white/10 text-white" /></div>
+              <Button onClick={handleStrategy} disabled={loading} className="w-full bg-[#C4972A] hover:bg-[#a87a1f] text-white">
+                {loading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <TrendingUp className="w-4 h-4 mr-1" />} Strateji Olustur
+              </Button>
+            </div>
+          )}
+        </div>
+
+        <div className="col-span-7">
+          {loading && (
+            <div className="glass rounded-xl p-12 text-center">
+              <Loader2 className="w-8 h-8 animate-spin text-[#C4972A] mx-auto mb-3" />
+              <p className="text-[#7e7e8a]">AI icerik uretiyor...</p>
+            </div>
+          )}
+          {!loading && !result && (
+            <div className="glass rounded-xl p-12 text-center">
+              <Sparkles className="w-8 h-8 text-[#7e7e8a] mx-auto mb-3" />
+              <p className="text-[#7e7e8a]">Soldaki formu doldurup icerik uretin</p>
+              <p className="text-xs text-[#7e7e8a] mt-1">AI donusum odakli, psikoloji tabanli metinler uretir</p>
+            </div>
+          )}
+          {!loading && result && (
+            <div className="glass rounded-xl p-4 space-y-3">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-bold text-white">
+                  {result.type === 'copy' && 'AI Metin Sonucu'}
+                  {result.type === 'rewrite' && 'Iyilestirilmis Metin'}
+                  {result.type === 'whatsapp' && 'WhatsApp Mesaj Dizisi'}
+                  {result.type === 'pinterest' && 'Pinterest Pin Aciklamalari'}
+                  {result.type === 'strategy' && 'Icerik Stratejisi'}
+                </h3>
+                <button onClick={() => { navigator.clipboard.writeText(result.data?.raw_response || JSON.stringify(result.data, null, 2)); }}
+                  className="text-xs text-[#7e7e8a] hover:text-white flex items-center gap-1 px-2 py-1 rounded hover:bg-white/5">
+                  <Copy className="w-3 h-3" /> Kopyala
+                </button>
+              </div>
+              <div className="bg-black/20 rounded-lg p-4 max-h-[500px] overflow-y-auto">
+                <pre className="text-sm text-white whitespace-pre-wrap font-mono leading-relaxed">
+                  {result.data?.raw_response || JSON.stringify(result.data, null, 2)}
+                </pre>
+              </div>
+              {result.data?.platform && (
+                <div className="flex items-center gap-2 text-xs text-[#7e7e8a]">
+                  <span>Platform: {result.data.platform}</span>
+                  {result.data.psychology && <span>| Psikoloji: {result.data.psychology}</span>}
+                  {result.data.tone && <span>| Ton: {result.data.tone}</span>}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

@@ -209,6 +209,19 @@ export const getEscalations = (params) => api.get('/escalations', { params });
 export const resolveEscalation = (id, notes) => api.patch(`/escalations/${id}/resolve`, null, { params: { notes } });
 export const getEscalationStats = () => api.get('/escalations/stats');
 
+// Marketing & AI Copywriter
+export const generateAICopy = (data) => api.post('/marketing/ai-copy', data);
+export const optimizeCTA = (data) => api.post('/marketing/optimize-cta', data);
+export const rewriteCopy = (data) => api.post('/marketing/rewrite', data);
+export const generateWASequence = (data) => api.post('/marketing/whatsapp-sequence', data);
+export const generatePinterestPins = (data) => api.post('/marketing/pinterest-pins', data);
+export const generateContentStrategy = (data) => api.post('/marketing/content-strategy', data);
+export const getPsychologyTips = (data) => api.post('/marketing/psychology-tips', data);
+export const getMarketingPlatforms = () => api.get('/marketing/platforms');
+export const getPsychologyTriggers = () => api.get('/marketing/psychology-triggers');
+export const getSequenceTypes = () => api.get('/marketing/sequence-types');
+export const getPinterestBoards = () => api.get('/marketing/pinterest-boards');
+
 // Event Leads & Outreach
 export const getEventIdeas = (category) => api.get('/event-leads/ideas', { params: category ? { category } : {} });
 export const getTargetGroups = () => api.get('/event-leads/target-groups');
