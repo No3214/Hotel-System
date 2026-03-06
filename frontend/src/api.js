@@ -193,6 +193,16 @@ export const batchDriveImport = (data) => api.post('/social/batch-drive', data);
 export const publishToPlatforms = (postId, platforms) => api.post(`/social/posts/${postId}/publish-to-platforms`, { post_id: postId, platforms });
 export const getPlatformStatus = () => api.get('/social/platform-status');
 
+// Content Queue & Smart Scheduling
+export const getContentQueue = () => api.get('/social/queue');
+export const addToQueue = (postId) => api.post(`/social/queue/${postId}`);
+export const removeFromQueue = (postId) => api.delete(`/social/queue/${postId}`);
+export const getOptimalTime = (platforms, topic) => api.get('/social/optimal-time', { params: { platforms, topic } });
+export const getRecyclablePosts = () => api.get('/social/recyclable');
+export const recyclePost = (postId) => api.post(`/social/recycle/${postId}`);
+export const getWeeklyPlan = (startDate) => api.get('/social/weekly-plan', { params: startDate ? { start_date: startDate } : {} });
+export const getPostScore = (postId) => api.get(`/social/post-score/${postId}`);
+
 // Event Leads & Outreach
 export const getEventIdeas = (category) => api.get('/event-leads/ideas', { params: category ? { category } : {} });
 export const getTargetGroups = () => api.get('/event-leads/target-groups');

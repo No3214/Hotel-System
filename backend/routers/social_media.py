@@ -809,6 +809,73 @@ async def get_platform_status():
     }
 
 
+# ==================== CONTENT QUEUE & SMART SCHEDULING ====================
+
+@router.get("/social/queue")
+async def get_queue():
+    """Gonderi kuyrugunungunu getir"""
+    from services.content_queue_service import get_content_queue
+    queue = await get_content_queue()
+    return {"queue": queue}
+
+
+@router.post("/social/queue/{post_id}")
+async def add_post_to_queue(post_id: str):
+    """Gonderiyi kuyruga ekle"""
+    from services.content_queue_service import add_to_queue
+    result = await add_to_queue(post_id)
+    return result
+
+
+@router.delete("/social/queue/{post_id}")
+async def remove_post_from_queue(post_id: str):
+    """Gonderiyi kuyruktan cikar"""
+    from services.content_queue_service import remove_from_queue
+    result = await remove_from_queue(post_id)
+    return result
+
+
+@router.get("/social/optimal-time")
+async def get_optimal_time(platforms: str = "instagram,facebook", topic: Optional[str] = None):
+    """Platformlar icin optimal paylasim saatini hesapla"""
+    from services.content_queue_service import get_optimal_posting_time
+    platform_list = [p.strip() for p in platforms.split(",")]
+    optimal = get_optimal_posting_time(platform_list, topic)
+    return {"optimal_time": optimal, "platforms": platform_list, "topic": topic}
+
+
+@router.get("/social/recyclable")
+async def get_recyclable():
+    """Tekrar paylasim icin uygun eski gonderileri getir"""
+    from services.content_queue_service import get_recyclable_posts
+    posts = await get_recyclable_posts()
+    return {"posts": posts, "count": len(posts)}
+
+
+@router.post("/social/recycle/{post_id}")
+async def recycle_post(post_id: str):
+    """Eski gonderiyi tekrar paylasim icin kopyala"""
+    from services.content_queue_service import recycle_post as do_recycle
+    result = await do_recycle(post_id)
+    return result
+
+
+@router.get("/social/weekly-plan")
+async def get_weekly_plan(start_date: Optional[str] = None):
+    """Haftalik icerik plani olustur"""
+    from services.content_queue_service import generate_weekly_plan
+    plan = await generate_weekly_plan(start_date)
+    return plan
+
+
+@router.get("/social/post-score/{post_id}")
+async def get_post_score(post_id: str):
+    """Gonderi performans puanini hesapla"""
+    from services.content_queue_service import calculate_post_performance
+    score = await calculate_post_performance(post_id)
+    return score
+
+
 @router.get("/social/content-calendar")
 async def get_content_calendar(days: int = 7):
     """Yaklasan zamanlanan gonderileri takvim formatinda getir"""
