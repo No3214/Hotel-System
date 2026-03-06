@@ -70,6 +70,11 @@ celery_app.conf.update(
             'schedule': crontab(hour=10, minute=0),
             'options': {'queue': 'scheduled'},
         },
+        'publish-scheduled-posts': {
+            'task': 'celery_tasks.publish_scheduled_posts_task',
+            'schedule': crontab(minute=0),  # Her saat basi kontrol et
+            'options': {'queue': 'scheduled'},
+        },
     },
 )
 

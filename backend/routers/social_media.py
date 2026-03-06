@@ -479,6 +479,14 @@ async def get_auto_publish_history(limit: int = 20):
     return {"history": history, "total": len(history)}
 
 
+@router.post("/social/publish-scheduled")
+async def publish_scheduled_now():
+    """Zamani gelmis zamanlanmis gonderileri simdi yayinla"""
+    from celery_tasks import publish_scheduled_posts_task
+    publish_scheduled_posts_task.delay()
+    return {"success": True, "message": "Zamanlanmis gonderi yayinlama kuyruge eklendi"}
+
+
 # ==================== TOPLU DRIVE ICERIK ISLEME ====================
 
 class BatchDriveRequest(BaseModel):

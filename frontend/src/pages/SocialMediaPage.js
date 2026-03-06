@@ -1096,13 +1096,22 @@ function AutoPublishPanel({ onRefresh }) {
                 {h.content_preview && (
                   <p className="text-[10px] text-[#7e7e8a] line-clamp-2 mb-1">{h.content_preview}</p>
                 )}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-[10px] text-[#5a5a65]">
                     {topicLabels[h.topic] || h.topic}
                   </span>
                   <span className="text-[10px] text-[#5a5a65]">
                     {h.created_at ? new Date(h.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''}
                   </span>
+                  {h.publish_results && Object.entries(h.publish_results).map(([plat, res]) => (
+                    <span key={plat} className={`text-[10px] px-1.5 py-0.5 rounded ${
+                      res.status === 'published' ? 'bg-green-500/15 text-green-400' :
+                      res.status === 'mock_published' ? 'bg-yellow-500/15 text-yellow-400' :
+                      'bg-red-500/15 text-red-400'
+                    }`}>
+                      {plat}: {res.status === 'published' ? 'Yayinda' : res.status === 'mock_published' ? 'Mock' : 'Hata'}
+                    </span>
+                  ))}
                 </div>
               </div>
             ))}
