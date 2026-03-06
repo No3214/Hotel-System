@@ -96,12 +96,24 @@ async def chatbot(data: ChatRequest, request: Request):
     except Exception:
         pass
 
-    raw_response = await get_chat_response(
-        message=data.message,
-        session_id=data.session_id,
-        system_prompt=GEMINI_SYSTEM_PROMPT,
-        context=context,
-    )
+    # Multi-provider AI: chatbot gorevi -> Gemini oncelikli, fallback DeepSeek/OpenRouter
+    try:
+        from services.ai_provider_service import ai_request
+        ai_result = await ai_request(
+            message=data.message,
+            system_prompt=GEMINI_SYSTEM_PROMPT + (f"\n\nEk Bilgi:\n{context}" if context else ""),
+            task_type="chatbot",
+            session_id=data.session_id,
+        )
+        raw_response = ai_result["response"]
+    except Exception:
+        # Fallback: eski gemini_service
+        raw_response = await get_chat_response(
+            message=data.message,
+            session_id=data.session_id,
+            system_prompt=GEMINI_SYSTEM_PROMPT,
+            context=context,
+        )
 
     # Anti-halucinasyon kontrolu
     sanitized = sanitize_response(raw_response, intent)

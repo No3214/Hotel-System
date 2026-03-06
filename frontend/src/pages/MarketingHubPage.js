@@ -6,7 +6,8 @@ import {
   addReputationReview,
   getMarketingOverview, getChannelPerformance, getConversionFunnel, getROIReport,
   getGoogleKeywordPlans, getGoogleAdFormats, createGoogleCampaign, getGoogleCampaigns,
-  updateGoogleCampaign, addGoogleAd, getGooglePerformance, deleteGoogleCampaign
+  updateGoogleCampaign, addGoogleAd, getGooglePerformance, deleteGoogleCampaign,
+  getAIProviders, getAIRouting, testAI
 } from '../api';
 import { Input } from '../components/ui/input';
 import {
@@ -892,6 +893,131 @@ function AnalyticsTab() {
   );
 }
 
+// ==================== AI PROVIDERS TAB ====================
+function AIProvidersTab() {
+  const [providers, setProviders] = useState({});
+  const [routing, setRouting] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [testMsg, setTestMsg] = useState('');
+  const [testTask, setTestTask] = useState('general');
+  const [testProvider, setTestProvider] = useState('');
+  const [testResult, setTestResult] = useState(null);
+  const [testing, setTesting] = useState(false);
+
+  useEffect(() => {
+    Promise.all([
+      getAIProviders().catch(() => ({ data: { providers: {} } })),
+      getAIRouting().catch(() => ({ data: { routing: {} } })),
+    ]).then(([provRes, routRes]) => {
+      setProviders(provRes.data.providers || {});
+      setRouting(routRes.data.routing || {});
+      setLoading(false);
+    });
+  }, []);
+
+  const handleTest = async () => {
+    if (!testMsg.trim()) return;
+    setTesting(true);
+    try {
+      const res = await testAI({ message: testMsg, task_type: testTask, preferred_provider: testProvider || undefined });
+      setTestResult(res.data);
+    } catch (e) { console.error(e); }
+    setTesting(false);
+  };
+
+  if (loading) return <div style={{ padding: 40, textAlign: 'center' }}><Loader2 className="animate-spin" size={24} /></div>;
+
+  const providerColors = { gemini: '#4285F4', deepseek: '#0066FF', openrouter: '#8B5CF6', groq: '#F97316' };
+  const costLabels = { cok_dusuk: 'Cok Dusuk', dusuk: 'Dusuk', degisken: 'Degisken' };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {/* Provider Status */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+        {Object.entries(providers).map(([id, p]) => (
+          <div key={id} style={{ ...card, borderColor: p.available ? `${providerColors[id]}40` : '#333' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <span style={{ fontWeight: 700, color: providerColors[id] || '#C4972A', fontSize: 14 }}>{p.name}</span>
+              <span style={{
+                fontSize: 10, padding: '2px 8px', borderRadius: 10, fontWeight: 600,
+                background: p.available ? '#8FAA8620' : '#e74c3c20',
+                color: p.available ? '#8FAA86' : '#e74c3c',
+              }}>{p.available ? 'Aktif' : 'Yapilandirilmadi'}</span>
+            </div>
+            <div style={{ fontSize: 12, color: '#888' }}>Maliyet: {costLabels[p.cost] || p.cost}</div>
+            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 6 }}>
+              {p.strengths?.map(s => (
+                <span key={s} style={{ fontSize: 10, padding: '1px 6px', borderRadius: 6, background: '#2a2a3e', color: '#aaa' }}>{s}</span>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Task Routing Table */}
+      <div style={card}>
+        <h3 style={{ color: '#C4972A', marginBottom: 12, fontSize: 15 }}>Gorev Yonlendirme Tablosu</h3>
+        <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>Her gorev turu icin hangi AI provider kullanilir (fallback sirali)</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {Object.entries(routing).map(([task, info]) => (
+            <div key={task} style={{ background: '#0d0d1a', borderRadius: 6, padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ color: '#e5e5e8', fontSize: 13, fontWeight: 500 }}>{task.replace(/_/g, ' ')}</span>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <span style={{
+                  fontSize: 11, padding: '2px 8px', borderRadius: 8, fontWeight: 600,
+                  background: `${providerColors[info.active_provider] || '#C4972A'}20`,
+                  color: providerColors[info.active_provider] || '#C4972A',
+                }}>{info.active_provider}</span>
+                {info.fallbacks?.length > 0 && (
+                  <span style={{ fontSize: 10, color: '#666' }}>
+                    fallback: {info.fallbacks.join(' > ')}
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Test AI */}
+      <div style={card}>
+        <h3 style={{ color: '#C4972A', marginBottom: 12, fontSize: 15 }}>AI Test</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 150px 150px', gap: 8, marginBottom: 10 }}>
+          <input placeholder="Test mesaji yazin..." value={testMsg} onChange={e => setTestMsg(e.target.value)} style={inputStyle} />
+          <select value={testTask} onChange={e => setTestTask(e.target.value)} style={selectStyle}>
+            <option value="general">Genel</option>
+            <option value="chatbot">Chatbot</option>
+            <option value="review_response">Yorum Yaniti</option>
+            <option value="sentiment_analysis">Duygu Analizi</option>
+            <option value="marketing_copy">Pazarlama</option>
+            <option value="classification">Siniflandirma</option>
+          </select>
+          <select value={testProvider} onChange={e => setTestProvider(e.target.value)} style={selectStyle}>
+            <option value="">Otomatik</option>
+            {Object.entries(providers).filter(([, p]) => p.available).map(([id, p]) => (
+              <option key={id} value={id}>{p.name}</option>
+            ))}
+          </select>
+        </div>
+        <button onClick={handleTest} disabled={testing || !testMsg.trim()} style={goldBtn}>
+          {testing ? <><Loader2 className="animate-spin" size={14} /> Test Ediliyor...</> : <><Zap size={14} /> Test Et</>}
+        </button>
+        {testResult && (
+          <div style={{ marginTop: 12, background: '#0d0d1a', borderRadius: 8, padding: 14 }}>
+            <div style={{ display: 'flex', gap: 12, marginBottom: 8, fontSize: 12 }}>
+              <span style={{ color: '#888' }}>Provider: <strong style={{ color: providerColors[testResult.provider] || '#C4972A' }}>{testResult.provider_name}</strong></span>
+              <span style={{ color: '#888' }}>Gorev: <strong style={{ color: '#C4972A' }}>{testResult.task_type}</strong></span>
+            </div>
+            <pre style={{ color: '#ccc', fontSize: 13, whiteSpace: 'pre-wrap', lineHeight: 1.6, fontFamily: 'inherit' }}>
+              {testResult.response}
+            </pre>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ==================== MAIN PAGE ====================
 export default function MarketingHubPage() {
   const [activeTab, setActiveTab] = useState('analytics');
@@ -903,7 +1029,7 @@ export default function MarketingHubPage() {
           <TrendingUp size={22} style={{ marginRight: 8, color: '#C4972A' }} />
           Pazarlama Merkezi
         </h1>
-        <p style={{ fontSize: 13, color: '#888', marginTop: 4 }}>Meta Ads, Google Ads, Itibar Yonetimi ve Performans Analitikleri</p>
+        <p style={{ fontSize: 13, color: '#888', marginTop: 4 }}>Meta Ads, Google Ads, Itibar Yonetimi, AI Provider Yonetimi</p>
       </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
@@ -911,12 +1037,14 @@ export default function MarketingHubPage() {
         <TabButton active={activeTab === 'meta_ads'} onClick={() => setActiveTab('meta_ads')} icon={Target} label="Meta Ads" />
         <TabButton active={activeTab === 'google_ads'} onClick={() => setActiveTab('google_ads')} icon={Globe} label="Google Ads" />
         <TabButton active={activeTab === 'reputation'} onClick={() => setActiveTab('reputation')} icon={Star} label="Itibar" />
+        <TabButton active={activeTab === 'ai_providers'} onClick={() => setActiveTab('ai_providers')} icon={Zap} label="AI Yonetimi" />
       </div>
 
       {activeTab === 'analytics' && <AnalyticsTab />}
       {activeTab === 'meta_ads' && <MetaAdsTab />}
       {activeTab === 'google_ads' && <GoogleAdsTab />}
       {activeTab === 'reputation' && <ReputationTab />}
+      {activeTab === 'ai_providers' && <AIProvidersTab />}
     </div>
   );
 }

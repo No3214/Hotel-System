@@ -149,11 +149,21 @@ CTA: {template['cta']}
 Lutfen bu sablonu baz alarak yaratici, donusum odakli bir reklam metni olustur.
 A/B test icin 2 varyant ver. JSON formatinda cevapla."""
 
-    result = await get_chat_response(
-        message=prompt,
-        session_id=f"meta-ad-{segment}-{new_id()[:8]}",
-        system_prompt=META_AD_SYSTEM_PROMPT,
-    )
+    # Multi-provider: ad_copy -> Gemini oncelikli
+    try:
+        from services.ai_provider_service import ai_request
+        ai_result = await ai_request(
+            message=prompt,
+            system_prompt=META_AD_SYSTEM_PROMPT,
+            task_type="ad_copy",
+        )
+        result = ai_result["response"]
+    except Exception:
+        result = await get_chat_response(
+            message=prompt,
+            session_id=f"meta-ad-{segment}-{new_id()[:8]}",
+            system_prompt=META_AD_SYSTEM_PROMPT,
+        )
 
     return {
         "ad_copy": result,

@@ -82,10 +82,20 @@ Ton: {tone_instruction}
 
 Yanit:"""
 
-    response = await get_review_response(
-        prompt=prompt,
-        system_prompt=REVIEW_RESPONSE_PROMPT,
-    )
+    # Multi-provider AI: review gorevi -> Gemini oncelikli
+    try:
+        from services.ai_provider_service import ai_request
+        ai_result = await ai_request(
+            message=prompt,
+            system_prompt=REVIEW_RESPONSE_PROMPT,
+            task_type="review_response",
+        )
+        response = ai_result["response"]
+    except Exception:
+        response = await get_review_response(
+            prompt=prompt,
+            system_prompt=REVIEW_RESPONSE_PROMPT,
+        )
 
     update = {
         "ai_response": response,

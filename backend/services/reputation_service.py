@@ -120,8 +120,7 @@ def analyze_sentiment_simple(text: str) -> dict:
 
 
 async def analyze_review_ai(review_text: str, platform: str = "google", rating: int = 0) -> dict:
-    """AI ile derinlemesine degerlendirme analizi"""
-    from gemini_service import get_chat_response
+    """AI ile derinlemesine degerlendirme analizi - multi-provider"""
 
     prompt = f"""Platform: {platform}
 Puan: {rating}/5
@@ -129,11 +128,22 @@ Degerlendirme: {review_text}
 
 Bu degerlendirmeyi analiz et ve JSON formatinda sonuc ver."""
 
-    result = await get_chat_response(
-        message=prompt,
-        session_id=f"reputation-{new_id()[:8]}",
-        system_prompt=REPUTATION_AI_PROMPT,
-    )
+    # Multi-provider: review_analysis -> DeepSeek oncelikli (analitik gorev)
+    try:
+        from services.ai_provider_service import ai_request
+        ai_result = await ai_request(
+            message=prompt,
+            system_prompt=REPUTATION_AI_PROMPT,
+            task_type="review_analysis",
+        )
+        result = ai_result["response"]
+    except Exception:
+        from gemini_service import get_chat_response
+        result = await get_chat_response(
+            message=prompt,
+            session_id=f"reputation-{new_id()[:8]}",
+            system_prompt=REPUTATION_AI_PROMPT,
+        )
 
     basic = analyze_sentiment_simple(review_text)
 

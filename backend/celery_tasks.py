@@ -712,3 +712,103 @@ def publish_scheduled_posts_task(self):
     except Exception as e:
         logger.error(f"Scheduled publish hatasi: {e}")
         raise self.retry(exc=e, countdown=120)
+
+
+# ==================== MARKETING AUTOMATION ORCHESTRATOR ====================
+# Anthropic patterns: Orchestrator-Subagents, Prompt Chaining
+
+@celery_app.task(bind=True, max_retries=2)
+def marketing_daily_report_task(self):
+    """Gunluk pazarlama raporu olustur (her gun 09:00)"""
+    try:
+        db = get_db()
+
+        # Verileri topla
+        today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+        yesterday = today - timedelta(days=1)
+
+        social_posts = db.social_posts.count_documents({"created_at": {"$gte": yesterday.isoformat()}})
+        new_reviews = db.reviews.count_documents({"created_at": {"$gte": yesterday.isoformat()}})
+        pending_reviews = db.reviews.count_documents({"ai_response": None})
+        lifecycle_sent = db.lifecycle_messages.count_documents({"created_at": {"$gte": yesterday.isoformat()}})
+        meta_campaigns = db.meta_campaigns.count_documents({"status": "active"})
+        google_campaigns = db.google_campaigns.count_documents({"status": "active"})
+
+        report = {
+            "id": str(uuid.uuid4()),
+            "type": "daily_marketing_report",
+            "date": today.strftime("%Y-%m-%d"),
+            "metrics": {
+                "social_posts_created": social_posts,
+                "new_reviews": new_reviews,
+                "pending_review_responses": pending_reviews,
+                "lifecycle_messages_sent": lifecycle_sent,
+                "active_meta_campaigns": meta_campaigns,
+                "active_google_campaigns": google_campaigns,
+            },
+            "alerts": [],
+            "created_at": utcnow(),
+        }
+
+        # Uyarilar
+        if pending_reviews > 5:
+            report["alerts"].append(f"{pending_reviews} yanitlanmamis degerlendirme var!")
+        if social_posts == 0:
+            report["alerts"].append("Dun hic sosyal medya gonderi olusturulmadi")
+        if meta_campaigns == 0 and google_campaigns == 0:
+            report["alerts"].append("Aktif reklam kampanyasi yok")
+
+        db.marketing_reports.insert_one(report)
+        logger.info(f"Daily marketing report generated: {report['id']}")
+        return {"status": "done", "report_id": report["id"], "alerts": len(report["alerts"])}
+
+    except Exception as e:
+        logger.error(f"Marketing report hatasi: {e}")
+        raise self.retry(exc=e, countdown=120)
+
+
+@celery_app.task(bind=True, max_retries=2)
+def reputation_monitor_task(self):
+    """Itibar izleme - olumsuz yorumlari tespit et (her 6 saatte)"""
+    try:
+        db = get_db()
+
+        # Son 24 saatteki yanitlanmamis olumsuz yorumlari bul
+        from services.reputation_service import SENTIMENT_KEYWORDS
+
+        pending = list(db.reviews.find(
+            {"ai_response": None},
+            {"_id": 0}
+        ).sort("created_at", -1).limit(20))
+
+        urgent = []
+        for review in pending:
+            text = (review.get("review_text", "") or "").lower()
+            rating = review.get("rating", 5)
+            neg_count = sum(1 for w in SENTIMENT_KEYWORDS["negative"] if w in text)
+
+            if rating <= 2 or neg_count >= 2:
+                urgent.append({
+                    "review_id": review.get("id"),
+                    "rating": rating,
+                    "reviewer": review.get("reviewer_name", "Anonim"),
+                    "negative_signals": neg_count,
+                })
+
+        if urgent:
+            alert = {
+                "id": str(uuid.uuid4()),
+                "type": "reputation_alert",
+                "urgent_reviews": urgent,
+                "count": len(urgent),
+                "message": f"{len(urgent)} acil yanitlanmasi gereken olumsuz degerlendirme var!",
+                "created_at": utcnow(),
+            }
+            db.marketing_reports.insert_one(alert)
+            logger.warning(f"Reputation alert: {len(urgent)} urgent reviews")
+
+        return {"status": "done", "urgent_count": len(urgent)}
+
+    except Exception as e:
+        logger.error(f"Reputation monitor hatasi: {e}")
+        raise self.retry(exc=e, countdown=120)

@@ -75,6 +75,16 @@ celery_app.conf.update(
             'schedule': crontab(minute=0),  # Her saat basi kontrol et
             'options': {'queue': 'scheduled'},
         },
+        'marketing-daily-report': {
+            'task': 'celery_tasks.marketing_daily_report_task',
+            'schedule': crontab(hour=9, minute=0),  # Her gun 09:00
+            'options': {'queue': 'scheduled'},
+        },
+        'reputation-monitor': {
+            'task': 'celery_tasks.reputation_monitor_task',
+            'schedule': crontab(hour='*/6', minute=30),  # Her 6 saatte
+            'options': {'queue': 'scheduled'},
+        },
     },
 )
 
