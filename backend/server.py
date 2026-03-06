@@ -49,6 +49,7 @@ from routers.meta_ads import router as meta_ads_router
 from routers.reputation import router as reputation_router
 from routers.marketing_analytics import router as marketing_analytics_router
 from routers.google_ads import router as google_ads_router
+from routers.ai_providers import router as ai_providers_router
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -192,6 +193,7 @@ api.include_router(meta_ads_router)
 api.include_router(reputation_router)
 api.include_router(marketing_analytics_router)
 api.include_router(google_ads_router)
+api.include_router(ai_providers_router)
 
 app.include_router(api)
 

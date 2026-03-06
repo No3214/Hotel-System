@@ -259,6 +259,12 @@ export const updateGoogleKeywords = (data) => api.put('/google-ads/campaigns/key
 export const getGooglePerformance = (campaignId) => api.get('/google-ads/performance', { params: campaignId ? { campaign_id: campaignId } : {} });
 export const deleteGoogleCampaign = (id) => api.delete(`/google-ads/campaigns/${id}`);
 
+// AI Providers
+export const getAIProviders = () => api.get('/ai/providers');
+export const getAIRouting = () => api.get('/ai/routing');
+export const testAI = (data) => api.post('/ai/test', data);
+export const smartAIRequest = (data) => api.post('/ai/smart-request', data);
+
 // Event Leads & Outreach
 export const getEventIdeas = (category) => api.get('/event-leads/ideas', { params: category ? { category } : {} });
 export const getTargetGroups = () => api.get('/event-leads/target-groups');
