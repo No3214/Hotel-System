@@ -358,8 +358,16 @@ ICERIK: [gonderi icerigi]
 HASHTAGLER: [virgullerle ayrilmis hashtag listesi, # isareti olmadan]"""
 
     try:
-        session_id = f"social_ai_{new_id()[:8]}"
-        response = await get_chat_response(full_prompt, session_id, AI_CONTENT_SYSTEM_PROMPT)
+        # Multi-provider: social_media gorevi
+        try:
+            from services.ai_provider_service import ai_request
+            ai_result = await ai_request(
+                message=full_prompt, system_prompt=AI_CONTENT_SYSTEM_PROMPT, task_type="social_media",
+            )
+            response = ai_result["response"]
+        except Exception:
+            session_id = f"social_ai_{new_id()[:8]}"
+            response = await get_chat_response(full_prompt, session_id, AI_CONTENT_SYSTEM_PROMPT)
 
         # Validate response
         if not response or not isinstance(response, str) or len(response.strip()) < 10:
@@ -552,8 +560,15 @@ BASLIK: [gonderi basligi]
 ICERIK: [gonderi icerigi - 150-300 karakter]
 HASHTAGLER: [virgullerle ayrilmis hashtag listesi, # isareti olmadan]"""
 
-                    session_id = f"batch_ai_{new_id()[:8]}"
-                    response = await get_chat_response(prompt, session_id, AI_CONTENT_SYSTEM_PROMPT)
+                    try:
+                        from services.ai_provider_service import ai_request
+                        ai_res = await ai_request(
+                            message=prompt, system_prompt=AI_CONTENT_SYSTEM_PROMPT, task_type="social_media",
+                        )
+                        response = ai_res["response"]
+                    except Exception:
+                        session_id = f"batch_ai_{new_id()[:8]}"
+                        response = await get_chat_response(prompt, session_id, AI_CONTENT_SYSTEM_PROMPT)
 
                     # Parse AI response
                     lines = response.strip().split("\n")

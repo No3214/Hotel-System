@@ -277,7 +277,6 @@ async def generate_conversion_copy(
     Dönüşüm odaklı reklam metni üret.
     Corey Haines copywriting skill mantığı.
     """
-    from gemini_service import get_chat_response
     from helpers import new_id
 
     platform_rules = PLATFORM_COPY_RULES.get(platform, PLATFORM_COPY_RULES["instagram"])
@@ -302,8 +301,14 @@ TON: {tone}
 
     prompt += "\nJSON formatinda yanit ver."
 
-    session_id = f"copywriter-{new_id()}"
-    response = await get_chat_response(prompt, session_id, COPYWRITER_SYSTEM_PROMPT)
+    try:
+        from services.ai_provider_service import ai_request
+        result = await ai_request(message=prompt, system_prompt=COPYWRITER_SYSTEM_PROMPT, task_type="marketing_copy")
+        response = result["response"]
+    except Exception:
+        from gemini_service import get_chat_response
+        session_id = f"copywriter-{new_id()}"
+        response = await get_chat_response(prompt, session_id, COPYWRITER_SYSTEM_PROMPT)
 
     return {
         "id": new_id(),
@@ -319,7 +324,6 @@ TON: {tone}
 
 async def optimize_cta(current_cta: str, context: str = "") -> Dict:
     """Mevcut CTA'yı optimize et - daha güçlü, daha net, daha dönüşüm odaklı."""
-    from gemini_service import get_chat_response
     from helpers import new_id
 
     prompt = f"""Mevcut CTA: "{current_cta}"
@@ -336,8 +340,14 @@ Her birinin neden daha etkili oldugunu 1 cumleyle acikla.
 JSON formatinda yanit ver: {{"alternatives": [{{"cta": "...", "type": "...", "reason": "..."}}]}}
 """
 
-    session_id = f"cta-opt-{new_id()}"
-    response = await get_chat_response(prompt, session_id, COPYWRITER_SYSTEM_PROMPT)
+    try:
+        from services.ai_provider_service import ai_request
+        result = await ai_request(message=prompt, system_prompt=COPYWRITER_SYSTEM_PROMPT, task_type="marketing_copy")
+        response = result["response"]
+    except Exception:
+        from gemini_service import get_chat_response
+        session_id = f"cta-opt-{new_id()}"
+        response = await get_chat_response(prompt, session_id, COPYWRITER_SYSTEM_PROMPT)
 
     return {
         "original_cta": current_cta,
@@ -355,7 +365,6 @@ async def generate_whatsapp_sequence(
     WhatsApp mesaj dizisi üret - trigger + exit koşullu.
     Butik otel için mesajlaşma odaklı pazarlama.
     """
-    from gemini_service import get_chat_response
     from helpers import new_id
 
     SEQUENCE_TYPES = {
@@ -389,8 +398,14 @@ ONEMLI:
 JSON formatinda yanit ver.
 """
 
-    session_id = f"wa-seq-{new_id()}"
-    response = await get_chat_response(prompt, session_id, WHATSAPP_SEQUENCE_SYSTEM_PROMPT)
+    try:
+        from services.ai_provider_service import ai_request
+        result = await ai_request(message=prompt, system_prompt=WHATSAPP_SEQUENCE_SYSTEM_PROMPT, task_type="marketing_copy")
+        response = result["response"]
+    except Exception:
+        from gemini_service import get_chat_response
+        session_id = f"wa-seq-{new_id()}"
+        response = await get_chat_response(prompt, session_id, WHATSAPP_SEQUENCE_SYSTEM_PROMPT)
 
     return {
         "id": new_id(),
@@ -412,7 +427,6 @@ async def generate_pinterest_pins(
     Pinterest pin açıklamaları ve SEO metadata üret.
     Düğün, etkinlik, yemek görselleri için.
     """
-    from gemini_service import get_chat_response
     from helpers import new_id
 
     CATEGORIES = {
@@ -444,8 +458,14 @@ Dugun icerikleri icin hem Turkce hem Ingilizce kelimeler kullan (uluslararasi ge
 JSON formatinda yanit ver: {{"pins": [...]}}
 """
 
-    session_id = f"pinterest-{new_id()}"
-    response = await get_chat_response(prompt, session_id, PINTEREST_SYSTEM_PROMPT)
+    try:
+        from services.ai_provider_service import ai_request
+        result = await ai_request(message=prompt, system_prompt=PINTEREST_SYSTEM_PROMPT, task_type="marketing_copy")
+        response = result["response"]
+    except Exception:
+        from gemini_service import get_chat_response
+        session_id = f"pinterest-{new_id()}"
+        response = await get_chat_response(prompt, session_id, PINTEREST_SYSTEM_PROMPT)
 
     return {
         "id": new_id(),
@@ -465,7 +485,6 @@ async def generate_content_strategy(
     Haftalık/aylık içerik stratejisi oluştur.
     Corey Haines content-strategy skill mantığı.
     """
-    from gemini_service import get_chat_response
     from helpers import new_id
 
     if not platforms:
@@ -500,8 +519,14 @@ Her gonderi icin belirt:
 JSON formatinda yanit ver.
 """
 
-    session_id = f"strategy-{new_id()}"
-    response = await get_chat_response(prompt, session_id, CONTENT_STRATEGY_SYSTEM_PROMPT)
+    try:
+        from services.ai_provider_service import ai_request
+        result = await ai_request(message=prompt, system_prompt=CONTENT_STRATEGY_SYSTEM_PROMPT, task_type="data_analysis")
+        response = result["response"]
+    except Exception:
+        from gemini_service import get_chat_response
+        session_id = f"strategy-{new_id()}"
+        response = await get_chat_response(prompt, session_id, CONTENT_STRATEGY_SYSTEM_PROMPT)
 
     return {
         "id": new_id(),
@@ -520,7 +545,6 @@ async def rewrite_for_conversion(
     goal: str = "reservation",
 ) -> Dict:
     """Mevcut bir metni dönüşüm odaklı olarak yeniden yaz."""
-    from gemini_service import get_chat_response
     from helpers import new_id
 
     GOALS = {
@@ -552,8 +576,14 @@ JSON formatinda yanit ver:
 {{"original": "...", "rewritten": "...", "improvements": ["..."], "cta": "...", "psychology_used": ["..."]}}
 """
 
-    session_id = f"rewrite-{new_id()}"
-    response = await get_chat_response(prompt, session_id, COPYWRITER_SYSTEM_PROMPT)
+    try:
+        from services.ai_provider_service import ai_request
+        result = await ai_request(message=prompt, system_prompt=COPYWRITER_SYSTEM_PROMPT, task_type="marketing_copy")
+        response = result["response"]
+    except Exception:
+        from gemini_service import get_chat_response
+        session_id = f"rewrite-{new_id()}"
+        response = await get_chat_response(prompt, session_id, COPYWRITER_SYSTEM_PROMPT)
 
     return {
         "original": original_text,

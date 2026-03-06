@@ -209,6 +209,13 @@ async def ai_request(
         try:
             logger.info(f"AI request: task={task_type}, provider={provider_id}")
             response = await call_provider(provider_id, message, system_prompt, session_id)
+
+            # AI kullanim loglama
+            try:
+                await _log_ai_usage(provider_id, task_type, len(response), True)
+            except Exception:
+                pass  # Loglama hatasi AI cevabini engellemez
+
             return {
                 "response": response,
                 "provider": provider_id,
@@ -292,3 +299,74 @@ def build_system_prompt(role: str, task: str, context: str = "", output_format: 
     prompt_parts.append("\n<talimat>\nAdim adim dusun. Once durumu analiz et, sonra cevabini olustur.\nTurkce cevapla.\n</talimat>")
 
     return "\n".join(prompt_parts)
+
+
+# ==================== AI USAGE LOGGING ====================
+
+async def _log_ai_usage(provider_id: str, task_type: str, response_length: int, success: bool):
+    """AI kullanim logunu MongoDB'ye kaydet"""
+    from database import db
+    from helpers import utcnow
+    import uuid
+
+    await db.ai_usage_log.insert_one({
+        "id": str(uuid.uuid4()),
+        "provider": provider_id,
+        "provider_name": PROVIDERS.get(provider_id, {}).get("name", provider_id),
+        "task_type": task_type,
+        "response_length": response_length,
+        "success": success,
+        "created_at": utcnow(),
+    })
+
+
+async def get_ai_usage_stats(days: int = 30) -> dict:
+    """AI kullanim istatistiklerini getir"""
+    from database import db
+    from datetime import datetime, timezone, timedelta
+
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+
+    # Provider bazli toplam
+    pipeline = [
+        {"$match": {"created_at": {"$gte": cutoff}}},
+        {"$group": {
+            "_id": "$provider",
+            "count": {"$sum": 1},
+            "avg_length": {"$avg": "$response_length"},
+        }},
+    ]
+    by_provider = {}
+    async for doc in db.ai_usage_log.aggregate(pipeline):
+        by_provider[doc["_id"]] = {"count": doc["count"], "avg_length": round(doc.get("avg_length", 0))}
+
+    # Gorev bazli toplam
+    pipeline2 = [
+        {"$match": {"created_at": {"$gte": cutoff}}},
+        {"$group": {"_id": "$task_type", "count": {"$sum": 1}}},
+    ]
+    by_task = {}
+    async for doc in db.ai_usage_log.aggregate(pipeline2):
+        by_task[doc["_id"]] = doc["count"]
+
+    # Gunluk trend (son 7 gun)
+    week_cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+    pipeline3 = [
+        {"$match": {"created_at": {"$gte": week_cutoff}}},
+        {"$addFields": {"date": {"$substr": ["$created_at", 0, 10]}}},
+        {"$group": {"_id": "$date", "count": {"$sum": 1}}},
+        {"$sort": {"_id": 1}},
+    ]
+    daily_trend = []
+    async for doc in db.ai_usage_log.aggregate(pipeline3):
+        daily_trend.append({"date": doc["_id"], "count": doc["count"]})
+
+    total = await db.ai_usage_log.count_documents({"created_at": {"$gte": cutoff}})
+
+    return {
+        "total_requests": total,
+        "by_provider": by_provider,
+        "by_task": by_task,
+        "daily_trend": daily_trend,
+        "period_days": days,
+    }
