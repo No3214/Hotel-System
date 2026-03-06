@@ -241,3 +241,79 @@ def _calc_nights(reservation: dict) -> int:
     except Exception:
         pass
     return 1
+
+
+# ==================== FAZ 5: AI CRM & Loyalty Manager ====================
+
+@router.get("/loyalty/ai-campaigns")
+async def generate_ai_loyalty_campaigns():
+    """Yapay zeka destegi ile yaklasik 1 yil once kalan veya dogum gunu/yildonumu yaklasan misafirleri tespit et"""
+    try:
+        from datetime import datetime, timedelta
+        import json
+        import logging
+        from gemini_service import get_chat_response
+        
+        logger = logging.getLogger(__name__)
+        today = datetime.now()
+        
+        # Ornek Senaryo: Tam 1 yil onceki ay (veya +/- 1 ay) kalmis misafirler
+        one_year_ago_start = (today - timedelta(days=365+15)).strftime("%Y-%m-%d")
+        one_year_ago_end = (today - timedelta(days=365-15)).strftime("%Y-%m-%d")
+        
+        # Son 1 yilda hic gelmemis, AMA tam 1 yil once kalmis eski misafirler
+        past_res = await db.reservations.find({
+            "status": "checked_out",
+            "check_in": {"$gte": one_year_ago_start, "$lte": one_year_ago_end}
+        }, {"_id": 0}).to_list(10)
+        
+        if not past_res:
+            return {"campaigns": [], "message": "Bu donem icin hedef kitle bulunamadi."}
+            
+        campaigns = []
+        for res in past_res:
+            guest_name = res.get('guest_name', 'Degerli Misafirimiz')
+            nights = res.get('nights', 1)
+            room = res.get('room_type_name', 'Oda')
+            
+            prompt = f"""
+            Sen Kozbeyli Konagi'nin Luks Misafir Iliskileri AI Asistanisin (Loyalty Manager).
+            Asagidaki misafir tam 1 yil once {nights} gece {room} odasinda kalmisti. 
+            Amacimiz: Onlari bu yilki tatilleri (veya yildonumleri) icin tekrar otelimize davet etmek.
+            
+            Bana sunlari tasiyan saf bir JSON don:
+            {{
+               "subject": "E-posta/Mesaj Basligi",
+               "message": "Sicak, samimi ve kisisellestirilmis (Maks 3-4 cumle) hosgeldin mesaji. Icine %15 Sadakat indirimi koy."
+            }}
+            
+            Misafir: {guest_name}
+            Tarih: Gecen yil tam bu zamanlar
+            """
+            
+            try:
+                ai_response = await get_chat_response("Mesaji hazirla", new_id(), prompt)
+                import re
+                json_match = re.search(r'```(?:json)?(.*?)```', ai_response, re.DOTALL)
+                res_str = json_match.group(1).strip() if json_match else ai_response
+                parsed = json.loads(res_str)
+                
+                campaigns.append({
+                    "id": new_id(),
+                    "guest_id": res.get("guest_id"),
+                    "guest_name": guest_name,
+                    "guest_email": res.get("guest_email", ""),
+                    "guest_phone": res.get("guest_phone", ""),
+                    "reason": "1. Yil Donumu / Sadakat Hatirlatmasi",
+                    "subject": parsed.get("subject", "Sizi Ozledik!"),
+                    "message": parsed.get("message", "Gecen yilki ziyaretinizin ustunden 1 yil gecti. Sizi tekrar agirlamak isteriz."),
+                    "status": "draft"
+                })
+            except Exception as e:
+                logger.error(f"AI CRM hata (misafir: {guest_name}): {e}")
+                
+        return {"campaigns": campaigns, "count": len(campaigns)}
+        
+    except Exception as e:
+        return {"error": str(e)}
+

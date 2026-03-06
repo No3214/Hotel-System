@@ -86,6 +86,7 @@ export const deleteCampaign = (id) => api.delete(`/campaigns/${id}`);
 export const getShifts = (params) => api.get('/shifts', { params });
 export const createShift = (data) => api.post('/shifts', data);
 export const deleteShift = (id) => api.delete(`/shifts/${id}`);
+export const getAIShifts = (startDate) => api.get('/staff/ai-shifts', { params: { start_date: startDate } });
 
 // Staff extended
 export const updateStaff = (id, data) => api.patch(`/staff/${id}`, data);
@@ -211,6 +212,7 @@ export const getGuestLoyalty = (id) => api.get(`/loyalty/guest/${id}`);
 export const updateGuestLoyalty = (id) => api.post(`/loyalty/update-guest/${id}`);
 export const matchReturningGuest = (params) => api.post('/loyalty/match-guest', null, { params });
 export const getLoyaltyStats = () => api.get('/loyalty/stats');
+export const getAILoyaltyCampaigns = () => api.get('/loyalty/ai-campaigns');
 
 // Set auth token
 export const setAuthToken = (token) => {

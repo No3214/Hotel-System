@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { getCampaigns, createCampaign, updateCampaignStatus, deleteCampaign } from '../api';
+import { getCampaigns, createCampaign, updateCampaignStatus, deleteCampaign, getAILoyaltyCampaigns } from '../api';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Mail, Plus, Trash2, Send, Eye, MousePointer, Users } from 'lucide-react';
+import { Mail, Plus, Trash2, Send, Eye, MousePointer, Users, Sparkles, Check } from 'lucide-react';
 
 const STATUS_CONFIG = {
   draft: { label: 'Taslak', color: 'bg-gray-500/20 text-gray-400' },
@@ -27,11 +27,41 @@ export default function CampaignsPage() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ title: '', subject: '', content: '', target_segment: 'all', channel: 'email', scheduled_at: '' });
+  
+  // AI CRM State
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiCampaigns, setAiCampaigns] = useState([]);
 
   const load = () => {
     getCampaigns().then(r => setCampaigns(r.data.campaigns)).catch(console.error).finally(() => setLoading(false));
   };
   useEffect(() => { load(); }, []);
+  
+  const fetchAILoyalty = async () => {
+    setAiLoading(true);
+    try {
+      const { data } = await getAILoyaltyCampaigns();
+      if (data.campaigns) setAiCampaigns(data.campaigns);
+    } catch (error) {
+       console.error(error);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+  
+  const handleApproveAICampaign = async (aiComp) => {
+      await createCampaign({
+          title: `AI Sadakat: ${aiComp.guest_name}`,
+          subject: aiComp.subject,
+          content: aiComp.message,
+          target_segment: 'returning',
+          channel: 'email',
+          status: 'draft'
+      });
+      // Remove from list
+      setAiCampaigns(prev => prev.filter(c => c.id !== aiComp.id));
+      load();
+  };
 
   const handleCreate = async () => {
     if (!form.title || !form.subject || !form.content) return;
@@ -53,12 +83,17 @@ export default function CampaignsPage() {
           <h1 className="text-2xl lg:text-3xl font-bold text-[#C4972A]">E-posta Kampanyalari</h1>
           <p className="text-[#7e7e8a] text-sm mt-1">{campaigns.length} kampanya</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-[#C4972A] hover:bg-[#a87a1f] text-white" data-testid="add-campaign-btn">
-              <Plus className="w-4 h-4 mr-2" /> Yeni Kampanya
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Button onClick={fetchAILoyalty} disabled={aiLoading} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+            <Sparkles className="w-4 h-4 mr-2" /> 
+            {aiLoading ? 'Analiz Ediliyor...' : 'AI Sadakat Fırsatları'}
+          </Button>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-[#C4972A] hover:bg-[#a87a1f] text-white" data-testid="add-campaign-btn">
+                <Plus className="w-4 h-4 mr-2" /> Yeni Kampanya
+              </Button>
+            </DialogTrigger>
           <DialogContent className="bg-[#1a1a22] border-[#C4972A]/20">
             <DialogHeader><DialogTitle className="text-[#C4972A]">Yeni Kampanya</DialogTitle></DialogHeader>
             <div className="space-y-3">
@@ -84,7 +119,36 @@ export default function CampaignsPage() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
+      
+      {aiCampaigns.length > 0 && (
+        <div className="mb-8 p-6 bg-indigo-500/10 border border-indigo-500/30 rounded-xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-10"><Sparkles className="w-24 h-24" /></div>
+            <h2 className="text-xl font-semibold text-indigo-400 flex items-center gap-2 mb-4">
+               <Sparkles className="w-5 h-5" /> Gemini CRM: Yaklaşan Yıldönümleri / Bekleyen Fırsatlar
+            </h2>
+            <div className="grid md:grid-cols-2 gap-4">
+                {aiCampaigns.map(ac => (
+                    <div key={ac.id} className="bg-[#1a1a22] p-4 rounded-lg border border-indigo-500/20">
+                        <div className="flex justify-between items-start mb-2">
+                            <div>
+                                <h3 className="font-medium text-white">{ac.guest_name}</h3>
+                                <span className="text-xs text-indigo-300">{ac.reason}</span>
+                            </div>
+                            <Button size="sm" onClick={() => handleApproveAICampaign(ac)} className="bg-green-600 hover:bg-green-700 h-8">
+                                <Check className="w-3 h-3 mr-1" /> Onayla & Taslağa Ekle
+                            </Button>
+                        </div>
+                        <div className="bg-white/5 p-3 rounded text-sm text-[#a9a9b2]">
+                            <p className="font-medium text-white mb-1">Konu: {ac.subject}</p>
+                            <p className="line-clamp-2">{ac.message}</p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+      )}
 
       <div className="space-y-4">
         {campaigns.map(c => {
