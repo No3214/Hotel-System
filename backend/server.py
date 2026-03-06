@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, RedirectResponse
+from fastapi import FastAPI, APIRouter, RedirectResponse, Request
 from starlette.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from pathlib import Path
@@ -51,48 +51,39 @@ load_dotenv(Path(__file__).parent / '.env')
 app = FastAPI(title="Kozbeyli Konagi API")
 api = APIRouter(prefix="/api")
 
-
 # ==================== HEALTH ====================
-
 @api.get("/health")
 async def health():
-    try:
-        await db.command("ping")
-        return {"status": "healthy", "database": "connected", "hotel": "Kozbeyli Konagi"}
-    except Exception as e:
+        try:
+                    await db.command("ping")
+                    return {"status": "healthy", "database": "connected", "hotel": "Kozbeyli Konagi"}
+except Exception as e:
         return {"status": "unhealthy", "error": str(e)}
 
-
 # ==================== SEED ====================
-
 @api.post("/seed")
 async def seed_database():
-    from hotel_data import HOTEL_POLICIES
-    from helpers import new_id
-
-    rooms_count = await db.rooms.count_documents({})
-    if rooms_count == 0:
-        for room in ROOMS:
-            await db.rooms.insert_one({**room, "created_at": utcnow()})
-
-    knowledge_count = await db.knowledge.count_documents({})
-    if knowledge_count == 0:
-        knowledge_items = [
-            {"id": new_id(), "title": "Iptal Politikasi", "content": HOTEL_POLICIES["cancellation"]["tr"], "category": "policy", "tags": ["iptal", "ceza"], "created_at": utcnow(), "updated_at": utcnow()},
-            {"id": new_id(), "title": "No-Show Politikasi", "content": HOTEL_POLICIES["no_show"]["tr"], "category": "policy", "tags": ["no-show", "ceza"], "created_at": utcnow(), "updated_at": utcnow()},
-            {"id": new_id(), "title": "On Odeme Kurali", "content": HOTEL_POLICIES["saturday_payment"]["tr"], "category": "policy", "tags": ["odeme", "cumartesi"], "created_at": utcnow(), "updated_at": utcnow()},
-            {"id": new_id(), "title": "Kahvalti Bilgisi", "content": HOTEL_POLICIES["breakfast"], "category": "service", "tags": ["kahvalti", "organik"], "created_at": utcnow(), "updated_at": utcnow()},
-            {"id": new_id(), "title": "Evcil Hayvan Politikasi", "content": HOTEL_POLICIES["pets"], "category": "policy", "tags": ["hayvan", "pet"], "created_at": utcnow(), "updated_at": utcnow()},
-            {"id": new_id(), "title": "Cocuk Politikasi", "content": HOTEL_POLICIES["children"], "category": "policy", "tags": ["cocuk", "bebek"], "created_at": utcnow(), "updated_at": utcnow()},
-        ]
-        for item in knowledge_items:
-            await db.knowledge.insert_one(item)
-
-    return {"success": True, "message": "Veri tabanina baslangic verileri yuklendi."}
-
+        from hotel_data import HOTEL_POLICIES
+        from helpers import new_id
+        rooms_count = await db.rooms.count_documents({})
+        if rooms_count == 0:
+                    for room in ROOMS:
+                                    await db.rooms.insert_one({**room, "created_at": utcnow()})
+                            knowledge_count = await db.knowledge.count_documents({})
+                if knowledge_count == 0:
+                            knowledge_items = [
+                                            {"id": new_id(), "title": "Iptal Politikasi", "content": HOTEL_POLICIES["cancellation"]["tr"], "category": "policy", "tags": ["iptal", "ceza"], "created_at": utcnow(), "updated_at": utcnow()},
+                                            {"id": new_id(), "title": "No-Show Politikasi", "content": HOTEL_POLICIES["no_show"]["tr"], "category": "policy", "tags": ["no-show", "ceza"], "created_at": utcnow(), "updated_at": utcnow()},
+                                            {"id": new_id(), "title": "On Odeme Kurali", "content": HOTEL_POLICIES["saturday_payment"]["tr"], "category": "policy", "tags": ["odeme", "cumartesi"], "created_at": utcnow(), "updated_at": utcnow()},
+                                            {"id": new_id(), "title": "Kahvalti Bilgisi", "content": HOTEL_POLICIES["breakfast"], "category": "service", "tags": ["kahvalti", "organik"], "created_at": utcnow(), "updated_at": utcnow()},
+                                            {"id": new_id(), "title": "Evcil Hayvan Politikasi", "content": HOTEL_POLICIES["pets"], "category": "policy", "tags": ["hayvan", "pet"], "created_at": utcnow(), "updated_at": utcnow()},
+                                            {"id": new_id(), "title": "Cocuk Politikasi", "content": HOTEL_POLICIES["children"], "category": "policy", "tags": ["cocuk", "bebek"], "created_at": utcnow(), "updated_at": utcnow()},
+                            ]
+                            for item in knowledge_items:
+                                            await db.knowledge.insert_one(item)
+                                    return {"success": True, "message": "Veri tabanina baslangic verileri yuklendi."}
 
 # ==================== INCLUDE ROUTERS ====================
-
 api.include_router(hotel_router)
 api.include_router(auth_router)
 api.include_router(rooms_router)
@@ -129,38 +120,38 @@ api.include_router(proposals_router)
 app.include_router(api)
 
 app.add_middleware(
-    CORSMiddleware,
+        CORSMiddleware,
     allow_credentials=True,
-    allow_origins=CORS_ORIGINS if CORS_ORIGINS != ['*'] else ["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+        allow_origins=CORS_ORIGINS if CORS_ORIGINS != ['*'] else ["*"],
+        allow_methods=["*"],
+        allow_headers=["*"],
 )
-
 
 @app.on_event("startup")
 async def startup():
-    logger.info(f"Kozbeyli Konagi API starting - DB: {DB_NAME}")
+        logger.info(f"Kozbeyli Konagi API starting - DB: {DB_NAME}")
     rooms_count = await db.rooms.count_documents({})
     if rooms_count == 0:
-        for room in ROOMS:
-            await db.rooms.insert_one({**room, "created_at": utcnow()})
-        logger.info("Rooms seeded successfully")
-
+                for room in ROOMS:
+                                await db.rooms.insert_one({**room, "created_at": utcnow()})
+                            logger.info("Rooms seeded successfully")
     # Database indexing
     from services.database_optimizer import apply_indexes
     await apply_indexes()
-
     # Celery beat baslat (background process)
     from celery_app import start_celery_beat
     start_celery_beat()
     logger.info("Celery beat started")
 
-
 @app.on_event("shutdown")
 async def shutdown():
-    client.close()
-
+        client.close()
 
 @app.get("/")
-async def root():
-        return RedirectResponse(url="/admin", status_code=302)
+async def root(request: Request):
+        host = request.headers.get("host", "")
+    # kozbeylikonagi.xyz -> admin paneli
+    if "kozbeylikonagi.xyz" in host:
+                return RedirectResponse(url="/admin", status_code=302)
+    # Railway domain veya diger -> QR menu
+    return RedirectResponse(url="/menu", status_code=302)
