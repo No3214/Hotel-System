@@ -248,6 +248,17 @@ export const getChannelPerformance = (period) => api.get('/marketing-analytics/c
 export const getConversionFunnel = () => api.get('/marketing-analytics/conversion-funnel');
 export const getROIReport = () => api.get('/marketing-analytics/roi-report');
 
+// Google Ads Manager
+export const getGoogleKeywordPlans = () => api.get('/google-ads/keyword-plans');
+export const getGoogleAdFormats = () => api.get('/google-ads/ad-formats');
+export const createGoogleCampaign = (data) => api.post('/google-ads/campaigns', data);
+export const getGoogleCampaigns = (params) => api.get('/google-ads/campaigns', { params });
+export const updateGoogleCampaign = (data) => api.put('/google-ads/campaigns', data);
+export const addGoogleAd = (data) => api.post('/google-ads/campaigns/ads', data);
+export const updateGoogleKeywords = (data) => api.put('/google-ads/campaigns/keywords', data);
+export const getGooglePerformance = (campaignId) => api.get('/google-ads/performance', { params: campaignId ? { campaign_id: campaignId } : {} });
+export const deleteGoogleCampaign = (id) => api.delete(`/google-ads/campaigns/${id}`);
+
 // Event Leads & Outreach
 export const getEventIdeas = (category) => api.get('/event-leads/ideas', { params: category ? { category } : {} });
 export const getTargetGroups = () => api.get('/event-leads/target-groups');
