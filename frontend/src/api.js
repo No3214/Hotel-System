@@ -202,6 +202,12 @@ export const getRecyclablePosts = () => api.get('/social/recyclable');
 export const recyclePost = (postId) => api.post(`/social/recycle/${postId}`);
 export const getWeeklyPlan = (startDate) => api.get('/social/weekly-plan', { params: startDate ? { start_date: startDate } : {} });
 export const getPostScore = (postId) => api.get(`/social/post-score/${postId}`);
+export const publishScheduledPosts = () => api.post('/social/publish-scheduled');
+
+// Escalation Management
+export const getEscalations = (params) => api.get('/escalations', { params });
+export const resolveEscalation = (id, notes) => api.patch(`/escalations/${id}/resolve`, null, { params: { notes } });
+export const getEscalationStats = () => api.get('/escalations/stats');
 
 // Event Leads & Outreach
 export const getEventIdeas = (category) => api.get('/event-leads/ideas', { params: category ? { category } : {} });

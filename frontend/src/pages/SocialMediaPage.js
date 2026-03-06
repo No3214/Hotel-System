@@ -4,7 +4,10 @@ import {
   publishSocialPost, getSocialTemplates, getSocialStats, convertImageLink,
   checkDuplicateMedia, aiGenerateContent, getAITopics, getAutoPublishSettings,
   updateAutoPublishSettings, triggerAutoPublish, getAutoPublishHistory, getContentCalendar,
-  batchDriveImport, publishToPlatforms, getPlatformStatus
+  batchDriveImport, publishToPlatforms, getPlatformStatus,
+  getContentQueue, addToQueue, removeFromQueue, getOptimalTime, getRecyclablePosts,
+  recyclePost, getWeeklyPlan, getPostScore, getEscalations, resolveEscalation,
+  getEscalationStats, publishScheduledPosts
 } from '../api';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -12,7 +15,8 @@ import {
   Plus, Trash2, Edit2, Save, X, Send, Copy, Instagram, Facebook, Twitter,
   MessageCircle, Eye, BarChart3, FileText, Sparkles, Clock, Linkedin, Video,
   Image, Link, Loader2, Wand2, Calendar, Settings, Zap, RotateCcw, CheckCircle2,
-  AlertCircle, Bot, ChevronRight, Upload, FolderOpen, ExternalLink, Wifi, WifiOff
+  AlertCircle, Bot, ChevronRight, Upload, FolderOpen, ExternalLink, Wifi, WifiOff,
+  List, RefreshCw, Star, AlertTriangle, TrendingUp, Award
 } from 'lucide-react';
 
 const PLATFORMS = [
@@ -202,6 +206,10 @@ export default function SocialMediaPage() {
             { id: 'batch', label: 'Toplu Yukle', icon: Upload },
             { id: 'autopublish', label: 'Oto-Yayinla', icon: Zap },
             { id: 'calendar', label: 'Takvim', icon: Calendar },
+            { id: 'queue', label: 'Kuyruk', icon: List },
+            { id: 'planner', label: 'Haftalik Plan', icon: Calendar },
+            { id: 'recycle', label: 'Geri Donusum', icon: RefreshCw },
+            { id: 'escalation', label: 'Escalation', icon: AlertTriangle },
           ].map(tab => (
             <button
               key={tab.id}
@@ -410,6 +418,26 @@ export default function SocialMediaPage() {
       {/* CALENDAR TAB */}
       {activeTab === 'calendar' && view === 'list' && (
         <ContentCalendarPanel />
+      )}
+
+      {/* CONTENT QUEUE TAB */}
+      {activeTab === 'queue' && view === 'list' && (
+        <ContentQueuePanel onRefresh={loadData} />
+      )}
+
+      {/* WEEKLY PLANNER TAB */}
+      {activeTab === 'planner' && view === 'list' && (
+        <WeeklyPlannerPanel />
+      )}
+
+      {/* RECYCLE TAB */}
+      {activeTab === 'recycle' && view === 'list' && (
+        <RecyclePanel onRefresh={loadData} />
+      )}
+
+      {/* ESCALATION TAB */}
+      {activeTab === 'escalation' && view === 'list' && (
+        <EscalationPanel />
       )}
 
       {/* CREATE / EDIT VIEW */}
@@ -1676,6 +1704,478 @@ function FramePreviewMini({ post, frameStyles }) {
           <div style={{ width: 24, height: 1, background: `${styles.text}40`, marginBottom: 2, borderRadius: 1 }} />
           <div style={{ width: 20, height: 1, background: `${styles.text}20`, borderRadius: 1 }} />
         </>
+      )}
+    </div>
+  );
+}
+
+
+// ==================== CONTENT QUEUE PANEL ====================
+function ContentQueuePanel({ onRefresh }) {
+  const [queue, setQueue] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [optimalTime, setOptimalTime] = useState(null);
+
+  const loadQueue = async () => {
+    setLoading(true);
+    try {
+      const res = await getContentQueue();
+      setQueue(res.data || []);
+    } catch (err) { console.error(err); }
+    setLoading(false);
+  };
+
+  const loadOptimalTime = async () => {
+    try {
+      const res = await getOptimalTime('instagram,facebook', '');
+      setOptimalTime(res.data);
+    } catch (err) { console.error(err); }
+  };
+
+  useEffect(() => { loadQueue(); loadOptimalTime(); }, []);
+
+  const handleRemove = async (postId) => {
+    try {
+      await removeFromQueue(postId);
+      loadQueue();
+      if (onRefresh) onRefresh();
+    } catch (err) { console.error(err); }
+  };
+
+  const handlePublishScheduled = async () => {
+    try {
+      await publishScheduledPosts();
+      loadQueue();
+      if (onRefresh) onRefresh();
+    } catch (err) { console.error(err); }
+  };
+
+  if (loading) return <div className="text-center py-12 text-[#7e7e8a]"><Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />Kuyruk yukleniyor...</div>;
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-bold text-white">Icerik Kuyrugu</h2>
+          <p className="text-xs text-[#7e7e8a]">Sira tabanlı gonderi kuyrugu - otomatik yayinlama icin sirala</p>
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={handlePublishScheduled} className="bg-green-600/80 hover:bg-green-600 text-white text-xs">
+            <Send className="w-3.5 h-3.5 mr-1" /> Planlanmislari Yayinla
+          </Button>
+          <Button onClick={loadQueue} variant="ghost" className="text-[#7e7e8a]">
+            <RefreshCw className="w-3.5 h-3.5" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Optimal Time Info */}
+      {optimalTime && (
+        <div className="glass rounded-xl p-4 border border-[#C4972A]/20">
+          <div className="flex items-center gap-2 mb-1">
+            <Clock className="w-4 h-4 text-[#C4972A]" />
+            <span className="text-sm font-medium text-[#C4972A]">Optimal Yayinlama Saati</span>
+          </div>
+          <p className="text-white text-lg font-bold">{optimalTime.optimal_time || optimalTime}</p>
+          <p className="text-xs text-[#7e7e8a]">Instagram & Facebook icin bugunun en iyi saati</p>
+        </div>
+      )}
+
+      {/* Queue Items */}
+      {queue.length === 0 ? (
+        <div className="glass rounded-xl p-8 text-center">
+          <List className="w-8 h-8 text-[#7e7e8a] mx-auto mb-2" />
+          <p className="text-[#7e7e8a]">Kuyrukta gonderi yok</p>
+          <p className="text-xs text-[#7e7e8a] mt-1">Gonderiler sekmesinden kuyruga ekleyin</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {queue.map((post, idx) => (
+            <div key={post.id || idx} className="glass rounded-xl p-4 flex items-center gap-4">
+              <div className="w-8 h-8 rounded-lg bg-[#C4972A]/10 flex items-center justify-center text-[#C4972A] font-bold text-sm">
+                {idx + 1}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white text-sm font-medium truncate">{post.title || 'Baslıksiz'}</p>
+                <p className="text-xs text-[#7e7e8a] truncate">{(post.content || '').slice(0, 80)}</p>
+                <div className="flex gap-1 mt-1">
+                  {(post.platforms || []).map(p => (
+                    <span key={p} className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-[#7e7e8a]">{p}</span>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs px-2 py-1 rounded" style={{
+                  background: post.status === 'scheduled' ? '#C4972A20' : '#7e7e8a20',
+                  color: post.status === 'scheduled' ? '#C4972A' : '#7e7e8a'
+                }}>
+                  {post.status === 'scheduled' ? 'Planlanmis' : 'Taslak'}
+                </span>
+                <button onClick={() => handleRemove(post.id)} className="text-red-400 hover:text-red-300 p-1">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+// ==================== WEEKLY PLANNER PANEL ====================
+function WeeklyPlannerPanel() {
+  const [plan, setPlan] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const loadPlan = async () => {
+    setLoading(true);
+    try {
+      const res = await getWeeklyPlan();
+      setPlan(res.data);
+    } catch (err) { console.error(err); }
+    setLoading(false);
+  };
+
+  useEffect(() => { loadPlan(); }, []);
+
+  if (loading) return <div className="text-center py-12 text-[#7e7e8a]"><Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />Plan yukleniyor...</div>;
+
+  const DAY_COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f97316', '#22c55e', '#06b6d4', '#C4972A'];
+  const TOPIC_ICONS = {
+    morning: '☀️', menu_highlight: '🍽️', local: '🏛️', behind_scenes: '🎬',
+    guest_story: '💬', weekend: '🏖️', seasonal: '🌸',
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-bold text-white">Haftalik Icerik Plani</h2>
+          <p className="text-xs text-[#7e7e8a]">
+            {plan?.week_start ? `Hafta: ${plan.week_start}` : 'Otomatik oluşturulan haftalık plan'}
+          </p>
+        </div>
+        <Button onClick={loadPlan} variant="ghost" className="text-[#7e7e8a]">
+          <RefreshCw className="w-3.5 h-3.5 mr-1" /> Yenile
+        </Button>
+      </div>
+
+      {plan?.plan ? (
+        <div className="grid grid-cols-7 gap-3">
+          {plan.plan.map((day, idx) => (
+            <div key={day.date} className="glass rounded-xl p-4 border-t-2" style={{ borderColor: DAY_COLORS[idx] }}>
+              <div className="text-center mb-3">
+                <span className="text-xs font-bold" style={{ color: DAY_COLORS[idx] }}>{day.day_name}</span>
+                <p className="text-[10px] text-[#7e7e8a]">{day.date}</p>
+              </div>
+              <div className="text-2xl text-center mb-2">{TOPIC_ICONS[day.topic] || '📝'}</div>
+              <p className="text-xs text-white text-center font-medium mb-2">{day.label?.split(' - ')[1] || day.topic}</p>
+              <div className="text-center">
+                <span className="text-[10px] px-2 py-1 rounded-full bg-[#C4972A]/10 text-[#C4972A]">
+                  <Clock className="w-3 h-3 inline mr-0.5" />{day.optimal_time}
+                </span>
+              </div>
+              <div className="flex justify-center gap-1 mt-2">
+                {(day.platforms || []).map(p => (
+                  <span key={p} className="text-[9px] px-1 py-0.5 rounded bg-white/5 text-[#7e7e8a]">{p}</span>
+                ))}
+              </div>
+              <div className="mt-2 text-center">
+                <span className="text-[10px] px-2 py-0.5 rounded" style={{
+                  background: day.status === 'planned' ? '#7e7e8a20' : '#8FAA8620',
+                  color: day.status === 'planned' ? '#7e7e8a' : '#8FAA86',
+                }}>
+                  {day.status === 'planned' ? 'Planlandı' : 'Hazir'}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="glass rounded-xl p-8 text-center">
+          <Calendar className="w-8 h-8 text-[#7e7e8a] mx-auto mb-2" />
+          <p className="text-[#7e7e8a]">Henuz plan olusturulmadı</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+// ==================== RECYCLE PANEL ====================
+function RecyclePanel({ onRefresh }) {
+  const [recyclable, setRecyclable] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [recycling, setRecycling] = useState(null);
+  const [scores, setScores] = useState({});
+
+  const loadRecyclable = async () => {
+    setLoading(true);
+    try {
+      const res = await getRecyclablePosts();
+      setRecyclable(res.data || []);
+    } catch (err) { console.error(err); }
+    setLoading(false);
+  };
+
+  useEffect(() => { loadRecyclable(); }, []);
+
+  const handleRecycle = async (postId) => {
+    setRecycling(postId);
+    try {
+      await recyclePost(postId);
+      loadRecyclable();
+      if (onRefresh) onRefresh();
+    } catch (err) { console.error(err); }
+    setRecycling(null);
+  };
+
+  const loadScore = async (postId) => {
+    if (scores[postId]) return;
+    try {
+      const res = await getPostScore(postId);
+      setScores(prev => ({ ...prev, [postId]: res.data }));
+    } catch (err) { console.error(err); }
+  };
+
+  const GRADE_COLORS = { A: '#22c55e', B: '#C4972A', C: '#f97316', D: '#ef4444' };
+
+  if (loading) return <div className="text-center py-12 text-[#7e7e8a]"><Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />Geri donusum yukleniyor...</div>;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-bold text-white">Icerik Geri Donusumu</h2>
+          <p className="text-xs text-[#7e7e8a]">30+ gun once yayinlanmis basarili gonderileri tekrar paylas</p>
+        </div>
+        <Button onClick={loadRecyclable} variant="ghost" className="text-[#7e7e8a]">
+          <RefreshCw className="w-3.5 h-3.5" />
+        </Button>
+      </div>
+
+      {recyclable.length === 0 ? (
+        <div className="glass rounded-xl p-8 text-center">
+          <RefreshCw className="w-8 h-8 text-[#7e7e8a] mx-auto mb-2" />
+          <p className="text-[#7e7e8a]">Geri donusturulebilecek gonderi bulunamadı</p>
+          <p className="text-xs text-[#7e7e8a] mt-1">30 gunden eski yayinlanmis gonderiler burada gorunur</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {recyclable.map(post => (
+            <div key={post.id} className="glass rounded-xl p-4">
+              <div className="flex items-start gap-4">
+                {post.image_url && (
+                  <img src={post.image_url} alt="" className="w-16 h-16 rounded-lg object-cover" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-white text-sm font-medium truncate">{post.title || 'Baslıksiz'}</p>
+                  <p className="text-xs text-[#7e7e8a] truncate">{(post.content || '').slice(0, 100)}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[10px] text-[#7e7e8a]">
+                      Yayinlanma: {post.published_at ? new Date(post.published_at).toLocaleDateString('tr-TR') : '-'}
+                    </span>
+                    <div className="flex gap-1">
+                      {(post.platforms || []).map(p => (
+                        <span key={p} className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-[#7e7e8a]">{p}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {/* Performance Score */}
+                  {scores[post.id] ? (
+                    <div className="text-center">
+                      <span className="text-lg font-bold" style={{ color: GRADE_COLORS[scores[post.id].grade] }}>
+                        {scores[post.id].grade}
+                      </span>
+                      <p className="text-[10px] text-[#7e7e8a]">{scores[post.id].score}/100</p>
+                    </div>
+                  ) : (
+                    <button onClick={() => loadScore(post.id)} className="text-xs text-[#C4972A] hover:underline">
+                      <Star className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  <Button
+                    onClick={() => handleRecycle(post.id)}
+                    disabled={recycling === post.id}
+                    className="bg-[#C4972A]/80 hover:bg-[#C4972A] text-white text-xs"
+                  >
+                    {recycling === post.id ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <><RotateCcw className="w-3.5 h-3.5 mr-1" /> Tekrar Paylas</>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+// ==================== ESCALATION PANEL ====================
+function EscalationPanel() {
+  const [escalations, setEscalations] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [filterStatus, setFilterStatus] = useState('all');
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const params = {};
+      if (filterStatus !== 'all') params.status = filterStatus;
+      const [escRes, statsRes] = await Promise.all([
+        getEscalations(params),
+        getEscalationStats(),
+      ]);
+      setEscalations(escRes.data?.escalations || []);
+      setStats(statsRes.data);
+    } catch (err) { console.error(err); }
+    setLoading(false);
+  };
+
+  useEffect(() => { loadData(); }, [filterStatus]);
+
+  const handleResolve = async (id) => {
+    try {
+      await resolveEscalation(id, 'Yonetici tarafından cozuldu');
+      loadData();
+    } catch (err) { console.error(err); }
+  };
+
+  const SEVERITY_COLORS = {
+    HIGH: { bg: '#ef444420', text: '#ef4444', label: 'Yuksek' },
+    MEDIUM: { bg: '#f9731620', text: '#f97316', label: 'Orta' },
+    LOW: { bg: '#C4972A20', text: '#C4972A', label: 'Dusuk' },
+  };
+
+  const REASON_LABELS = {
+    urgent_situation: 'Acil Durum',
+    very_negative_sentiment: 'Negatif Duygu',
+    ai_uncertainty: 'AI Belirsizlik',
+    repeated_question: 'Tekrar Soru',
+  };
+
+  if (loading) return <div className="text-center py-12 text-[#7e7e8a]"><Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />Yukleniyor...</div>;
+
+  return (
+    <div className="space-y-6">
+      {/* Stats */}
+      {stats && (
+        <div className="grid grid-cols-4 gap-4">
+          <div className="glass rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <AlertTriangle className="w-4 h-4 text-[#C4972A]" />
+              <span className="text-xs text-[#7e7e8a]">Toplam</span>
+            </div>
+            <span className="text-2xl font-bold text-white">{stats.total || 0}</span>
+          </div>
+          <div className="glass rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <AlertCircle className="w-4 h-4 text-red-400" />
+              <span className="text-xs text-[#7e7e8a]">Acik</span>
+            </div>
+            <span className="text-2xl font-bold text-red-400">{stats.open || 0}</span>
+          </div>
+          <div className="glass rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle2 className="w-4 h-4 text-green-400" />
+              <span className="text-xs text-[#7e7e8a]">Cozuldu</span>
+            </div>
+            <span className="text-2xl font-bold text-green-400">{stats.resolved || 0}</span>
+          </div>
+          <div className="glass rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp className="w-4 h-4 text-[#C4972A]" />
+              <span className="text-xs text-[#7e7e8a]">Cozum Oranı</span>
+            </div>
+            <span className="text-2xl font-bold text-[#C4972A]">
+              {stats.total ? Math.round((stats.resolved / stats.total) * 100) : 0}%
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Filter */}
+      <div className="flex items-center justify-between">
+        <div className="flex gap-2">
+          {[
+            { id: 'all', label: 'Tumu' },
+            { id: 'open', label: 'Acik' },
+            { id: 'resolved', label: 'Cozuldu' },
+          ].map(f => (
+            <button
+              key={f.id}
+              onClick={() => setFilterStatus(f.id)}
+              className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
+                filterStatus === f.id ? 'bg-[#C4972A]/15 text-[#C4972A]' : 'text-[#7e7e8a] hover:bg-white/5'
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+        <Button onClick={loadData} variant="ghost" className="text-[#7e7e8a]">
+          <RefreshCw className="w-3.5 h-3.5" />
+        </Button>
+      </div>
+
+      {/* List */}
+      {escalations.length === 0 ? (
+        <div className="glass rounded-xl p-8 text-center">
+          <CheckCircle2 className="w-8 h-8 text-green-400 mx-auto mb-2" />
+          <p className="text-[#7e7e8a]">Escalation kaydı bulunamadı</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {escalations.map(esc => {
+            const sev = SEVERITY_COLORS[esc.severity] || SEVERITY_COLORS.LOW;
+            return (
+              <div key={esc.id} className="glass rounded-xl p-4 border-l-4" style={{ borderColor: sev.text }}>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs px-2 py-0.5 rounded" style={{ background: sev.bg, color: sev.text }}>
+                        {sev.label}
+                      </span>
+                      <span className="text-xs text-[#7e7e8a]">
+                        {REASON_LABELS[esc.reason] || esc.reason}
+                      </span>
+                      <span className="text-[10px] text-[#7e7e8a]">
+                        {esc.platform}
+                      </span>
+                    </div>
+                    <p className="text-white text-sm mt-1">{esc.message}</p>
+                    {esc.ai_response && (
+                      <p className="text-xs text-[#7e7e8a] mt-1 italic">AI: {esc.ai_response}</p>
+                    )}
+                    <p className="text-[10px] text-[#7e7e8a] mt-1">
+                      {esc.created_at ? new Date(esc.created_at).toLocaleString('tr-TR') : ''}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 ml-4">
+                    {esc.status === 'open' ? (
+                      <Button onClick={() => handleResolve(esc.id)} className="bg-green-600/80 hover:bg-green-600 text-white text-xs">
+                        <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Coz
+                      </Button>
+                    ) : (
+                      <span className="text-xs px-2 py-1 rounded bg-green-500/10 text-green-400">Cozuldu</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       )}
     </div>
   );
