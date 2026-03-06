@@ -71,3 +71,40 @@ async def smart_request(data: AIPromptRequest):
         preferred_provider=data.preferred_provider,
     )
     return result
+
+
+# ==================== MARKETING REPORTS ====================
+
+@router.get("/ai/marketing-reports")
+async def get_marketing_reports(limit: int = 10, report_type: Optional[str] = None):
+    """Pazarlama raporlarini ve itibar uyarilarini listele"""
+    from database import db
+    query = {}
+    if report_type:
+        query["type"] = report_type
+    reports = await db.marketing_reports.find(
+        query, {"_id": 0}
+    ).sort("created_at", -1).limit(limit).to_list(limit)
+    return {"reports": reports, "total": len(reports)}
+
+
+@router.get("/ai/marketing-reports/latest")
+async def get_latest_report():
+    """Son gunluk pazarlama raporunu getir"""
+    from database import db
+    report = await db.marketing_reports.find_one(
+        {"type": "daily_marketing_report"}, {"_id": 0},
+        sort=[("created_at", -1)]
+    )
+    alerts = await db.marketing_reports.find(
+        {"type": "reputation_alert"}, {"_id": 0}
+    ).sort("created_at", -1).limit(5).to_list(5)
+    return {"report": report, "recent_alerts": alerts}
+
+
+@router.get("/ai/usage-stats")
+async def get_usage_stats(days: int = 30):
+    """AI kullanim istatistiklerini getir"""
+    from services.ai_provider_service import get_ai_usage_stats
+    stats = await get_ai_usage_stats(days)
+    return stats

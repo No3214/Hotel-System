@@ -7,7 +7,8 @@ import {
   getMarketingOverview, getChannelPerformance, getConversionFunnel, getROIReport,
   getGoogleKeywordPlans, getGoogleAdFormats, createGoogleCampaign, getGoogleCampaigns,
   updateGoogleCampaign, addGoogleAd, getGooglePerformance, deleteGoogleCampaign,
-  getAIProviders, getAIRouting, testAI
+  getAIProviders, getAIRouting, testAI,
+  getLatestMarketingReport, getAIUsageStats
 } from '../api';
 import { Input } from '../components/ui/input';
 import {
@@ -903,14 +904,22 @@ function AIProvidersTab() {
   const [testProvider, setTestProvider] = useState('');
   const [testResult, setTestResult] = useState(null);
   const [testing, setTesting] = useState(false);
+  const [latestReport, setLatestReport] = useState(null);
+  const [recentAlerts, setRecentAlerts] = useState([]);
+  const [usageStats, setUsageStats] = useState(null);
 
   useEffect(() => {
     Promise.all([
       getAIProviders().catch(() => ({ data: { providers: {} } })),
       getAIRouting().catch(() => ({ data: { routing: {} } })),
-    ]).then(([provRes, routRes]) => {
+      getLatestMarketingReport().catch(() => ({ data: { report: null, recent_alerts: [] } })),
+      getAIUsageStats(30).catch(() => ({ data: { total_requests: 0, by_provider: {}, by_task: {} } })),
+    ]).then(([provRes, routRes, reportRes, usageRes]) => {
       setProviders(provRes.data.providers || {});
       setRouting(routRes.data.routing || {});
+      setLatestReport(reportRes.data.report);
+      setRecentAlerts(reportRes.data.recent_alerts || []);
+      setUsageStats(usageRes.data);
       setLoading(false);
     });
   }, []);
@@ -1014,6 +1023,76 @@ function AIProvidersTab() {
           </div>
         )}
       </div>
+
+      {/* AI Kullanim Istatistikleri */}
+      {usageStats && (
+        <div style={card}>
+          <h3 style={{ color: '#C4972A', marginBottom: 12, fontSize: 15 }}>AI Kullanim Istatistikleri (Son 30 Gun)</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, marginBottom: 16 }}>
+            <StatBox label="Toplam Istek" value={usageStats.total_requests || 0} icon={Zap} color="#C4972A" />
+            {Object.entries(usageStats.by_provider || {}).map(([pid, info]) => (
+              <StatBox key={pid} label={pid} value={info.count} icon={MessageCircle} color={providerColors[pid] || '#888'} suffix={`ort ${info.avg_length} kr`} />
+            ))}
+          </div>
+          {Object.keys(usageStats.by_task || {}).length > 0 && (
+            <div>
+              <div style={{ fontSize: 12, color: '#888', marginBottom: 6 }}>Gorev Dagilimi</div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {Object.entries(usageStats.by_task || {}).sort((a, b) => b[1] - a[1]).map(([task, count]) => (
+                  <span key={task} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 8, background: '#2a2a3e', color: '#ccc' }}>
+                    {task.replace(/_/g, ' ')}: <strong>{count}</strong>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Son Pazarlama Raporu */}
+      {latestReport && (
+        <div style={card}>
+          <h3 style={{ color: '#C4972A', marginBottom: 12, fontSize: 15 }}>Son Pazarlama Raporu ({latestReport.date})</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, marginBottom: 12 }}>
+            {Object.entries(latestReport.metrics || {}).map(([key, val]) => (
+              <div key={key} style={{ background: '#0d0d1a', borderRadius: 8, padding: '10px 12px' }}>
+                <div style={{ fontSize: 10, color: '#888', marginBottom: 2 }}>{key.replace(/_/g, ' ')}</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: '#e5e5e8' }}>{val}</div>
+              </div>
+            ))}
+          </div>
+          {latestReport.alerts?.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {latestReport.alerts.map((alert, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', background: '#e74c3c15', borderRadius: 6, border: '1px solid #e74c3c30' }}>
+                  <AlertCircle size={14} color="#e74c3c" />
+                  <span style={{ fontSize: 12, color: '#e74c3c' }}>{alert}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Itibar Uyarilari */}
+      {recentAlerts.length > 0 && (
+        <div style={card}>
+          <h3 style={{ color: '#e74c3c', marginBottom: 12, fontSize: 15 }}>Itibar Uyarilari</h3>
+          {recentAlerts.map((alert, i) => (
+            <div key={i} style={{ background: '#0d0d1a', borderRadius: 8, padding: 12, marginBottom: 8, border: '1px solid #e74c3c20' }}>
+              <div style={{ fontSize: 13, color: '#e5e5e8', marginBottom: 6 }}>{alert.message}</div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {(alert.urgent_reviews || []).map((rev, j) => (
+                  <span key={j} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: rev.rating <= 2 ? '#e74c3c20' : '#f39c1220', color: rev.rating <= 2 ? '#e74c3c' : '#f39c12' }}>
+                    {rev.reviewer} - {rev.rating}/5
+                  </span>
+                ))}
+              </div>
+              <div style={{ fontSize: 10, color: '#555', marginTop: 4 }}>{alert.created_at?.slice(0, 16)}</div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

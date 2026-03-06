@@ -264,6 +264,9 @@ export const getAIProviders = () => api.get('/ai/providers');
 export const getAIRouting = () => api.get('/ai/routing');
 export const testAI = (data) => api.post('/ai/test', data);
 export const smartAIRequest = (data) => api.post('/ai/smart-request', data);
+export const getMarketingReports = (limit) => api.get('/ai/marketing-reports', { params: { limit } });
+export const getLatestMarketingReport = () => api.get('/ai/marketing-reports/latest');
+export const getAIUsageStats = (days) => api.get('/ai/usage-stats', { params: { days } });
 
 // Event Leads & Outreach
 export const getEventIdeas = (category) => api.get('/event-leads/ideas', { params: category ? { category } : {} });
