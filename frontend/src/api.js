@@ -268,6 +268,14 @@ export const getMarketingReports = (limit) => api.get('/ai/marketing-reports', {
 export const getLatestMarketingReport = () => api.get('/ai/marketing-reports/latest');
 export const getAIUsageStats = (days) => api.get('/ai/usage-stats', { params: { days } });
 
+// Online Presence Monitor
+export const getPresencePlatforms = () => api.get('/presence/platforms');
+export const runPresenceAudit = (data) => api.post('/presence/audit', data);
+export const auditSinglePlatform = (data) => api.post('/presence/audit/platform', data);
+export const getPresenceHistory = (limit) => api.get('/presence/audit/history', { params: { limit } });
+export const getPresenceAuditDetail = (id) => api.get(`/presence/audit/${id}`);
+export const getPresenceTruthSource = () => api.get('/presence/truth-source');
+
 // Event Leads & Outreach
 export const getEventIdeas = (category) => api.get('/event-leads/ideas', { params: category ? { category } : {} });
 export const getTargetGroups = () => api.get('/event-leads/target-groups');

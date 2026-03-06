@@ -41,6 +41,7 @@ const OrganizationPage = lazy(() => import('./pages/OrganizationPage'));
 const ProposalsPage = lazy(() => import('./pages/ProposalsPage'));
 const EventLeadsPage = lazy(() => import('./pages/EventLeadsPage'));
 const MarketingHubPage = lazy(() => import('./pages/MarketingHubPage'));
+const PresenceMonitorPage = lazy(() => import('./pages/PresenceMonitorPage'));
 
 const NAV_CONFIG = [
   {
@@ -131,6 +132,7 @@ const PAGES = {
   proposals: ProposalsPage,
   event_leads: EventLeadsPage,
   marketing_hub: MarketingHubPage,
+  presence_monitor: PresenceMonitorPage,
 };
 
 export default function App() {
