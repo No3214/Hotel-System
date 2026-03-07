@@ -1,5 +1,6 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, Request
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import FileResponse
 from dotenv import load_dotenv
@@ -59,6 +60,8 @@ from routers.pricing import router as pricing_router
 from routers.revenue import router as revenue_router
 from routers.seo import router as seo_router
 from routers.competitor import router as competitor_router
+from routers.manager_ai import router as manager_ai_router
+from routers.crm import router as crm_router
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -232,6 +235,8 @@ api.include_router(pricing_router)
 api.include_router(revenue_router)
 api.include_router(seo_router)
 api.include_router(competitor_router)
+api.include_router(manager_ai_router)
+api.include_router(crm_router)
 
 app.include_router(api)
 

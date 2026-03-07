@@ -171,6 +171,12 @@ export const updateMenuCategory = (id, data) => api.patch(`/menu-admin/categorie
 export const deleteMenuCategory = (id) => api.delete(`/menu-admin/categories/${id}`);
 export const getMenuTheme = () => api.get('/menu-admin/theme');
 export const updateMenuTheme = (data) => api.patch('/menu-admin/theme', data);
+export const getAIMenuEngineering = () => api.get('/menu-admin/ai-engineering');
+
+// Dashboard AI Features
+export const getArrivalBriefings = () => api.get('/dashboard/arrival-briefings');
+export const getEnergyAIReport = () => api.get('/automation/energy-ai');
+export const getAIComplaintRadar = () => api.get('/guests/ai-complaint-radar');
 
 // Social Media
 export const getSocialPosts = (params) => api.get('/social/posts', { params });

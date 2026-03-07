@@ -5,7 +5,7 @@ import {
   Calendar, Sparkles, BookOpen, UtensilsCrossed, Menu, ChevronLeft,
   CalendarCheck, UserCog, Mail, MapPin, Settings, Star, Heart, LogOut, QrCode, Share2,
   Globe, Bell, FileText, Target, TrendingUp, Search, BarChart3, Eye,
-  DollarSign, Tags
+  DollarSign, Tags, Building2, Crown
 } from 'lucide-react';
 
 import { setAuthToken, getMe } from './api';
@@ -50,12 +50,17 @@ const KitchenPage = lazy(() => import('./pages/KitchenPage'));
 const MenuPage = lazy(() => import('./pages/MenuPage'));
 const PricingPage = lazy(() => import('./pages/PricingPage'));
 const RevenueManagementPage = lazy(() => import('./pages/RevenueManagementPage'));
+const ManagerAIPage = lazy(() => import('./pages/ManagerAIPage'));
+const CRMPage = lazy(() => import('./pages/CRMPage'));
+const LoyaltyPage = lazy(() => import('./pages/LoyaltyPage'));
+const SustainabilityPage = lazy(() => import('./pages/SustainabilityPage'));
 
 const NAV_CONFIG = [
   {
     labelKey: 'general',
     items: [
       { id: 'dashboard', nameKey: 'dashboard', icon: LayoutDashboard },
+      { id: 'manager_ai', nameKey: 'manager_ai', icon: Sparkles },
       { id: 'reservations', nameKey: 'reservations', icon: CalendarCheck },
       { id: 'rooms', nameKey: 'rooms', icon: BedDouble },
       { id: 'guests', nameKey: 'guests', icon: Users },
@@ -71,6 +76,8 @@ const NAV_CONFIG = [
       { id: 'campaigns', nameKey: 'campaigns', icon: Mail },
       { id: 'reviews', nameKey: 'reviews', icon: Star },
       { id: 'lifecycle', nameKey: 'lifecycle', icon: Heart },
+      { id: 'loyalty', nameKey: 'loyalty', icon: Crown },
+      { id: 'crm', nameKey: 'crm', icon: Building2 },
       { id: 'social', nameKey: 'social', icon: Share2 },
       { id: 'marketing_hub', nameKey: 'marketing_hub', icon: TrendingUp },
       { id: 'presence_monitor', nameKey: 'presence_monitor', icon: Eye },
@@ -117,6 +124,7 @@ const NAV_CONFIG = [
   {
     labelKey: 'system',
     items: [
+      { id: 'sustainability', nameKey: 'sustainability', icon: Sparkles },
       { id: 'automation', nameKey: 'automation', icon: Settings },
       { id: 'audit', nameKey: 'audit', icon: Settings },
       { id: 'settings', nameKey: 'settings', icon: Settings },
@@ -160,6 +168,10 @@ const PAGES = {
   menu: MenuPage,
   pricing: PricingPage,
   revenue: RevenueManagementPage,
+  manager_ai: ManagerAIPage,
+  crm: CRMPage,
+  loyalty: LoyaltyPage,
+  sustainability: SustainabilityPage,
 };
 
 export default function App() {

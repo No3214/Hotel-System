@@ -4,7 +4,7 @@ import { getTranslations, getLanguages } from '../api';
 const LanguageContext = createContext();
 
 const FALLBACK_TR = {
-  dashboard: "Dashboard", rooms: "Odalar", guests: "Misafirler",
+  dashboard: "Dashboard", manager_ai: "Manager AI", rooms: "Odalar", guests: "Misafirler",
   chatbot: "AI Asistan", messages: "Mesajlar", tasks: "Gorevler",
   events: "Etkinlikler", housekeeping: "Kat Hizmetleri",
   knowledge: "Bilgi Bankasi", menu: "QR Menu",
@@ -21,6 +21,9 @@ const FALLBACK_TR = {
   general: "Genel", communication: "Iletisim", operations: "Operasyon",
   information: "Bilgi", system: "Sistem",
   hotel_management: "Otel Yonetim Paneli",
+  crm: "B2B Kurumsal CRM",
+  loyalty: "VIP & Sadakat",
+  sustainability: "Green Hotel AI",
   occupancy_rate: "Doluluk Orani", total_rooms: "Toplam Oda",
   occupied_rooms: "Dolu Oda", available_rooms: "Bos Oda",
   todays_checkins: "Bugunun Girisleri", todays_checkouts: "Bugunun Cikislari",
