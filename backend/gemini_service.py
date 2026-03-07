@@ -1,5 +1,6 @@
 """
 Gemini AI Service for Kozbeyli Konagi chatbot
+Uses the official Google Generative AI SDK (google-generativeai)
 """
 import logging
 import os
@@ -16,30 +17,29 @@ GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY', '')
 _chat_sessions = {}
 
 
-async def get_chat_response(message: str, session_id: str, system_prompt: str, context: str = "") -> str:
-    """Get AI response from Gemini"""
-    from emergentintegrations.llm.chat import LlmChat, UserMessage
-
+async def get_chat_response(message: str, session_id: str, system_prompt: str, context: str = "", **kwargs) -> str:
+    """Get AI response from Gemini using google-generativeai SDK"""
     try:
         if not GOOGLE_API_KEY:
             return "AI servisi su anda yapilandiriliyor. Lutfen daha sonra tekrar deneyin."
+
+        import google.generativeai as genai
+        genai.configure(api_key=GOOGLE_API_KEY)
 
         full_system = system_prompt
         if context:
             full_system += f"\n\nEk Bilgi:\n{context}"
 
         if session_id not in _chat_sessions:
-            chat = LlmChat(
-                api_key=GOOGLE_API_KEY,
-                session_id=session_id,
-                system_message=full_system
-            ).with_model("gemini", "gemini-2.5-flash")
-            _chat_sessions[session_id] = chat
+            model = genai.GenerativeModel(
+                model_name="gemini-2.5-flash",
+                system_instruction=full_system
+            )
+            _chat_sessions[session_id] = model.start_chat(history=[])
 
         chat = _chat_sessions[session_id]
-        user_msg = UserMessage(text=message)
-        response = await chat.send_message(user_msg)
-        return response
+        response = chat.send_message(message)
+        return response.text
 
     except Exception as e:
         logger.error(f"Gemini error: {e}")
@@ -66,21 +66,20 @@ def detect_intent(message: str) -> str:
 
 async def get_review_response(prompt: str, system_prompt: str) -> str:
     """Generate a professional response to a Google review"""
-    from emergentintegrations.llm.chat import LlmChat, UserMessage
-
     try:
         if not GOOGLE_API_KEY:
             return "AI servisi su anda yapilandiriliyor. Lutfen daha sonra tekrar deneyin."
 
-        chat = LlmChat(
-            api_key=GOOGLE_API_KEY,
-            session_id=f"review-{id(prompt)}",
-            system_message=system_prompt,
-        ).with_model("gemini", "gemini-2.5-flash")
+        import google.generativeai as genai
+        genai.configure(api_key=GOOGLE_API_KEY)
 
-        user_msg = UserMessage(text=prompt)
-        response = await chat.send_message(user_msg)
-        return response
+        model = genai.GenerativeModel(
+            model_name="gemini-2.5-flash",
+            system_instruction=system_prompt
+        )
+        chat = model.start_chat(history=[])
+        response = chat.send_message(prompt)
+        return response.text
 
     except Exception as e:
         logger.error(f"Gemini review response error: {e}")
