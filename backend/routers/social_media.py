@@ -3,7 +3,9 @@ from pydantic import BaseModel
 from typing import Optional, List
 from database import db
 from helpers import utcnow, new_id, clean_doc
+from gemini_service import get_chat_response
 import re
+import json
 import logging
 import os
 

@@ -1,10 +1,15 @@
 """
 Kozbeyli Konagi - Marketing & AI Copywriter Router
 Sosyal medya + WhatsApp + Pinterest odakli pazarlama ajansi API'leri
++ AI Lifecycle Re-engagement + B2B Corporate Outreach
 """
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List
+from database import db
+from helpers import utcnow, new_id, clean_doc
+import json
+from gemini_service import get_chat_response
 
 router = APIRouter(tags=["marketing"])
 
@@ -179,3 +184,122 @@ async def get_pinterest_boards():
             "decor": {"tr": "Kir Dugunu Dekorasyon", "en": "Rustic Wedding Decor"},
         }
     }
+
+
+# ==================== PHASE 12: AI LIFECYCLE RE-ENGAGEMENT ====================
+
+@router.get("/marketing/ai-re-engagement")
+async def ai_re_engagement_campaigns():
+    """
+    Eski misafirleri tespit edip onlara ozel, isimlerine hitap eden
+    (Retargeting) pazarlama mesajlari uretir.
+    """
+    try:
+        now_str = utcnow()[:10]
+
+        past_res = await db.reservations.find({
+            "status": "checked_out"
+        }, {"_id": 0, "guest_name": 1, "check_in": 1, "room_type": 1, "notes": 1, "guest_email": 1, "guest_phone": 1}).sort("check_in", 1).to_list(100)
+
+        if not past_res:
+            past_res = [
+                {"guest_name": "Canan Yilmaz", "check_in": "2023-08-15", "room_type": "Suit", "guest_phone": "5551234567", "notes": "Balayi cifti, sarap ikrami yapildi."},
+                {"guest_name": "Ahmet Demir", "check_in": "2024-01-20", "room_type": "Standart", "guest_email": "ahmet@gmail.com", "notes": "Sirket gezisi, kahvalti onemli."}
+            ]
+
+        profiles_to_analyze = []
+        for r in past_res[:10]:
+            profiles_to_analyze.append({
+                "name": r.get("guest_name", "Misafir"),
+                "last_visit_date": r.get("check_in", ""),
+                "stayed_in": r.get("room_type", ""),
+                "known_preferences": r.get("notes", "Bilinmiyor")
+            })
+
+        prompt = f"""
+        Sen Kozbeyli Konagi'nin AI Pazarlama (CRM & Retargeting) Uzmanisin.
+        Asagidaki eski misafir listesine bakarak onlari 'tekrar otele gelmeye tesvik edecek'
+        KIŞİSELLEŞTİRİLMİŞ, sicak, ikna edici ve cazip teklifler iceren kampanya SMS/Email mesajlari uret.
+
+        Eski Misafirler:
+        {json.dumps(profiles_to_analyze, ensure_ascii=False, indent=2)}
+
+        Gorevin:
+        Her bir misafir icin spesifik gecmisini yansitan bir giris ve onlara uygun bir 'Teklif (Kanca)' iceren mesaj draftlari olustur.
+
+        Sadece JSON dondur:
+        {{
+           "campaigns": [
+              {{
+                 "guest_name": "Canan Yilmaz",
+                 "target_segment": "Yildonumu Kutlamasi",
+                 "channel": "WhatsApp/SMS",
+                 "message": "Merhaba Canan Hanim, Kozbeyli Konagi'ndan sevgiler!"
+              }}
+           ]
+        }}
+        """
+
+        ai_resp = await get_chat_response("re_engagement", new_id(), prompt)
+
+        import re
+        json_match = re.search(r'```(?:json)?(.*?)```', ai_resp, re.DOTALL)
+        res_str = json_match.group(1).strip() if json_match else ai_resp
+        marketing_data = json.loads(res_str)
+
+        return {
+            "success": True,
+            "campaigns": marketing_data.get("campaigns", [])
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI Retargeting hatasi: {str(e)}")
+
+
+# ==================== PHASE 13: AI B2B CORPORATE OUTREACH & LEAD GEN ====================
+
+@router.get("/marketing/b2b-leads")
+async def ai_b2b_corporate_leads(industry: str = "Genel"):
+    """
+    Kullanicinin girdigi sektore gore kurumsal satis stratejisi ve lead uretir.
+    """
+    try:
+        prompt = f"""
+        Sen Kozbeyli Konagi adli luks butik otelin 'Kurumsal Satış (B2B) Yöneticisisin (AI)'.
+        Kullanici '{industry}' sektorune yonelik kurumsal satis stratejisi istiyor.
+
+        Lutfen '{industry}' sektorune uygun 4 adet yuksek potansiyelli hayali kurumsal MUSTERI (Lead) uret.
+        Her biri icin:
+        - Sirket adi ve Yetkilisi
+        - Sektor/Baglam
+        - Satış Açısı (Angle)
+        - Cold Email Taslagi
+        - LinkedIn DM Taslagi
+
+        SADECE JSON dondur:
+        {{
+            "leads": [
+                {{
+                    "company_name": "ABC Lojistik & Liman",
+                    "contact_person": "Ahmet Yilmaz - Satinalma Muduru",
+                    "angle": "Gemi murettebati icin huzurlu dinlenme paketi.",
+                    "status_label": "Yuksek Potansiyel (Sıcak)",
+                    "linkedin_dm": "Ahmet Bey merhaba...",
+                    "cold_email": "Konu: ABC Lojistik VIP Misafir Konaklamalari\\n\\nSayin Ahmet Bey,\\n\\n..."
+                }}
+            ]
+        }}
+        """
+
+        ai_resp = await get_chat_response("b2b_leads", new_id(), prompt)
+
+        import re
+        json_match = re.search(r'```(?:json)?(.*?)```', ai_resp, re.DOTALL)
+        res_str = json_match.group(1).strip() if json_match else ai_resp
+        b2b_data = json.loads(res_str)
+
+        return {
+            "success": True,
+            "leads": b2b_data.get("leads", [])
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI B2B Leads hatasi: {str(e)}")
