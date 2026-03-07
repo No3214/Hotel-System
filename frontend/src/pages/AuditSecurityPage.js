@@ -25,7 +25,9 @@ export default function AuditSecurityPage() {
   const [page, setPage] = useState(1);
   const [checking, setChecking] = useState(false);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadAll(); }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (tab === 'logs') loadLogs(); }, [page]);
 
   const loadAll = async () => {

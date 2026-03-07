@@ -133,7 +133,7 @@ def cache_stats():
     else:
         sizes = {d: len(c) for d, c in _fallback_caches.items()}
 
-    return {
+    result = {
         "backend": backend,
         "hits": _stats["hits"],
         "misses": _stats["misses"],
@@ -141,6 +141,9 @@ def cache_stats():
         "hit_rate_percent": round(hit_rate, 1),
         "cache_sizes": sizes,
     }
+    if backend == "in-memory":
+        result["warning"] = "Redis baglantisi kurulamadi, in-memory fallback aktif. Veriler yeniden baslatmada kaybolur."
+    return result
 
 
 def cached(key_prefix: str, duration: str = "medium"):

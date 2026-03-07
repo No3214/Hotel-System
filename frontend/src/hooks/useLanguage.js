@@ -4,7 +4,7 @@ import { getTranslations, getLanguages } from '../api';
 const LanguageContext = createContext();
 
 const FALLBACK_TR = {
-  dashboard: "Dashboard", manager_ai: "Manager AI", rooms: "Odalar", guests: "Misafirler",
+  dashboard: "Dashboard", rooms: "Odalar", guests: "Misafirler",
   chatbot: "AI Asistan", messages: "Mesajlar", tasks: "Gorevler",
   events: "Etkinlikler", housekeeping: "Kat Hizmetleri",
   knowledge: "Bilgi Bankasi", menu: "QR Menu",
@@ -21,8 +21,6 @@ const FALLBACK_TR = {
   general: "Genel", communication: "Iletisim", operations: "Operasyon",
   information: "Bilgi", system: "Sistem",
   hotel_management: "Otel Yonetim Paneli",
-  crm: "B2B Kurumsal CRM",
-  loyalty: "VIP & Sadakat",
   occupancy_rate: "Doluluk Orani", total_rooms: "Toplam Oda",
   occupied_rooms: "Dolu Oda", available_rooms: "Bos Oda",
   todays_checkins: "Bugunun Girisleri", todays_checkouts: "Bugunun Cikislari",
@@ -38,7 +36,10 @@ const FALLBACK_TR = {
   today: "Bugun", this_month: "Bu Ay",
   revenue: "Gelir Yonetimi", analytics: "Analitik", audit: "Guvenlik",
   hotelrunner: "HotelRunner", integrations: "Entegrasyonlar",
-  sustainability: "Green Hotel AI",
+  marketing_hub: "Pazarlama", event_leads: "Etkinlik Leadleri",
+  presence_monitor: "Online Varlik", seo: "SEO Yonetimi", competitor: "Rakip Analizi",
+  financials: "Gelir/Gider", kitchen: "Mutfak", pricing: "Fiyatlandirma",
+  revenue: "Gelir Yonetimi", finance: "Finans",
 };
 
 export function LanguageProvider({ children }) {
