@@ -43,6 +43,7 @@ export default function Dashboard({ onNavigate }) {
     fetchStats();
     intervalRef.current = setInterval(() => fetchStats(), 30000);
     return () => clearInterval(intervalRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (loading) {

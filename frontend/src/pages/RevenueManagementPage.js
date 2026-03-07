@@ -32,6 +32,7 @@ export default function RevenueManagementPage() {
 
   useEffect(() => {
     loadCalendar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedRoom, calMonth]);
 
   const loadData = async () => {

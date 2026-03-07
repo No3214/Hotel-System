@@ -2052,6 +2052,7 @@ function EscalationPanel() {
     setLoading(false);
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadData(); }, [filterStatus]);
 
   const handleResolve = async (id) => {
