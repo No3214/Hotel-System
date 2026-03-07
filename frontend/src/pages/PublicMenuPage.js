@@ -112,420 +112,353 @@ export default function PublicMenuPage() {
 
   const categories = Object.keys(data.menu);
   const activeCat = data.menu[activeCategory];
-  const bgStyle = bg.mode === 'gradient' ? { background: bg.value } : { background: colors.bg };
+  // background: '#0D150E' according to the html 'var(--bg)'
+  const bgStyle = { background: '#0D150E' };
+
+  // To format prices
+  const fmt = (n) => n >= 1000 ? n.toLocaleString('tr-TR') : n;
 
   return (
     <div
-      style={{ ...bgStyle, minHeight: '100vh', fontFamily: "'Inter', sans-serif", overflow: 'hidden' }}
+      style={{ ...bgStyle, minHeight: '100vh', fontFamily: "'Montserrat', sans-serif", overflow: 'hidden', paddingBottom: 60 }}
       data-testid="public-menu-page"
     >
       <style>{`
-        @font-face {
-          font-family: 'Alifira';
-          src: url('/fonts/Alifira.ttf') format('truetype');
-          font-weight: normal;
-          font-style: normal;
-          font-display: swap;
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,600&display=swap');
+        
+        :root {
+          --bg: #0D150E;
+          --gold: #C5A55A;
+          --text: #F4F1EB;
+          --muted: #8AA392;
+          --fd: "Playfair Display", serif;
+          --fm: "Montserrat", sans-serif;
         }
-        .menu-heading { font-family: 'Alifira', serif; }
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .item-divider { background: linear-gradient(90deg, transparent, ${colors.border || '#6A6B60'}30, transparent); height: 1px; }
-        @keyframes shimmer {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
+
+        .scroll-prog{position:fixed;top:0;left:0;height:3px;background:var(--gold);z-index:999;transition:width .1s;width:0%}
+
+        .gcol {
+          max-width: 600px;
+          margin: 0 auto;
+          background: var(--bg);
+          min-height: 100vh;
+          box-shadow: 0 0 30px rgba(0,0,0,.5);
+          position: relative;
+          color: var(--text);
         }
-        .search-input::placeholder { color: ${colors.muted || '#D8D1C5'}80; }
+
+        .hero {
+          text-align: center;
+          padding: 30px 20px 20px;
+          position: relative;
+        }
+        .hero::after {
+          content: "";
+          position: absolute;
+          bottom: 0;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 50px;
+          height: 1px;
+          background: rgba(197,165,90,.3);
+        }
+        .hero-logo {
+          width: 80px;
+          margin-bottom: 15px;
+        }
+        .hero h1 {
+          font-family: var(--fd);
+          color: var(--gold);
+          font-size: 2rem;
+          margin: 0 0 5px;
+          font-weight: 600;
+          letter-spacing: .05em;
+        }
+        .hero-sub {
+          font-size: .8rem;
+          color: rgba(244,241,235,.6);
+          letter-spacing: .15em;
+          text-transform: uppercase;
+        }
+
+        .nav-scroller {
+          display: flex;
+          overflow-x: auto;
+          gap: 12px;
+          padding: 20px;
+          background: var(--bg);
+          position: sticky;
+          top: 0;
+          z-index: 100;
+          border-bottom: 1px solid rgba(255,255,255,.05);
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .nav-scroller::-webkit-scrollbar { display: none; }
+        
+        .nav-btn {
+          background: transparent;
+          border: 1px solid rgba(255,255,255,.1);
+          color: rgba(255,255,255,.6);
+          padding: 8px 16px;
+          border-radius: 20px;
+          font-family: var(--fm);
+          font-size: .85rem;
+          font-weight: 500;
+          cursor: pointer;
+          white-space: nowrap;
+          transition: all .3s ease;
+        }
+        .nav-btn.active {
+          background: var(--gold);
+          color: var(--bg);
+          border-color: var(--gold);
+          font-weight: 600;
+        }
+
+        .content { padding: 20px 20px 40px; }
+        .cat-section { margin-bottom: 40px; }
+        .cat-title {
+          font-family: var(--fd);
+          font-size: 1.4rem;
+          color: var(--gold);
+          margin: 0 0 15px;
+          padding-bottom: 8px;
+          border-bottom: 1px solid rgba(197,165,90,.2);
+        }
+
+        .item {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          padding: 12px 0;
+          gap: 15px;
+        }
+        .item-div { height: 1px; background: rgba(255,255,255,.05); margin: 0 10%; }
+        .item-name {
+          font-size: .95rem;
+          font-weight: 600;
+          color: var(--text);
+          margin-bottom: 4px;
+        }
+        .item-desc {
+          font-size: .8rem;
+          color: rgba(255,255,255,.5);
+          line-height: 1.4;
+          margin-bottom: 4px;
+        }
+        .item-allergen {
+          font-size: .75rem;
+          color: var(--muted);
+          font-style: italic;
+        }
+        .item-price {
+          font-family: var(--fm);
+          font-size: .95rem;
+          font-weight: 600;
+          color: var(--gold);
+          white-space: nowrap;
+        }
+
+        .wine-tag {
+          display: inline-block;
+          font-size: .65rem;
+          padding: 2px 6px;
+          border: 1px solid rgba(197,165,90,.3);
+          border-radius: 3px;
+          color: var(--gold);
+          margin-top: 5px;
+        }
+
+        .badge {
+          display: inline-block;
+          font-size: .65rem;
+          font-weight: 600;
+          padding: 2px 6px;
+          border-radius: 3px;
+          margin-top: 5px;
+          text-transform: uppercase;
+        }
+        .badge-new { background: rgba(197,165,90,.15); color: var(--gold); border: 1px solid rgba(197,165,90,.3); }
+        .badge-vegan { background: rgba(138,163,146,.15); color: var(--muted); border: 1px solid rgba(138,163,146,.3); }
+
+        .search-box {
+          position: relative;
+          margin: 0 20px 20px;
+        }
+        .search-input {
+          width: 100%;
+          background: rgba(255,255,255,.03);
+          border: 1px solid rgba(255,255,255,.1);
+          border-radius: 20px;
+          padding: 10px 15px 10px 35px;
+          color: var(--text);
+          font-family: var(--fm);
+          font-size: .85rem;
+          outline: none;
+        }
+        .search-icon {
+          position: absolute;
+          left: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 16px;
+          height: 16px;
+          color: rgba(255,255,255,.4);
+        }
+
+        .footer {
+          margin-top: 40px;
+          padding: 30px 20px;
+          text-align: center;
+          background: rgba(255,255,255,.02);
+          border-top: 1px solid rgba(255,255,255,.05);
+        }
+        .f-wifi {
+          background: rgba(197,165,90,.05);
+          border: 1px solid rgba(197,165,90,.15);
+          border-radius: 8px;
+          padding: 15px;
+          margin-bottom: 24px;
+          display: inline-block;
+          text-align: left;
+        }
+        .f-wifi-lbl { font-size: .6rem; letter-spacing: .15em; text-transform: uppercase; color: rgba(255,255,255,.35); margin-bottom: 2px; }
+        .f-wifi-val { font-size: .9rem; font-weight: 600; color: #fff; letter-spacing: .04em; }
+        .f-links { display: flex; justify-content: center; gap: 14px; margin-bottom: 16px; flex-wrap: wrap; }
+        .f-links a { color: rgba(255,255,255,.4); text-decoration: none; font-size: .72rem; transition: color .3s; }
+        .f-links a:hover { color: var(--gold); }
+        .f-review { display: inline-block; padding: 8px 20px; border: 1px solid rgba(197,165,90,.3); border-radius: 3px; color: var(--gold); text-decoration: none; font-size: .72rem; margin-bottom: 16px; transition: all .3s; }
+        .f-review:hover { background: rgba(197,165,90,.08); border-color: var(--gold); }
+        .f-brand { font-family: var(--fd); font-size: .78rem; color: rgba(255,255,255,.2); }
+        .f-kdv { font-size: .6rem; color: rgba(255,255,255,.25); margin-top: 8px; }
       `}</style>
 
-      {/* ═══ HEADER ═══ */}
-      <motion.header
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8 }}
-        style={{
-          padding: '40px 24px 28px',
-          textAlign: 'center',
-          position: 'relative',
-          background: `linear-gradient(180deg, ${colors.bg || '#515249'}00, ${colors.bg || '#515249'}40)`,
-        }}
-        data-testid="menu-header"
-      >
-        {/* Search Toggle */}
-        <button
-          onClick={() => { setSearchOpen(!searchOpen); setSearchQuery(''); }}
-          style={{
-            position: 'absolute', top: 16, right: 16,
-            width: 36, height: 36, borderRadius: 12,
-            background: `${colors.border || '#6A6B60'}30`,
-            border: 'none', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: colors.muted,
-          }}
-          data-testid="search-toggle"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ width: 18, height: 18 }}>
-            {searchOpen
-              ? <path d="M18 6L6 18M6 6l12 12"/>
-              : <><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></>
-            }
-          </svg>
-        </button>
-
-        {/* Logo */}
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-        >
+      <div className="gcol">
+        {/* ═══ HEADER ═══ */}
+        <header className="hero">
           <img
+            className="hero-logo"
             src="/brand/KOZBEYLI_BEYAZ_LOGO.png"
-            alt={theme.brand_name}
-            style={{
-              maxWidth: 160,
-              height: 'auto',
-              margin: '0 auto',
-              display: 'block',
-              filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))',
-            }}
-            data-testid="menu-logo"
+            alt={theme.brand_name || 'Kozbeyli Konagi'}
             onError={(e) => {
               e.target.src = '/logo.jpeg';
-              e.target.style.maxWidth = '120px';
-              e.target.style.borderRadius = '12px';
+              e.target.style.borderRadius = '50%';
             }}
           />
-        </motion.div>
+          <h1 className="menu-heading">{theme.brand_name || 'Kozbeyli Konagi'}</h1>
+          <div className="hero-sub">{data.restaurant || 'Antakya Sofrasi'}</div>
+        </header>
 
-        {/* Brand Name */}
-        <motion.h1
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="menu-heading"
-          style={{
-            color: colors.text,
-            fontSize: 'clamp(24px, 5vw, 36px)',
-            margin: '16px 0 4px',
-            letterSpacing: `${components.headingTracking || 0.12}em`,
-            textTransform: components.headingUppercase ? 'uppercase' : 'none',
-            lineHeight: 1.15,
-          }}
-          data-testid="menu-brand-name"
-        >
-          {theme.brand_name || 'Kozbeyli Konagi'}
-        </motion.h1>
-
-        {/* Divider */}
-        <motion.div
-          initial={{ scaleX: 0 }}
-          animate={{ scaleX: 1 }}
-          transition={{ duration: 0.6, delay: 0.5 }}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 12 }}
-        >
-          <div style={{ width: 50, height: 1, background: `${colors.text}40` }} />
-          <span className="menu-heading" style={{ color: colors.muted, fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase' }}>
-            {data.restaurant}
-          </span>
-          <div style={{ width: 50, height: 1, background: `${colors.text}40` }} />
-        </motion.div>
-      </motion.header>
-
-      {/* ═══ SEARCH BAR ═══ */}
-      <AnimatePresence>
-        {searchOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            style={{ overflow: 'hidden', padding: '0 16px' }}
-          >
-            <div style={{ padding: '0 0 12px' }}>
-              <input
-                type="text"
-                className="search-input"
-                placeholder="Menu'de ara..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                autoFocus
-                style={{
-                  width: '100%', padding: '10px 16px',
-                  borderRadius: components.radius || 18,
-                  border: `1px solid ${colors.border}40`,
-                  background: `${colors.bg}80`,
-                  color: colors.text, fontSize: 14,
-                  outline: 'none', backdropFilter: 'blur(8px)',
-                }}
-                data-testid="menu-search-input"
-              />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ═══ CATEGORY NAVIGATION ═══ */}
-      {!searchResults && (
-        <motion.nav
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          ref={navRef}
-          className="hide-scrollbar"
-          style={{
-            padding: '8px 16px 12px',
-            overflowX: 'auto',
-            display: 'flex',
-            gap: 6,
-            WebkitOverflowScrolling: 'touch',
-            position: 'sticky',
-            top: 0, zIndex: 20,
-            background: colors.bg,
-            borderBottom: `1px solid ${colors.border}20`,
-          }}
-          data-testid="menu-categories"
-        >
-          {categories.map(catKey => {
-            const cat = data.menu[catKey];
-            const isActive = activeCategory === catKey;
-            return (
-              <button
-                key={catKey}
-                ref={isActive ? activeBtnRef : null}
-                onClick={() => setActiveCategory(catKey)}
-                style={{
-                  flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5,
-                  padding: '7px 14px', borderRadius: 24,
-                  border: isActive ? `1.5px solid ${colors.text}` : `1px solid transparent`,
-                  background: isActive ? `${colors.text}18` : 'transparent',
-                  color: isActive ? colors.text : `${colors.muted}99`,
-                  fontSize: 12, fontWeight: isActive ? 600 : 400, cursor: 'pointer',
-                  whiteSpace: 'nowrap', letterSpacing: '0.02em',
-                  transition: 'all 0.25s ease',
-                }}
-                data-testid={`cat-${catKey}`}
-              >
-                <Icon name={cat.icon} className="w-3.5 h-3.5" />
-                {cat.name_tr}
-              </button>
-            );
-          })}
-        </motion.nav>
-      )}
-
-      {/* ═══ MENU ITEMS ═══ */}
-      <main style={{ padding: '16px 16px 100px', maxWidth: 700, margin: '0 auto' }}>
-        {/* Search Results */}
-        {searchResults && (
-          <motion.div variants={stagger} initial="hidden" animate="visible">
-            <div style={{ marginBottom: 16, textAlign: 'center' }}>
-              <span style={{ color: colors.muted, fontSize: 12 }}>
-                {searchResults.length} sonuc bulundu
-              </span>
-            </div>
-            {searchResults.map((item, i) => (
-              <motion.div key={i} variants={fadeUp}>
-                <MenuItem item={item} colors={colors} components={components} subtitle={item.categoryName} />
-              </motion.div>
-            ))}
-            {searchResults.length === 0 && (
-              <div style={{ textAlign: 'center', padding: 40, color: colors.muted }}>
-                <p style={{ fontSize: 14 }}>Sonuc bulunamadi</p>
-              </div>
-            )}
-          </motion.div>
-        )}
-
-        {/* Category Items */}
-        {!searchResults && activeCat && (
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeCategory}
-              initial="hidden"
-              animate="visible"
-              exit={{ opacity: 0, y: -8 }}
-              variants={stagger}
-            >
-              {/* Category Title */}
-              <motion.div variants={fadeIn} style={{ marginBottom: 20, textAlign: 'center' }}>
-                <h2
-                  className="menu-heading"
-                  style={{
-                    color: colors.text, fontSize: 20,
-                    letterSpacing: '0.12em',
-                    textTransform: components.headingUppercase ? 'uppercase' : 'none',
-                    margin: 0,
-                  }}
-                  data-testid="active-category-title"
-                >
-                  {activeCat.name_tr}
-                </h2>
-                <div style={{ width: 32, height: 2, background: `${colors.text}60`, margin: '8px auto 0', borderRadius: 2 }} />
-              </motion.div>
-
-              {/* Items */}
-              {activeCat.items.map((item, i) => (
-                <motion.div key={item.id || i} variants={fadeUp}>
-                  <MenuItem item={item} colors={colors} components={components} />
-                  {i < activeCat.items.length - 1 && <div className="item-divider" style={{ margin: '0 20px' }} />}
-                </motion.div>
-              ))}
-            </motion.div>
-          </AnimatePresence>
-        )}
-      </main>
-
-      {/* ═══ FOOTER - WiFi, Sosyal Medya, Yorum ═══ */}
-      <footer style={{ padding: '24px 16px 40px', borderTop: `1px solid ${colors.border}20` }}>
-        
-        {/* WiFi Box */}
-        <div style={{
-          background: `${colors.card}20`,
-          borderRadius: 16,
-          padding: '16px 20px',
-          marginBottom: 20,
-          border: `1px solid ${colors.border}30`,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{
-              width: 40, height: 40, borderRadius: 12,
-              background: `${colors.text}15`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke={colors.text} strokeWidth="1.5" style={{ width: 20, height: 20 }}>
-                <path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0M12 20h.01"/>
-              </svg>
-            </div>
-            <div>
-              <p style={{ color: colors.muted, fontSize: 10, margin: 0, letterSpacing: '0.08em', textTransform: 'uppercase' }}>WiFi Sifresi</p>
-              <p style={{ color: colors.text, fontSize: 15, fontWeight: 600, margin: '2px 0 0' }}>KozbeyliKonagi2024</p>
-            </div>
+        {/* ═══ SEARCH BAR ═══ */}
+        <div style={{ padding: '20px 0 0' }}>
+          <div className="search-box">
+            <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+            </svg>
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Menü'de ara..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+            />
           </div>
         </div>
 
-        {/* Social Media & Review Links */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-          {/* Instagram */}
-          <a href="https://instagram.com/kozbeylikonagi" target="_blank" rel="noopener noreferrer" style={{
-            width: 44, height: 44, borderRadius: 12,
-            background: `${colors.text}12`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            textDecoration: 'none',
-          }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke={colors.text} strokeWidth="1.5" style={{ width: 20, height: 20 }}>
-              <rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="18" cy="6" r="1.5" fill={colors.text}/>
-            </svg>
-          </a>
-          {/* Facebook */}
-          <a href="https://facebook.com/kozbeylikonagi" target="_blank" rel="noopener noreferrer" style={{
-            width: 44, height: 44, borderRadius: 12,
-            background: `${colors.text}12`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            textDecoration: 'none',
-          }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke={colors.text} strokeWidth="1.5" style={{ width: 20, height: 20 }}>
-              <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3V2z"/>
-            </svg>
-          </a>
-          {/* Google Maps */}
-          <a href="https://maps.google.com/?q=Kozbeyli+Konagi+Foca" target="_blank" rel="noopener noreferrer" style={{
-            width: 44, height: 44, borderRadius: 12,
-            background: `${colors.text}12`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            textDecoration: 'none',
-          }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke={colors.text} strokeWidth="1.5" style={{ width: 20, height: 20 }}>
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
-            </svg>
-          </a>
-          {/* Phone */}
-          <a href="tel:+902328261112" style={{
-            width: 44, height: 44, borderRadius: 12,
-            background: `${colors.text}12`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            textDecoration: 'none',
-          }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke={colors.text} strokeWidth="1.5" style={{ width: 20, height: 20 }}>
-              <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
-            </svg>
-          </a>
+        {/* ═══ CATEGORY NAVIGATION ═══ */}
+        {!searchResults && (
+          <div className="nav-scroller" ref={navRef}>
+            {categories.map(catKey => {
+              const cat = data.menu[catKey];
+              const isActive = activeCategory === catKey;
+              return (
+                <button
+                  key={catKey}
+                  ref={isActive ? activeBtnRef : null}
+                  onClick={() => setActiveCategory(catKey)}
+                  className={`nav-btn ${isActive ? 'active' : ''}`}
+                >
+                  {cat.name_tr}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ═══ MENU ITEMS ═══ */}
+        <div className="content">
+          {searchResults ? (
+            <motion.div variants={stagger} initial="hidden" animate="visible">
+              <div style={{ marginBottom: 16, textAlign: 'center', fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>
+                {searchResults.length} sonuç bulundu
+              </div>
+              {searchResults.map((item, i) => (
+                <motion.div key={i} variants={fadeUp}>
+                  <div className="item">
+                    <div className="item-left">
+                      <div className="item-name">{item.name} <span style={{fontSize: '0.7em', color: 'rgba(255,255,255,0.3)', fontWeight: 'normal'}}>- {item.categoryName}</span></div>
+                      {item.desc && <div className="item-desc">{item.desc}</div>}
+                    </div>
+                    <div className="item-price">{fmt(parseInt(item.price_try || 0))} ₺</div>
+                  </div>
+                  {i < searchResults.length - 1 && <div className="item-div"></div>}
+                </motion.div>
+              ))}
+              {searchResults.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '40px 20px', color: 'rgba(255,255,255,0.5)' }}>
+                  Sonuç bulunamadı.
+                </div>
+              )}
+            </motion.div>
+          ) : (
+            activeCat && (
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeCategory}
+                  initial="hidden"
+                  animate="visible"
+                  exit={{ opacity: 0, y: -8 }}
+                  variants={stagger}
+                  className="cat-section"
+                >
+                  <h2 className="cat-title">{activeCat.name_tr}</h2>
+                  {activeCat.items.map((item, i) => (
+                    <motion.div key={item.id || i} variants={fadeUp}>
+                      <div className="item">
+                        <div className="item-left">
+                          <div className="item-name">{item.name}</div>
+                          {item.desc && <div className="item-desc">{item.desc}</div>}
+                        </div>
+                        <div className="item-price">{fmt(parseInt(item.price_try || 0))} ₺</div>
+                      </div>
+                      {i < activeCat.items.length - 1 && <div className="item-div"></div>}
+                    </motion.div>
+                  ))}
+                </motion.div>
+              </AnimatePresence>
+            )
+          )}
         </div>
 
-        {/* Review Button */}
-        <a
-          href="https://g.page/kozbeylikonagi/review"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 8,
-            padding: '12px 24px',
-            background: `${colors.text}15`,
-            borderRadius: 12,
-            textDecoration: 'none',
-            marginBottom: 20,
-          }}
-        >
-          <svg viewBox="0 0 24 24" fill={colors.text} style={{ width: 18, height: 18 }}>
-            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-          </svg>
-          <span style={{ color: colors.text, fontSize: 13, fontWeight: 500 }}>Bizi Degerlendirin</span>
-        </a>
-
-        {/* Brand */}
-        <p style={{ color: colors.muted, fontSize: 11, opacity: 0.5, margin: 0, letterSpacing: '0.05em', textAlign: 'center' }}>
-          {theme.brand_name || 'Kozbeyli Konagi'} - Antakya Sofrasi
-        </p>
-      </footer>
-    </div>
-  );
-}
-
-/* ─── Menu Item Component ─── */
-function MenuItem({ item, colors, components, subtitle }) {
-  return (
-    <div
-      style={{
-        padding: '14px 4px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        gap: 16,
-      }}
-    >
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <h3 style={{
-            color: colors.text, fontSize: 14.5, fontWeight: 500,
-            margin: 0, letterSpacing: '0.01em', lineHeight: 1.35,
-          }}>
-            {item.name}
-          </h3>
-        </div>
-        {subtitle && (
-          <span style={{ color: colors.muted, fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', opacity: 0.7 }}>
-            {subtitle}
-          </span>
-        )}
-        {item.desc && (
-          <p style={{
-            color: `${colors.muted}B0`, fontSize: 12,
-            margin: '3px 0 0', lineHeight: 1.5,
-          }}>
-            {item.desc}
-          </p>
-        )}
-      </div>
-      <div style={{ flexShrink: 0, textAlign: 'right', paddingTop: 1 }}>
-        <span style={{
-          color: colors.text, fontSize: 15, fontWeight: 600,
-          fontFamily: "'Inter', sans-serif",
-        }}>
-          {item.price_try}
-        </span>
-        <span style={{ color: `${colors.muted}80`, fontSize: 10, marginLeft: 2 }}>TL</span>
+        {/* ═══ FOOTER ═══ */}
+        <footer className="footer">
+          <div className="f-wifi">
+            <div className="f-wifi-lbl">WiFi Şifresi</div>
+            <div className="f-wifi-val">KozbeyliKonagi2024</div>
+          </div>
+          <div className="f-links">
+            <a href="https://instagram.com/kozbeylikonagi" target="_blank" rel="noopener noreferrer">Instagram</a>
+            <a href="https://facebook.com/kozbeylikonagi" target="_blank" rel="noopener noreferrer">Facebook</a>
+            <a href="https://maps.google.com/?q=Kozbeyli+Konagi+Foca" target="_blank" rel="noopener noreferrer">Harita</a>
+            <a href="tel:+902328261112">Ara</a>
+          </div>
+          <a href="https://g.page/kozbeylikonagi/review" target="_blank" rel="noopener noreferrer" className="f-review">
+            Bizi Değerlendirin
+          </a>
+          <div className="f-brand">{theme.brand_name || 'Kozbeyli Konagi'}</div>
+          <div className="f-kdv">Fiyatlarımıza KDV dahildir. %10 servis ücreti eklenebilir.</div>
+        </footer>
       </div>
     </div>
   );
