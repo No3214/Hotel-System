@@ -188,11 +188,10 @@ Guclu Yanlar: Yemek, Atmosfer, Personel
     }
 
 
-async def compare_ratings(competitor_ids: Optional[List[str]] = None) -> dict:
+async def compare_ratings(competitor_ids: Optional[List[str]] = None, competitors: Optional[List[dict]] = None) -> dict:
     """Platform bazinda puan karsilastirmasi"""
-    from database import db
-
-    competitors = await get_competitors()
+    if competitors is None:
+        competitors = await get_competitors()
 
     # Belirli rakipler istendiyse filtrele
     if competitor_ids:
@@ -292,7 +291,7 @@ Fiyat: Orta-ust segment ($$)
 async def get_market_position() -> dict:
     """Pazar konumu raporu"""
     competitors = await get_competitors()
-    comparison = await compare_ratings()
+    comparison = await compare_ratings(competitors=competitors)
 
     # Genel puan hesapla
     our_avg = 0

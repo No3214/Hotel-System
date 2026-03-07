@@ -39,9 +39,12 @@ async def add_competitor(request: AddCompetitorRequest):
 @router.post("/competitor/analyze")
 async def analyze_competitor(competitor_id: str):
     """AI ile rakip analizi"""
-    from services.competitor_service import get_competitors, analyze_competitor as do_analyze
-    competitors = await get_competitors()
-    comp = next((c for c in competitors if c.get("id") == competitor_id), None)
+    from database import db
+    from services.competitor_service import COMPETITORS, analyze_competitor as do_analyze
+    # Direct DB lookup instead of fetching all competitors
+    comp = await db.competitors.find_one({"id": competitor_id}, {"_id": 0})
+    if not comp:
+        comp = COMPETITORS.get(competitor_id)
     if not comp:
         from fastapi import HTTPException
         raise HTTPException(404, "Rakip bulunamadi")

@@ -245,3 +245,6 @@ async def startup():
 @app.on_event("shutdown")
 async def shutdown():
     client.close()
+    # Close httpx connection pool
+    from services.ai_provider_service import close_http_client
+    await close_http_client()

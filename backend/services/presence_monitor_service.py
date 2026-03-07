@@ -497,14 +497,17 @@ def _score_to_grade(score: int) -> str:
 async def run_full_audit(audit_data: Dict = None) -> Dict:
     """Tum platformlar icin toplu denetim calistir"""
     from helpers import utcnow, new_id
+    import asyncio
 
-    results = []
+    # Run all platform audits concurrently
+    audit_tasks = [
+        run_platform_audit(platform_id, (audit_data or {}).get(platform_id, {}))
+        for platform_id in PLATFORMS
+    ]
+    results = await asyncio.gather(*audit_tasks)
+
     all_issues = []
-
-    for platform_id in PLATFORMS:
-        platform_data = (audit_data or {}).get(platform_id, {})
-        audit = await run_platform_audit(platform_id, platform_data)
-        results.append(audit)
+    for audit in results:
         all_issues.extend(audit.get("issues", []))
 
     # Genel skor

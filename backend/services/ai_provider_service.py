@@ -24,6 +24,25 @@ from config import GOOGLE_API_KEY, DEEPSEEK_API_KEY, OPENROUTER_API_KEY, GROQ_AP
 
 logger = logging.getLogger(__name__)
 
+# Module-level httpx client for connection reuse (HTTP/2 pooling)
+_http_client: Optional[httpx.AsyncClient] = None
+
+
+def _get_http_client() -> httpx.AsyncClient:
+    """Get or create the module-level httpx client."""
+    global _http_client
+    if _http_client is None or _http_client.is_closed:
+        _http_client = httpx.AsyncClient(timeout=30.0)
+    return _http_client
+
+
+async def close_http_client():
+    """Close the httpx client on app shutdown."""
+    global _http_client
+    if _http_client and not _http_client.is_closed:
+        await _http_client.aclose()
+        _http_client = None
+
 # ==================== PROVIDER CONFIG ====================
 
 PROVIDERS = {
@@ -102,21 +121,23 @@ def get_provider_for_task(task_type: str) -> str:
 # ==================== PROVIDER IMPLEMENTATIONS ====================
 
 async def _call_gemini(message: str, system_prompt: str, session_id: str = "") -> str:
-    """Gemini API cagrisi (emergentintegrations uzerinden)"""
-    from emergentintegrations.llm.chat import LlmChat, UserMessage
+    """Gemini API cagrisi (google-genai SDK)"""
+    from google import genai
 
     if not GOOGLE_API_KEY:
         raise Exception("GOOGLE_API_KEY not configured")
 
-    chat = LlmChat(
-        api_key=GOOGLE_API_KEY,
-        session_id=session_id or f"ai-{id(message)}",
-        system_message=system_prompt
-    ).with_model("gemini", "gemini-2.5-flash")
-
-    user_msg = UserMessage(text=message)
-    response = await chat.send_message(user_msg)
-    return response
+    client = genai.Client(api_key=GOOGLE_API_KEY)
+    response = await client.aio.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=message,
+        config=genai.types.GenerateContentConfig(
+            system_instruction=system_prompt,
+            temperature=0.7,
+            max_output_tokens=2000,
+        ),
+    )
+    return response.text
 
 
 async def _call_openai_compatible(
@@ -143,11 +164,11 @@ async def _call_openai_compatible(
         "max_tokens": 2000,
     }
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        response = await client.post(api_url, headers=headers, json=payload)
-        response.raise_for_status()
-        data = response.json()
-        return data["choices"][0]["message"]["content"]
+    client = _get_http_client()
+    response = await client.post(api_url, headers=headers, json=payload)
+    response.raise_for_status()
+    data = response.json()
+    return data["choices"][0]["message"]["content"]
 
 
 async def call_provider(provider_id: str, message: str, system_prompt: str, session_id: str = "") -> str:
@@ -324,8 +345,10 @@ async def get_ai_usage_stats(days: int = 30) -> dict:
     """AI kullanim istatistiklerini getir"""
     from database import db
     from datetime import datetime, timezone, timedelta
+    import asyncio
 
     cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    week_cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
 
     # Provider bazli toplam
     pipeline = [
@@ -336,32 +359,40 @@ async def get_ai_usage_stats(days: int = 30) -> dict:
             "avg_length": {"$avg": "$response_length"},
         }},
     ]
-    by_provider = {}
-    async for doc in db.ai_usage_log.aggregate(pipeline):
-        by_provider[doc["_id"]] = {"count": doc["count"], "avg_length": round(doc.get("avg_length", 0))}
 
     # Gorev bazli toplam
     pipeline2 = [
         {"$match": {"created_at": {"$gte": cutoff}}},
         {"$group": {"_id": "$task_type", "count": {"$sum": 1}}},
     ]
-    by_task = {}
-    async for doc in db.ai_usage_log.aggregate(pipeline2):
-        by_task[doc["_id"]] = doc["count"]
 
     # Gunluk trend (son 7 gun)
-    week_cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
     pipeline3 = [
         {"$match": {"created_at": {"$gte": week_cutoff}}},
         {"$addFields": {"date": {"$substr": ["$created_at", 0, 10]}}},
         {"$group": {"_id": "$date", "count": {"$sum": 1}}},
         {"$sort": {"_id": 1}},
     ]
-    daily_trend = []
-    async for doc in db.ai_usage_log.aggregate(pipeline3):
-        daily_trend.append({"date": doc["_id"], "count": doc["count"]})
 
-    total = await db.ai_usage_log.count_documents({"created_at": {"$gte": cutoff}})
+    # Run all queries in parallel
+    provider_cursor, task_cursor, trend_cursor = await asyncio.gather(
+        db.ai_usage_log.aggregate(pipeline).to_list(100),
+        db.ai_usage_log.aggregate(pipeline2).to_list(100),
+        db.ai_usage_log.aggregate(pipeline3).to_list(100),
+    )
+
+    by_provider = {}
+    for doc in provider_cursor:
+        by_provider[doc["_id"]] = {"count": doc["count"], "avg_length": round(doc.get("avg_length", 0))}
+
+    by_task = {}
+    for doc in task_cursor:
+        by_task[doc["_id"]] = doc["count"]
+
+    daily_trend = [{"date": doc["_id"], "count": doc["count"]} for doc in trend_cursor]
+
+    # Derive total from by_provider counts instead of separate query
+    total = sum(p["count"] for p in by_provider.values())
 
     return {
         "total_requests": total,

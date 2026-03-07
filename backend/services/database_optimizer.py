@@ -83,6 +83,42 @@ async def apply_indexes():
         await db.instagram_messages.create_index("direction")
         await db.instagram_messages.create_index([("created_at", -1)])
 
+        # AI Usage Log - queried by created_at + provider + task_type
+        await db.ai_usage_log.create_index([("created_at", -1)])
+        await db.ai_usage_log.create_index("provider")
+        await db.ai_usage_log.create_index("task_type")
+
+        # Marketing Reports
+        await db.marketing_reports.create_index("type")
+        await db.marketing_reports.create_index([("created_at", -1)])
+
+        # Reputation Reviews
+        await db.reputation_reviews.create_index("platform")
+        await db.reputation_reviews.create_index("sentiment")
+        await db.reputation_reviews.create_index([("created_at", -1)])
+
+        # Meta Campaigns
+        await db.meta_campaigns.create_index("status")
+        await db.meta_campaigns.create_index([("created_at", -1)])
+
+        # Google Campaigns
+        await db.google_campaigns.create_index("status")
+        await db.google_campaigns.create_index("campaign_type")
+        await db.google_campaigns.create_index([("created_at", -1)])
+
+        # Competitors
+        await db.competitors.create_index("id", unique=True, sparse=True)
+
+        # Presence Audits
+        await db.presence_audits.create_index([("created_at", -1)])
+
+        # Social Posts
+        await db.social_posts.create_index([("created_at", -1)])
+        await db.social_posts.create_index("platform")
+
+        # Lifecycle Messages
+        await db.lifecycle_messages.create_index([("created_at", -1)])
+
         logger.info("Database indexes applied successfully")
     except Exception as e:
         logger.error(f"Error applying database indexes: {e}")

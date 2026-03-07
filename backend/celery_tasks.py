@@ -501,24 +501,29 @@ def auto_publish_content_task(self):
             })
             return {"status": "error", "message": "API key not configured"}
 
-        # Use emergentintegrations sync call
-        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        # Use google-genai SDK
+        from google import genai
         import asyncio
 
         full_prompt = f"{topic_prompt}\n\nSicak ve samimi bir ton kullan."
 
-        chat = LlmChat(
-            api_key=GOOGLE_API_KEY,
-            session_id=f"auto_publish_{new_id()[:8]}",
-            system_message=AI_SYSTEM_PROMPT_CELERY,
-        ).with_model("gemini", "gemini-2.5-flash")
-
-        user_msg = UserMessage(text=full_prompt)
+        client = genai.Client(api_key=GOOGLE_API_KEY)
 
         # Run async in sync context
         loop = asyncio.new_event_loop()
         try:
-            response = loop.run_until_complete(chat.send_message(user_msg))
+            response = loop.run_until_complete(
+                client.aio.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=full_prompt,
+                    config=genai.types.GenerateContentConfig(
+                        system_instruction=AI_SYSTEM_PROMPT_CELERY,
+                        temperature=0.7,
+                        max_output_tokens=2000,
+                    ),
+                )
+            )
+            response = response.text
         finally:
             loop.close()
 

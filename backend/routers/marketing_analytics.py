@@ -14,13 +14,16 @@ async def marketing_overview():
     """Pazarlama genel bakis - tum kanallarin ozeti"""
     from database import db
     import random
+    import asyncio
 
-    # Aggregate data from multiple sources
-    social_posts = await db.social_posts.count_documents({})
-    campaigns_count = await db.campaigns.count_documents({})
-    meta_campaigns = await db.meta_campaigns.count_documents({})
-    reviews_count = await db.reputation_reviews.count_documents({})
-    lifecycle_msgs = await db.lifecycle_messages.count_documents({})
+    # Parallel DB queries with asyncio.gather
+    social_posts, campaigns_count, meta_campaigns, reviews_count, lifecycle_msgs = await asyncio.gather(
+        db.social_posts.count_documents({}),
+        db.campaigns.count_documents({}),
+        db.meta_campaigns.count_documents({}),
+        db.reputation_reviews.count_documents({}),
+        db.lifecycle_messages.count_documents({}),
+    )
 
     return {
         "overview": {
