@@ -18,9 +18,9 @@ export default function LifecyclePage() {
 
   useEffect(() => {
     Promise.all([
-      getLifecycleTemplates().then(r => setTemplates(r.data.templates)),
-      getReservations({ limit: 100 }).then(r => setReservations(r.data.reservations)),
-      getLifecycleHistory().then(r => setHistory(r.data.messages)),
+      getLifecycleTemplates().then(r => setTemplates(r.data.templates)).catch(() => {}),
+      getReservations({ limit: 100 }).then(r => setReservations(r.data.reservations)).catch(() => {}),
+      getLifecycleHistory().then(r => setHistory(r.data.messages)).catch(() => {}),
     ]).finally(() => setLoading(false));
   }, []);
 

@@ -5,6 +5,7 @@ const API_BASE = process.env.REACT_APP_BACKEND_URL || '';
 const api = axios.create({
   baseURL: `${API_BASE}/api`,
   headers: { 'Content-Type': 'application/json' },
+  timeout: 30000,
 });
 
 // Dashboard
@@ -19,6 +20,9 @@ export const getLocalGuide = () => api.get('/hotel/guide');
 // Rooms
 export const getRooms = () => api.get('/rooms');
 export const getRoom = (id) => api.get(`/rooms/${id}`);
+export const updateRoomStatus = (id, data) => api.patch(`/rooms/${id}/status`, data);
+export const updateRoomPrice = (id, data) => api.patch(`/rooms/${id}/price`, data);
+export const getRoomAvailability = () => api.get('/rooms/availability/summary');
 
 // Menu
 export const getMenu = () => api.get('/menu');
@@ -28,7 +32,6 @@ export const getGuests = (params) => api.get('/guests', { params });
 export const createGuest = (data) => api.post('/guests', data);
 export const getGuest = (id) => api.get(`/guests/${id}`);
 export const updateGuest = (id, data) => api.patch(`/guests/${id}`, data);
-export const getAIComplaintRadar = () => api.get('/guests/ai-complaint-radar');
 
 // Reservations
 export const getReservations = (params) => api.get('/reservations', { params });
@@ -46,14 +49,11 @@ export const getEvents = (params) => api.get('/events', { params });
 export const createEvent = (data) => api.post('/events', data);
 export const updateEvent = (id, data) => api.patch(`/events/${id}`, data);
 export const deleteEvent = (id) => api.delete(`/events/${id}`);
-export const getAIEventPlan = (data) => api.post('/events/ai-planner', data);
 
 // Housekeeping
 export const getHousekeeping = (params) => api.get('/housekeeping', { params });
 export const createHousekeeping = (data) => api.post('/housekeeping', data);
 export const updateHousekeepingStatus = (id, status) => api.patch(`/housekeeping/${id}/status?status=${status}`);
-export const getHousekeepingAIRouting = () => api.get('/housekeeping/ai-routing');
-export const getAILostAndFoundMatch = () => api.post('/housekeeping/lost-found-match');
 
 // Staff
 export const getStaff = () => api.get('/staff');
@@ -69,13 +69,9 @@ export const sendChatMessage = (data) => api.post('/chatbot', data);
 export const getChatHistory = (sessionId) => api.get(`/chatbot/history/${sessionId}`);
 export const clearChat = (sessionId) => api.delete(`/chatbot/session/${sessionId}`);
 
-// Manager AI
-export const sendManagerCommand = (data) => api.post('/manager-ai/chat', data);
-
 // Messages (WhatsApp/Instagram)
-export const getMessages = (params) => api.get('/chatbot/messages', { params });
-export const sendWhatsAppWebhook = (data) => api.post('/chatbot/whatsapp/webhook', data);
-export const translateMessage = (data) => api.post('/messages/ai-translate', data);
+export const getMessages = (params) => api.get('/messages', { params });
+export const sendWhatsAppWebhook = (data) => api.post('/whatsapp/webhook', data);
 
 // Seed
 export const seedDatabase = () => api.post('/seed');
@@ -90,22 +86,15 @@ export const deleteCampaign = (id) => api.delete(`/campaigns/${id}`);
 export const getShifts = (params) => api.get('/shifts', { params });
 export const createShift = (data) => api.post('/shifts', data);
 export const deleteShift = (id) => api.delete(`/shifts/${id}`);
-export const getAIShifts = (startDate) => api.get('/staff/ai-shifts', { params: { start_date: startDate } });
 
 // Staff extended
 export const updateStaff = (id, data) => api.patch(`/staff/${id}`, data);
 export const deleteStaff = (id) => api.delete(`/staff/${id}`);
-export const getAIPerformance = (id) => api.get(`/staff/${id}/ai-performance`);
-export const getAIHRAnalytics = () => api.get('/staff/ai-hr-analytics');
 
 // Reservations extended
 export const getReservation = (id) => api.get(`/reservations/${id}`);
 export const updateReservation = (id, data) => api.patch(`/reservations/${id}`, data);
 export const deleteReservation = (id) => api.delete(`/reservations/${id}`);
-export const autoAllocateRooms = () => api.post('/reservations/ai-allocation');
-export const getAISmartRoomAllocation = () => api.post('/reservations/ai-allocation');
-export const getAIUpsellOpps = (id) => api.get(`/reservations/${id}/ai-upsell`);
-export const getAIGuestJourney = () => api.get('/reservations/ai-guest-journey');
 
 // Settings
 export const getSettings = () => api.get('/settings');
@@ -123,7 +112,6 @@ export const autoScheduleHousekeeping = () => api.post('/housekeeping/auto-sched
 
 // Hotel
 export const getHotelHistory = () => api.get('/hotel/history');
-export const getAILocalGuideItinerary = (data) => api.post('/hotel/guide/ai-itinerary', data);
 
 // Reviews
 export const getReviews = (params) => api.get('/reviews', { params });
@@ -132,14 +120,11 @@ export const generateReviewResponse = (reviewId, tone) => api.post(`/reviews/${r
 export const updateReview = (id, data) => api.patch(`/reviews/${id}`, data);
 export const deleteReview = (id) => api.delete(`/reviews/${id}`);
 export const getReviewStats = () => api.get('/reviews/stats');
-export const getReviewAIAnalytics = () => api.get('/reviews/ai-analytics');
-export const getDeepSentiment = (id) => api.get(`/reviews/${id}/ai-sentiment`);
 
 // Dynamic Pricing
 export const calculatePrice = (roomId, date) => api.get(`/pricing/calculate?room_id=${roomId}&date=${date}`);
 export const getPriceRange = (roomId, start, end) => api.get(`/pricing/range?room_id=${roomId}&start_date=${start}&end_date=${end}`);
 export const getSeasons = () => api.get('/pricing/seasons');
-export const getAIMarketIntel = () => api.get('/revenue/ai-market-intel');
 export const getHolidays = () => api.get('/pricing/holidays');
 
 // Table Reservations
@@ -156,8 +141,6 @@ export const getLifecycleTemplate = (key) => api.get(`/lifecycle/templates/${key
 export const previewLifecycleMessage = (templateKey, reservationId) => api.post(`/lifecycle/preview?template_key=${templateKey}${reservationId ? `&reservation_id=${reservationId}` : ''}`);
 export const sendLifecycleMessage = (templateKey, reservationId, channel) => api.post(`/lifecycle/send?template_key=${templateKey}&reservation_id=${reservationId}&channel=${channel}`);
 export const getLifecycleHistory = (params) => api.get('/lifecycle/history', { params });
-export const getAIRetargetingCampaigns = () => api.get('/marketing/ai-re-engagement');
-export const getAIB2BLeads = (industry) => api.get('/marketing/b2b-leads', { params: industry ? { industry } : {} });
 
 // Automation
 export const runPaymentReminder = () => api.post('/automation/payment-reminder');
@@ -172,7 +155,6 @@ export const runEveningRoomCheck = () => api.post('/automation/evening-room-chec
 export const getScheduledJobs = () => api.get('/automation/scheduled-jobs');
 export const getGroupNotifications = (params) => api.get('/automation/group-notifications', { params });
 export const seedSampleEvents = () => api.post('/events/seed-samples');
-export const getEnergyAIReport = () => api.get('/automation/energy-ai');
 
 // Public Menu (no auth)
 export const getPublicMenu = () => axios.get(`${API_BASE}/api/public/menu`);
@@ -191,6 +173,11 @@ export const getMenuTheme = () => api.get('/menu-admin/theme');
 export const updateMenuTheme = (data) => api.patch('/menu-admin/theme', data);
 export const getAIMenuEngineering = () => api.get('/menu-admin/ai-engineering');
 
+// Dashboard AI Features
+export const getArrivalBriefings = () => api.get('/dashboard/arrival-briefings');
+export const getEnergyAIReport = () => api.get('/automation/energy-ai');
+export const getAIComplaintRadar = () => api.get('/guests/ai-complaint-radar');
+
 // Social Media
 export const getSocialPosts = (params) => api.get('/social/posts', { params });
 export const createSocialPost = (data) => api.post('/social/posts', data);
@@ -201,7 +188,130 @@ export const publishSocialPost = (id) => api.post(`/social/posts/${id}/publish`)
 export const getSocialTemplates = () => api.get('/social/templates');
 export const getSocialStats = () => api.get('/social/stats');
 export const convertImageLink = (url) => api.post('/social/convert-image-link', { url });
-export const generateSocialPost = (data) => api.post('/social/generate-post', data);
+export const checkDuplicateMedia = (url) => api.post('/social/check-duplicate-media', { url });
+export const aiGenerateContent = (data) => api.post('/social/ai-generate', data);
+export const getAITopics = () => api.get('/social/ai-topics');
+export const getAutoPublishSettings = () => api.get('/social/auto-publish/settings');
+export const updateAutoPublishSettings = (data) => api.put('/social/auto-publish/settings', data);
+export const triggerAutoPublish = () => api.post('/social/auto-publish/trigger');
+export const getAutoPublishHistory = (limit) => api.get('/social/auto-publish/history', { params: { limit } });
+export const getContentCalendar = (days) => api.get('/social/content-calendar', { params: { days } });
+export const batchDriveImport = (data) => api.post('/social/batch-drive', data);
+export const publishToPlatforms = (postId, platforms) => api.post(`/social/posts/${postId}/publish-to-platforms`, { post_id: postId, platforms });
+export const getPlatformStatus = () => api.get('/social/platform-status');
+
+// Content Queue & Smart Scheduling
+export const getContentQueue = () => api.get('/social/queue');
+export const addToQueue = (postId) => api.post(`/social/queue/${postId}`);
+export const removeFromQueue = (postId) => api.delete(`/social/queue/${postId}`);
+export const getOptimalTime = (platforms, topic) => api.get('/social/optimal-time', { params: { platforms, topic } });
+export const getRecyclablePosts = () => api.get('/social/recyclable');
+export const recyclePost = (postId) => api.post(`/social/recycle/${postId}`);
+export const getWeeklyPlan = (startDate) => api.get('/social/weekly-plan', { params: startDate ? { start_date: startDate } : {} });
+export const getPostScore = (postId) => api.get(`/social/post-score/${postId}`);
+export const publishScheduledPosts = () => api.post('/social/publish-scheduled');
+
+// Escalation Management
+export const getEscalations = (params) => api.get('/escalations', { params });
+export const resolveEscalation = (id, notes) => api.patch(`/escalations/${id}/resolve`, null, { params: { notes } });
+export const getEscalationStats = () => api.get('/escalations/stats');
+
+// Marketing & AI Copywriter
+export const generateAICopy = (data) => api.post('/marketing/ai-copy', data);
+export const optimizeCTA = (data) => api.post('/marketing/optimize-cta', data);
+export const rewriteCopy = (data) => api.post('/marketing/rewrite', data);
+export const generateWASequence = (data) => api.post('/marketing/whatsapp-sequence', data);
+export const generatePinterestPins = (data) => api.post('/marketing/pinterest-pins', data);
+export const generateContentStrategy = (data) => api.post('/marketing/content-strategy', data);
+export const getPsychologyTips = (data) => api.post('/marketing/psychology-tips', data);
+export const getMarketingPlatforms = () => api.get('/marketing/platforms');
+export const getPsychologyTriggers = () => api.get('/marketing/psychology-triggers');
+export const getSequenceTypes = () => api.get('/marketing/sequence-types');
+export const getPinterestBoards = () => api.get('/marketing/pinterest-boards');
+
+// Meta Ads Manager
+export const generateAdCopy = (data) => api.post('/meta-ads/generate-copy', data);
+export const getAdAudiences = () => api.get('/meta-ads/audiences');
+export const getAdTemplates = () => api.get('/meta-ads/templates');
+export const getAdPerformance = (campaignId) => api.get('/meta-ads/performance', { params: campaignId ? { campaign_id: campaignId } : {} });
+export const createAdCampaign = (data) => api.post('/meta-ads/campaigns', data);
+export const getAdCampaigns = (params) => api.get('/meta-ads/campaigns', { params });
+export const updateAdCampaignStatus = (data) => api.put('/meta-ads/campaigns/status', data);
+export const getBudgetSuggestions = () => api.get('/meta-ads/budget-suggestions');
+
+// Reputation Management
+export const getReputationOverview = () => api.get('/reputation/overview');
+export const getReputationPlatforms = () => api.get('/reputation/platforms');
+export const analyzeReview = (data) => api.post('/reputation/analyze', data);
+export const addReputationReview = (data) => api.post('/reputation/reviews', data);
+export const getReputationReviews = (params) => api.get('/reputation/reviews', { params });
+export const getCompetitorComparison = () => api.get('/reputation/competitors');
+export const getSentimentKeywords = () => api.get('/reputation/sentiment-keywords');
+export const quickSentiment = (data) => api.post('/reputation/quick-sentiment', data);
+
+// Marketing Analytics
+export const getMarketingOverview = () => api.get('/marketing-analytics/overview');
+export const getChannelPerformance = (period) => api.get('/marketing-analytics/channel-performance', { params: { period } });
+export const getConversionFunnel = () => api.get('/marketing-analytics/conversion-funnel');
+export const getROIReport = () => api.get('/marketing-analytics/roi-report');
+
+// Google Ads Manager
+export const getGoogleKeywordPlans = () => api.get('/google-ads/keyword-plans');
+export const getGoogleAdFormats = () => api.get('/google-ads/ad-formats');
+export const createGoogleCampaign = (data) => api.post('/google-ads/campaigns', data);
+export const getGoogleCampaigns = (params) => api.get('/google-ads/campaigns', { params });
+export const updateGoogleCampaign = (data) => api.put('/google-ads/campaigns', data);
+export const addGoogleAd = (data) => api.post('/google-ads/campaigns/ads', data);
+export const updateGoogleKeywords = (data) => api.put('/google-ads/campaigns/keywords', data);
+export const getGooglePerformance = (campaignId) => api.get('/google-ads/performance', { params: campaignId ? { campaign_id: campaignId } : {} });
+export const deleteGoogleCampaign = (id) => api.delete(`/google-ads/campaigns/${id}`);
+
+// AI Providers
+export const getAIProviders = () => api.get('/ai/providers');
+export const getAIRouting = () => api.get('/ai/routing');
+export const testAI = (data) => api.post('/ai/test', data);
+export const smartAIRequest = (data) => api.post('/ai/smart-request', data);
+export const getMarketingReports = (limit) => api.get('/ai/marketing-reports', { params: { limit } });
+export const getLatestMarketingReport = () => api.get('/ai/marketing-reports/latest');
+export const getAIUsageStats = (days) => api.get('/ai/usage-stats', { params: { days } });
+
+// Online Presence Monitor
+export const getPresencePlatforms = () => api.get('/presence/platforms');
+export const runPresenceAudit = (data) => api.post('/presence/audit', data);
+export const auditSinglePlatform = (data) => api.post('/presence/audit/platform', data);
+export const getPresenceHistory = (limit) => api.get('/presence/audit/history', { params: { limit } });
+export const getPresenceAuditDetail = (id) => api.get(`/presence/audit/${id}`);
+export const getPresenceTruthSource = () => api.get('/presence/truth-source');
+
+// SEO Management
+export const getSEOSchema = (type) => api.get(`/seo/schema/${type}`);
+export const getAllSEOSchemas = () => api.get('/seo/schemas');
+export const generateMetaTags = (data) => api.post('/seo/meta-tags', data);
+export const getMetaTemplates = () => api.get('/seo/meta-templates');
+export const suggestKeywords = (data) => api.post('/seo/keywords', data);
+export const analyzeSEO = (data) => api.post('/seo/analyze', data);
+export const getSitemap = () => api.get('/seo/sitemap');
+export const getLocalSEOReport = () => api.get('/seo/local-report');
+
+// Competitor Analysis
+export const getCompetitors = () => api.get('/competitor/list');
+export const addCompetitor = (data) => api.post('/competitor/add', data);
+export const analyzeCompetitor = (id) => api.post(`/competitor/analyze?competitor_id=${id}`);
+export const compareCompetitorRatings = () => api.get('/competitor/compare');
+export const getCompetitorSWOT = () => api.get('/competitor/swot');
+export const getMarketPosition = () => api.get('/competitor/market-position');
+
+// Event Leads & Outreach
+export const getEventIdeas = (category) => api.get('/event-leads/ideas', { params: category ? { category } : {} });
+export const getTargetGroups = () => api.get('/event-leads/target-groups');
+export const getEventLeads = (params) => api.get('/event-leads/leads', { params });
+export const createEventLead = (data) => api.post('/event-leads/leads', data);
+export const updateEventLead = (id, data) => api.patch(`/event-leads/leads/${id}`, data);
+export const deleteEventLead = (id) => api.delete(`/event-leads/leads/${id}`);
+export const generateOutreachMessage = (data) => api.post('/event-leads/generate-message', data);
+export const logLeadContact = (id) => api.post(`/event-leads/leads/${id}/log-contact`);
+export const getEventLeadStats = () => api.get('/event-leads/stats');
+export const getEventSuggestions = () => api.get('/event-leads/suggestions');
 
 // Kitchen Dashboard
 export const getKitchenOrders = (params) => api.get('/kitchen/orders', { params });
@@ -211,8 +321,6 @@ export const updateKitchenOrderStatus = (id, data) => api.put(`/kitchen/orders/$
 export const cancelKitchenOrder = (id) => api.delete(`/kitchen/orders/${id}`);
 export const getKitchenSummary = () => api.get('/kitchen/summary');
 export const getKitchenNotifications = () => api.get('/kitchen/notifications');
-export const getKitchenAIForecast = () => api.get('/kitchen/ai-forecast');
-export const getAiProcurementDrafts = () => api.get('/kitchen/ai-procurement');
 
 // Auth
 export const login = (data) => api.post('/auth/login', data);
@@ -230,7 +338,6 @@ export const getGuestLoyalty = (id) => api.get(`/loyalty/guest/${id}`);
 export const updateGuestLoyalty = (id) => api.post(`/loyalty/update-guest/${id}`);
 export const matchReturningGuest = (params) => api.post('/loyalty/match-guest', null, { params });
 export const getLoyaltyStats = () => api.get('/loyalty/stats');
-export const getAILoyaltyCampaigns = () => api.get('/loyalty/ai-campaigns');
 
 // Set auth token
 export const setAuthToken = (token) => {
@@ -250,6 +357,30 @@ if (savedToken) {
   api.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
 }
 
+// Global error interceptor
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error.response?.status;
+
+    if (status === 401) {
+      // Token expired or invalid - redirect to login
+      localStorage.removeItem('kozbeyli_token');
+      localStorage.removeItem('kozbeyli_user');
+      delete api.defaults.headers.common['Authorization'];
+      if (window.location.pathname.startsWith('/admin')) {
+        window.location.reload();
+      }
+    }
+
+    if (status >= 500) {
+      console.error('Server error:', error.response?.data?.detail || error.message);
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 // Revenue Management
 export const getRevenueRoomTypes = () => api.get('/revenue/room-types');
 export const calculateDynamicPrice = (roomType, targetDate, basePrice) => api.get('/revenue/pricing/calculate', { params: { room_type: roomType, target_date: targetDate, base_price: basePrice } });
@@ -258,8 +389,6 @@ export const updateAllPrices = (daysAhead) => api.post(`/revenue/pricing/update-
 export const getRevenueForecast = (dateFrom, dateTo) => api.get('/revenue/forecast', { params: { date_from: dateFrom, date_to: dateTo } });
 export const getRevenueKPI = (dateFrom, dateTo) => api.get('/revenue/kpi', { params: { date_from: dateFrom, date_to: dateTo } });
 export const getPricingRules = () => api.get('/revenue/pricing/rules');
-export const getRevenueAIInsights = () => api.get('/revenue/ai-insights');
-export const simulateRevenueStrategy = (priceChangePercent) => api.post(`/revenue/ai-simulator?price_change_percent=${priceChangePercent}`);
 
 // Analytics
 export const getAnalyticsKPI = (dateFrom, dateTo) => api.get('/analytics/dashboard/kpi', { params: { date_from: dateFrom, date_to: dateTo } });
@@ -297,6 +426,12 @@ export const sendTestNotification = () => api.post('/notifications/send-test');
 export const getVapidKey = () => api.get('/notifications/vapid-key');
 export const sendPushNotification = (title, body, tag) => api.post('/notifications/send-push', { title, body, tag });
 export const getSubscriberCount = () => api.get('/notifications/subscribers');
+export const getNotificationHistory = (params) => api.get('/notifications/history', { params });
+export const createInAppNotification = (data) => api.post('/notifications/in-app', data);
+export const markNotificationRead = (id) => api.patch(`/notifications/${id}/read`);
+export const markAllNotificationsRead = () => api.post('/notifications/mark-all-read');
+export const deleteNotification = (id) => api.delete(`/notifications/${id}`);
+export const clearNotificationHistory = () => api.delete('/notifications/history/clear');
 
 // Financials
 export const getFinancialCategories = () => api.get('/financials/categories');
@@ -307,20 +442,5 @@ export const getExpenseList = (params) => api.get('/financials/expense', { param
 export const deleteFinancialRecord = (id) => api.delete(`/financials/${id}`);
 export const getDailySummary = (dateStr) => api.get(`/financials/daily/${dateStr}`);
 export const getMonthlySummary = (year, month) => api.get('/financials/monthly', { params: { year, month } });
-export const getFinancialAudit = (year, month) => api.get('/financials/ai-audit', { params: { year, month } });
-export const getFinancialForecast = () => api.get('/financials/ai-forecast');
-export const getVendorROIAnalysis = (monthsBack) => api.get('/financials/ai-vendor-roi', { params: { months_back: monthsBack || 6 } });
-
-// CRM / B2B Pipeline
-export const getDeals = () => api.get('/crm/deals');
-export const createDeal = (data) => api.post('/crm/deals', data);
-export const updateDealStatus = (id, status) => api.put(`/crm/deals/${id}/status`, { status });
-export const deleteDeal = (id) => api.delete(`/crm/deals/${id}`);
-export const simulateAILeadDiscovery = () => api.post('/crm/ai-lead-discovery');
-export const getAIPitch = (dealId) => api.get(`/crm/deals/${dealId}/ai-pitch`);
-
-// Loyalty & VIP
-export const getLoyaltySegments = () => api.get('/loyalty/segments');
-export const generateLoyaltyAICampaign = (data) => api.post('/loyalty/ai-campaign', data);
 
 export default api;

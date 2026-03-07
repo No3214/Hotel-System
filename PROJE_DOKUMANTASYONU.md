@@ -46,7 +46,7 @@
 - **Veritabani:** MongoDB (Motor 3.3.1 - async driver)
 - **Onbellek:** Redis 7.1.1
 - **Zamanlayici:** APScheduler 3.11.2
-- **AI:** Google Gemini (emergentintegrations kutuphanesi uzerinden)
+- **AI:** Google Gemini
 - **Auth:** JWT (PyJWT) + bcrypt sifreleme
 - **Push Bildirimi:** py-vapid + pywebpush (VAPID standardi)
 - **QR Kod:** qrcode[pil] 8.2
@@ -741,7 +741,6 @@ CORS_ORIGINS="*"
 
 # AI Anahtarlari
 GOOGLE_API_KEY=AIzaSy...                    # Google Gemini AI
-EMERGENT_LLM_KEY=sk-emergent-...            # Emergent Universal Key
 
 # Push Bildirim (VAPID)
 VAPID_PRIVATE_KEY=-----BEGIN PRIVATE KEY-----
@@ -1034,7 +1033,7 @@ Yeni kullanici eklemek icin: Admin Panel → Ayarlar → Kullanici Yonetimi
 
 2. **Redis**: Redis sunucusu calismiyorsa, sistem otomatik olarak in-memory onbellege geri doner.
 
-3. **AI Chatbot**: Google Gemini AI kullanir. GOOGLE_API_KEY veya EMERGENT_LLM_KEY olmadan AI yanit uretmez.
+3. **AI Chatbot**: Google Gemini AI kullanir. GOOGLE_API_KEY olmadan AI yanit uretmez.
 
 4. **Push Bildirimleri**: VAPID anahtarlari .env dosyasinda tanimli. Tarayici izni gerektirir.
 

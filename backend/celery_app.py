@@ -65,6 +65,26 @@ celery_app.conf.update(
             'schedule': crontab(hour=14, minute=0),
             'options': {'queue': 'scheduled'},
         },
+        'auto-publish-content': {
+            'task': 'celery_tasks.auto_publish_content_task',
+            'schedule': crontab(hour=10, minute=0),
+            'options': {'queue': 'scheduled'},
+        },
+        'publish-scheduled-posts': {
+            'task': 'celery_tasks.publish_scheduled_posts_task',
+            'schedule': crontab(minute=0),  # Her saat basi kontrol et
+            'options': {'queue': 'scheduled'},
+        },
+        'marketing-daily-report': {
+            'task': 'celery_tasks.marketing_daily_report_task',
+            'schedule': crontab(hour=9, minute=0),  # Her gun 09:00
+            'options': {'queue': 'scheduled'},
+        },
+        'reputation-monitor': {
+            'task': 'celery_tasks.reputation_monitor_task',
+            'schedule': crontab(hour='*/6', minute=30),  # Her 6 saatte
+            'options': {'queue': 'scheduled'},
+        },
     },
 )
 
@@ -76,31 +96,54 @@ _beat_process = None
 _worker_process = None
 
 
+def _find_celery_bin():
+    """Find celery binary path dynamically."""
+    import shutil
+    import sys
+    # Check virtualenv bin first
+    venv_celery = Path(sys.executable).parent / 'celery'
+    if venv_celery.exists():
+        return str(venv_celery)
+    # Fallback to system PATH
+    found = shutil.which('celery')
+    if found:
+        return found
+    return '/root/.venv/bin/celery'
+
+
 def start_celery_beat():
     """Start Celery beat scheduler and worker as background subprocesses."""
     global _beat_process, _worker_process
     cwd = str(Path(__file__).parent)
+    celery_bin = _find_celery_bin()
+    log_dir = Path('/var/log/supervisor')
+    log_dir.mkdir(parents=True, exist_ok=True)
+
     try:
+        worker_stdout = open(log_dir / 'celery_worker.log', 'a')
+        worker_stderr = open(log_dir / 'celery_worker.err.log', 'a')
         _worker_process = subprocess.Popen(
-            ['/root/.venv/bin/celery', '-A', 'celery_app', 'worker', '--loglevel=info', '--concurrency=2', '-Q', 'celery,scheduled'],
+            [celery_bin, '-A', 'celery_app', 'worker', '--loglevel=info', '--concurrency=2', '-Q', 'celery,scheduled'],
             cwd=cwd,
-            stdout=open('/var/log/supervisor/celery_worker.log', 'a'),
-            stderr=open('/var/log/supervisor/celery_worker.err.log', 'a'),
+            stdout=worker_stdout,
+            stderr=worker_stderr,
         )
         logger.info(f"Celery worker started (PID: {_worker_process.pid})")
     except Exception as e:
-        logger.warning(f"Celery worker could not start: {e}")
+        logger.error(f"Celery worker could not start: {e}")
 
     try:
+        beat_stdout = open(log_dir / 'celery_beat.log', 'a')
+        beat_stderr = open(log_dir / 'celery_beat.err.log', 'a')
         _beat_process = subprocess.Popen(
-            ['/root/.venv/bin/celery', '-A', 'celery_app', 'beat', '--loglevel=info'],
+            [celery_bin, '-A', 'celery_app', 'beat', '--loglevel=info'],
             cwd=cwd,
-            stdout=open('/var/log/supervisor/celery_beat.log', 'a'),
-            stderr=open('/var/log/supervisor/celery_beat.err.log', 'a'),
+            stdout=beat_stdout,
+            stderr=beat_stderr,
         )
         logger.info(f"Celery beat started (PID: {_beat_process.pid})")
     except Exception as e:
-        logger.warning(f"Celery beat could not start: {e}")
+        logger.error(f"Celery beat could not start: {e}")
 
 
 def stop_celery_beat():
