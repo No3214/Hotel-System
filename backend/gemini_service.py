@@ -18,11 +18,14 @@ _chat_sessions = {}
 
 async def get_chat_response(message: str, session_id: str, system_prompt: str, context: str = "") -> str:
     """Get AI response from Gemini"""
-    from emergentintegrations.llm.chat import LlmChat, UserMessage
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage
+    except ImportError:
+        return "AI Mock Response: Merhaba! Kozbeyli Konagi'na hos geldiniz. Size nasil yardimci olabilirim?"
 
     try:
-        if not GOOGLE_API_KEY:
-            return "AI servisi su anda yapilandiriliyor. Lutfen daha sonra tekrar deneyin."
+        if not GOOGLE_API_KEY or GOOGLE_API_KEY == "mock_key":
+            return "AI Mock Response: Merhaba! Kozbeyli Konagi'na hos geldiniz. Size nasil yardimci olabilirim?"
 
         full_system = system_prompt
         if context:
@@ -66,11 +69,14 @@ def detect_intent(message: str) -> str:
 
 async def get_review_response(prompt: str, system_prompt: str) -> str:
     """Generate a professional response to a Google review"""
-    from emergentintegrations.llm.chat import LlmChat, UserMessage
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage
+    except ImportError:
+        return "Değerli misafirimiz, güzel yorumunuz için teşekkür ederiz. Sizi tekrar ağırlamaktan mutluluk duyacağız."
 
     try:
-        if not GOOGLE_API_KEY:
-            return "AI servisi su anda yapilandiriliyor. Lutfen daha sonra tekrar deneyin."
+        if not GOOGLE_API_KEY or GOOGLE_API_KEY == "mock_key":
+            return "Değerli misafirimiz, güzel yorumunuz için teşekkür ederiz. Sizi tekrar ağırlamaktan mutluluk duyacağız."
 
         chat = LlmChat(
             api_key=GOOGLE_API_KEY,

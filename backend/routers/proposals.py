@@ -121,7 +121,7 @@ async def create_proposal(data: ProposalCreate):
         "id": new_id(),
         "proposal_number": proposal_number,
         "status": "draft",
-        **data.dict(),
+        **data.model_dump(),
         "accommodation_total": acc_total,
         "meal_total": meal_total,
         "extras_total": ext_total,
@@ -134,9 +134,9 @@ async def create_proposal(data: ProposalCreate):
     }
 
     # Pydantic nesnelerini dict'e cevir
-    proposal["accommodation_items"] = [i.dict() for i in data.accommodation_items]
-    proposal["meal_options"] = [m.dict() for m in data.meal_options]
-    proposal["extra_services"] = [s.dict() for s in data.extra_services]
+    proposal["accommodation_items"] = [i.model_dump() for i in data.accommodation_items]
+    proposal["meal_options"] = [m.model_dump() for m in data.meal_options]
+    proposal["extra_services"] = [s.model_dump() for s in data.extra_services]
 
     await db.proposals.insert_one(proposal)
     del proposal["_id"]
@@ -176,10 +176,10 @@ async def get_proposal(proposal_id: str):
 async def update_proposal(proposal_id: str, data: ProposalUpdate):
     """Teklif guncelle"""
     update_data = {}
-    for k, v in data.dict().items():
+    for k, v in data.model_dump().items():
         if v is not None:
             if isinstance(v, list):
-                update_data[k] = [i.dict() if hasattr(i, 'dict') else i for i in v]
+                update_data[k] = [i.model_dump() if hasattr(i, 'model_dump') else i for i in v]
             else:
                 update_data[k] = v
 

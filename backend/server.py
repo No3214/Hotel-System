@@ -36,6 +36,7 @@ from routers.whatsapp import router as whatsapp_router
 from routers.loyalty import router as loyalty_router
 from routers.analytics import router as analytics_router
 from routers.audit import router as audit_router
+from routers.kitchen import router as kitchen_router
 from routers.hotelrunner import router as hotelrunner_router
 from routers.cache import router as cache_router
 from routers.notifications import router as notifications_router
@@ -119,6 +120,7 @@ api.include_router(whatsapp_router)
 api.include_router(loyalty_router)
 api.include_router(analytics_router)
 api.include_router(audit_router)
+api.include_router(kitchen_router)
 api.include_router(hotelrunner_router)
 api.include_router(cache_router)
 api.include_router(notifications_router)
