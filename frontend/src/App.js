@@ -4,7 +4,7 @@ import {
   LayoutDashboard, BedDouble, Users, MessageCircle, CheckSquare,
   Calendar, Sparkles, BookOpen, UtensilsCrossed, Menu, ChevronLeft,
   CalendarCheck, UserCog, Mail, MapPin, Settings, Star, Heart, LogOut, QrCode, Share2,
-  Globe, Bell, FileText, Target, TrendingUp
+  Globe, Bell, FileText, Target, TrendingUp, Search, BarChart3, Eye
 } from 'lucide-react';
 
 import { setAuthToken, getMe } from './api';
@@ -42,6 +42,8 @@ const ProposalsPage = lazy(() => import('./pages/ProposalsPage'));
 const EventLeadsPage = lazy(() => import('./pages/EventLeadsPage'));
 const MarketingHubPage = lazy(() => import('./pages/MarketingHubPage'));
 const PresenceMonitorPage = lazy(() => import('./pages/PresenceMonitorPage'));
+const SEOPage = lazy(() => import('./pages/SEOPage'));
+const CompetitorPage = lazy(() => import('./pages/CompetitorPage'));
 
 const NAV_CONFIG = [
   {
@@ -65,6 +67,9 @@ const NAV_CONFIG = [
       { id: 'lifecycle', nameKey: 'lifecycle', icon: Heart },
       { id: 'social', nameKey: 'social', icon: Share2 },
       { id: 'marketing_hub', nameKey: 'marketing_hub', icon: TrendingUp },
+      { id: 'presence_monitor', nameKey: 'presence_monitor', icon: Eye },
+      { id: 'seo', nameKey: 'seo', icon: Search },
+      { id: 'competitor', nameKey: 'competitor', icon: BarChart3 },
     ],
   },
   {
@@ -133,6 +138,8 @@ const PAGES = {
   event_leads: EventLeadsPage,
   marketing_hub: MarketingHubPage,
   presence_monitor: PresenceMonitorPage,
+  seo: SEOPage,
+  competitor: CompetitorPage,
 };
 
 export default function App() {

@@ -37,6 +37,7 @@ const FALLBACK_TR = {
   revenue: "Gelir Yonetimi", analytics: "Analitik", audit: "Guvenlik",
   hotelrunner: "HotelRunner", integrations: "Entegrasyonlar",
   marketing_hub: "Pazarlama", event_leads: "Etkinlik Leadleri",
+  presence_monitor: "Online Varlik", seo: "SEO Yonetimi", competitor: "Rakip Analizi",
 };
 
 export function LanguageProvider({ children }) {

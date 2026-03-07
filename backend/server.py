@@ -51,6 +51,12 @@ from routers.marketing_analytics import router as marketing_analytics_router
 from routers.google_ads import router as google_ads_router
 from routers.ai_providers import router as ai_providers_router
 from routers.presence import router as presence_router
+from routers.financials import router as financials_router
+from routers.kitchen import router as kitchen_router
+from routers.pricing import router as pricing_router
+from routers.revenue import router as revenue_router
+from routers.seo import router as seo_router
+from routers.competitor import router as competitor_router
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -196,6 +202,12 @@ api.include_router(marketing_analytics_router)
 api.include_router(google_ads_router)
 api.include_router(ai_providers_router)
 api.include_router(presence_router)
+api.include_router(financials_router)
+api.include_router(kitchen_router)
+api.include_router(pricing_router)
+api.include_router(revenue_router)
+api.include_router(seo_router)
+api.include_router(competitor_router)
 
 app.include_router(api)
 

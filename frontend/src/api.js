@@ -276,6 +276,24 @@ export const getPresenceHistory = (limit) => api.get('/presence/audit/history', 
 export const getPresenceAuditDetail = (id) => api.get(`/presence/audit/${id}`);
 export const getPresenceTruthSource = () => api.get('/presence/truth-source');
 
+// SEO Management
+export const getSEOSchema = (type) => api.get(`/seo/schema/${type}`);
+export const getAllSEOSchemas = () => api.get('/seo/schemas');
+export const generateMetaTags = (data) => api.post('/seo/meta-tags', data);
+export const getMetaTemplates = () => api.get('/seo/meta-templates');
+export const suggestKeywords = (data) => api.post('/seo/keywords', data);
+export const analyzeSEO = (data) => api.post('/seo/analyze', data);
+export const getSitemap = () => api.get('/seo/sitemap');
+export const getLocalSEOReport = () => api.get('/seo/local-report');
+
+// Competitor Analysis
+export const getCompetitors = () => api.get('/competitor/list');
+export const addCompetitor = (data) => api.post('/competitor/add', data);
+export const analyzeCompetitor = (id) => api.post(`/competitor/analyze?competitor_id=${id}`);
+export const compareCompetitorRatings = () => api.get('/competitor/compare');
+export const getCompetitorSWOT = () => api.get('/competitor/swot');
+export const getMarketPosition = () => api.get('/competitor/market-position');
+
 // Event Leads & Outreach
 export const getEventIdeas = (category) => api.get('/event-leads/ideas', { params: category ? { category } : {} });
 export const getTargetGroups = () => api.get('/event-leads/target-groups');
