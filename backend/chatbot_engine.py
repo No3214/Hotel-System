@@ -224,6 +224,152 @@ ESCALATION_RESPONSES = {
 }
 
 
+# ==========================================
+# GELISMIS ESCALATION ENGINE (Jack The Butler'dan ilham)
+# ==========================================
+
+NEGATIVE_SENTIMENT_WORDS = {
+    "high": ["rezalet", "berbat", "felaket", "korkunç", "igrenc", "skandal", "kabul edilemez",
+             "worst", "terrible", "disgusting", "unacceptable", "horrible"],
+    "medium": ["mutsuz", "memnuniyetsiz", "sorunlu", "problem", "hayal kirikligi",
+               "disappointed", "unhappy", "unsatisfied", "issue", "broken"],
+    "low": ["biraz", "keske", "olabilirdi", "beklerdim", "could be better", "not great"],
+}
+
+ESCALATION_SEVERITY = {
+    "emergency": "HIGH",
+    "complaint": "MEDIUM",
+    "large_group": "MEDIUM",
+    "price_dispute": "LOW",
+    "negative_sentiment_high": "HIGH",
+    "negative_sentiment_medium": "MEDIUM",
+    "negative_sentiment_low": "LOW",
+    "repeated_issue": "HIGH",
+}
+
+
+def analyze_sentiment(message: str) -> dict:
+    """Mesajin sentiment skorunu hesapla - Jack The Butler tarzi"""
+    lower = message.lower()
+    score = 0
+    detected_words = []
+    severity = None
+
+    for level, words in NEGATIVE_SENTIMENT_WORDS.items():
+        for word in words:
+            if word in lower:
+                detected_words.append(word)
+                if level == "high":
+                    score += 3
+                    severity = "HIGH"
+                elif level == "medium":
+                    score += 2
+                    if not severity:
+                        severity = "MEDIUM"
+                else:
+                    score += 1
+                    if not severity:
+                        severity = "LOW"
+
+    # Multiple exclamation/question marks = frustrated
+    if lower.count("!") >= 3 or lower.count("?") >= 3:
+        score += 2
+
+    # ALL CAPS detection (frustration)
+    words_list = message.split()
+    caps_count = sum(1 for w in words_list if w.isupper() and len(w) > 2)
+    if caps_count >= 2:
+        score += 2
+
+    return {
+        "score": score,
+        "severity": severity,
+        "detected_words": detected_words,
+        "is_negative": score >= 2,
+    }
+
+
+async def smart_escalation(message: str, session_id: str, platform: str = "web") -> Optional[dict]:
+    """Gelismis escalation - sentiment + gecmis + keyword analizi"""
+
+    # 1. Standard keyword escalation
+    keyword_escalation = detect_escalation(message)
+
+    # 2. Sentiment analysis
+    sentiment = analyze_sentiment(message)
+
+    # 3. Check repeat complaints in this session
+    recent_escalations = await db.escalation_log.count_documents({
+        "session_id": session_id,
+        "created_at": {"$gte": (datetime.utcnow() - timedelta(hours=24)).isoformat()},
+    })
+
+    # Determine final escalation
+    escalation_type = None
+    severity = "LOW"
+
+    if keyword_escalation:
+        escalation_type = keyword_escalation
+        severity = ESCALATION_SEVERITY.get(keyword_escalation, "MEDIUM")
+    elif sentiment["is_negative"]:
+        escalation_type = f"negative_sentiment_{sentiment['severity'].lower()}"
+        severity = sentiment["severity"]
+
+    # Repeated issues bump severity
+    if recent_escalations >= 2:
+        escalation_type = escalation_type or "repeated_issue"
+        severity = "HIGH"
+
+    if not escalation_type:
+        return None
+
+    # Log escalation
+    escalation_record = {
+        "id": new_id(),
+        "session_id": session_id,
+        "platform": platform,
+        "message": message,
+        "escalation_type": escalation_type,
+        "severity": severity,
+        "sentiment_score": sentiment["score"],
+        "sentiment_words": sentiment["detected_words"],
+        "repeat_count": recent_escalations + 1,
+        "status": "open",
+        "created_at": utcnow(),
+    }
+    await db.escalation_log.insert_one(escalation_record)
+
+    # Create notification for staff
+    if severity in ("MEDIUM", "HIGH"):
+        from helpers import new_id as nid
+        await db.group_notifications.insert_one({
+            "id": nid(),
+            "type": f"escalation_{severity.lower()}",
+            "message": f"{'ACIL' if severity == 'HIGH' else 'Dikkat'}: Misafir escalation - {escalation_type}. Platform: {platform}. Mesaj: {message[:100]}",
+            "status": "sent",
+            "source": "chatbot_escalation",
+            "escalation_id": escalation_record["id"],
+            "created_at": utcnow(),
+        })
+
+    # Return response
+    if keyword_escalation and keyword_escalation in ESCALATION_RESPONSES:
+        response_text = ESCALATION_RESPONSES[keyword_escalation]
+    elif severity == "HIGH":
+        response_text = "Durumu anladim ve cok ciddiye aliyoruz. Yoneticimiz en kisa surede sizinle iletisime gececek. Bize ulasabilirsiniz: +90 532 234 26 86"
+    elif severity == "MEDIUM":
+        response_text = "Gorusinuzu dikkatlice not aldim. Ekibimiz en kisa surede sizinle ilgilenecek. Baska bir konuda yardimci olabilir miyim?"
+    else:
+        response_text = None  # LOW severity - just log, don't interrupt flow
+
+    return {
+        "escalation_type": escalation_type,
+        "severity": severity,
+        "response": response_text,
+        "escalation_id": escalation_record["id"],
+    }
+
+
 # ==============================================
 # CONVERSATION FLOW MANAGER
 # ==============================================

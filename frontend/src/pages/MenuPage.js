@@ -43,6 +43,7 @@ export default function MenuPage() {
     setLoading(false);
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadData(); }, []);
 
   const filteredItems = items.filter(i => i.category === activeCat);

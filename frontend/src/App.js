@@ -4,7 +4,8 @@ import {
   LayoutDashboard, BedDouble, Users, MessageCircle, CheckSquare,
   Calendar, Sparkles, BookOpen, UtensilsCrossed, Menu, ChevronLeft,
   CalendarCheck, UserCog, Mail, MapPin, Settings, Star, Heart, LogOut, QrCode, Share2,
-  Globe, Bell, FileText, Building2, Crown
+  Globe, Bell, FileText, Target, TrendingUp, Search, BarChart3, Eye,
+  DollarSign, Tags, Building2, Crown
 } from 'lucide-react';
 
 import { setAuthToken, getMe } from './api';
@@ -12,6 +13,7 @@ import { LanguageProvider, useLanguage } from './hooks/useLanguage';
 import LoginPage from './pages/LoginPage';
 import PublicMenuPage from './pages/PublicMenuPage';
 import Dashboard from './pages/Dashboard';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Lazy load all non-critical pages
 const RoomsPage = lazy(() => import('./pages/RoomsPage'));
@@ -38,6 +40,16 @@ const AuditSecurityPage = lazy(() => import('./pages/AuditSecurityPage'));
 const HotelRunnerPage = lazy(() => import('./pages/HotelRunnerPage'));
 const OrganizationPage = lazy(() => import('./pages/OrganizationPage'));
 const ProposalsPage = lazy(() => import('./pages/ProposalsPage'));
+const EventLeadsPage = lazy(() => import('./pages/EventLeadsPage'));
+const MarketingHubPage = lazy(() => import('./pages/MarketingHubPage'));
+const PresenceMonitorPage = lazy(() => import('./pages/PresenceMonitorPage'));
+const SEOPage = lazy(() => import('./pages/SEOPage'));
+const CompetitorPage = lazy(() => import('./pages/CompetitorPage'));
+const FinancialsPage = lazy(() => import('./pages/FinancialsPage'));
+const KitchenPage = lazy(() => import('./pages/KitchenPage'));
+const MenuPage = lazy(() => import('./pages/MenuPage'));
+const PricingPage = lazy(() => import('./pages/PricingPage'));
+const RevenueManagementPage = lazy(() => import('./pages/RevenueManagementPage'));
 const ManagerAIPage = lazy(() => import('./pages/ManagerAIPage'));
 const CRMPage = lazy(() => import('./pages/CRMPage'));
 const LoyaltyPage = lazy(() => import('./pages/LoyaltyPage'));
@@ -67,6 +79,10 @@ const NAV_CONFIG = [
       { id: 'loyalty', nameKey: 'loyalty', icon: Crown },
       { id: 'crm', nameKey: 'crm', icon: Building2 },
       { id: 'social', nameKey: 'social', icon: Share2 },
+      { id: 'marketing_hub', nameKey: 'marketing_hub', icon: TrendingUp },
+      { id: 'presence_monitor', nameKey: 'presence_monitor', icon: Eye },
+      { id: 'seo', nameKey: 'seo', icon: Search },
+      { id: 'competitor', nameKey: 'competitor', icon: BarChart3 },
     ],
   },
   {
@@ -79,6 +95,16 @@ const NAV_CONFIG = [
       { id: 'table_reservations', nameKey: 'table_reservations', icon: UtensilsCrossed },
       { id: 'organization', nameKey: 'organization', icon: Heart },
       { id: 'proposals', nameKey: 'proposals', icon: FileText },
+      { id: 'event_leads', nameKey: 'event_leads', icon: Target },
+      { id: 'kitchen', nameKey: 'kitchen', icon: UtensilsCrossed },
+    ],
+  },
+  {
+    labelKey: 'finance',
+    items: [
+      { id: 'financials', nameKey: 'financials', icon: DollarSign },
+      { id: 'pricing', nameKey: 'pricing', icon: Tags },
+      { id: 'revenue', nameKey: 'revenue', icon: TrendingUp },
     ],
   },
   {
@@ -98,7 +124,7 @@ const NAV_CONFIG = [
   {
     labelKey: 'system',
     items: [
-      { id: 'sustainability', nameKey: 'sustainability', icon: Sparkles }, // We'll need to define 'sustainability' in translations, or just rely on fallback
+      { id: 'sustainability', nameKey: 'sustainability', icon: Sparkles },
       { id: 'automation', nameKey: 'automation', icon: Settings },
       { id: 'audit', nameKey: 'audit', icon: Settings },
       { id: 'settings', nameKey: 'settings', icon: Settings },
@@ -132,6 +158,16 @@ const PAGES = {
   hotelrunner: HotelRunnerPage,
   organization: OrganizationPage,
   proposals: ProposalsPage,
+  event_leads: EventLeadsPage,
+  marketing_hub: MarketingHubPage,
+  presence_monitor: PresenceMonitorPage,
+  seo: SEOPage,
+  competitor: CompetitorPage,
+  financials: FinancialsPage,
+  kitchen: KitchenPage,
+  menu: MenuPage,
+  pricing: PricingPage,
+  revenue: RevenueManagementPage,
   manager_ai: ManagerAIPage,
   crm: CRMPage,
   loyalty: LoyaltyPage,
@@ -259,7 +295,7 @@ function AdminApp() {
     const saved = localStorage.getItem('kozbeyli_user');
     const token = localStorage.getItem('kozbeyli_token');
     if (saved && token) {
-      setUser(JSON.parse(saved));
+      try { setUser(JSON.parse(saved)); } catch { /* corrupted localStorage */ }
       getMe().then(r => {
         const u = r.data;
         setUser(u);
@@ -408,9 +444,11 @@ function AdminApp() {
             transition={{ duration: 0.2 }}
             className="h-full"
           >
-            <Suspense fallback={LazyFallback}>
-              <PageComponent onNavigate={setPage} />
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={LazyFallback}>
+                <PageComponent onNavigate={setPage} />
+              </Suspense>
+            </ErrorBoundary>
           </motion.div>
         </AnimatePresence>
       </main>

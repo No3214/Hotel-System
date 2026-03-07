@@ -17,7 +17,9 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [trendPeriod, setTrendPeriod] = useState('30d');
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadAll(); }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadTrend(); }, [trendPeriod]);
 
   const loadAll = async () => {

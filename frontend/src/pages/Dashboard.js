@@ -16,11 +16,13 @@ const ROOM_STATUS_COLORS = {
   cleaning: { bg: 'bg-purple-500/15', text: 'text-purple-400', dot: 'bg-purple-400' },
 };
 
+export default function Dashboard({ onNavigate }) {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
-  
+  const [error, setError] = useState(false);
+
   // VIP Briefings state
   const [briefings, setBriefings] = useState([]);
   const [briefingsLoading, setBriefingsLoading] = useState(false);
@@ -45,7 +47,11 @@ const ROOM_STATUS_COLORS = {
       const r = await getDashboardStats();
       setStats(r.data);
       setLastUpdate(new Date());
-    } catch (e) { console.error(e); }
+      setError(false);
+    } catch (e) {
+      console.error(e);
+      if (!stats) setError(true);
+    }
     setLoading(false);
     if (isManual) setTimeout(() => setRefreshing(false), 500);
   };
@@ -84,6 +90,7 @@ const ROOM_STATUS_COLORS = {
     fetchStats();
     intervalRef.current = setInterval(() => fetchStats(), 30000);
     return () => clearInterval(intervalRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (loading) {
@@ -94,6 +101,20 @@ const ROOM_STATUS_COLORS = {
           {[...Array(8)].map((_, i) => (
             <div key={i} className="h-24 bg-white/5 rounded-xl animate-pulse" />
           ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !stats) {
+    return (
+      <div className="p-8 flex items-center justify-center h-full">
+        <div className="text-center">
+          <p className="text-[#7e7e8a] text-sm mb-3">Dashboard verileri yuklenemedi.</p>
+          <button onClick={() => { setLoading(true); fetchStats(true); }}
+            className="px-4 py-2 bg-[#C4972A] text-[#0a0a0f] rounded-lg text-sm font-medium hover:bg-[#d4a73a] transition-colors">
+            Tekrar Dene
+          </button>
         </div>
       </div>
     );
@@ -169,8 +190,8 @@ const ROOM_STATUS_COLORS = {
                   Bugun giris yapacak ({stats?.todays_checkins || 0}) misafir icin AI tarafindan hazirlanmis kisisellestirilmis karsilama brifingleri.
                </p>
             </div>
-            <Button 
-               onClick={loadBriefings} 
+            <Button
+               onClick={loadBriefings}
                disabled={briefingsLoading}
                className="bg-[#1a1a22] border border-[#C4972A]/30 hover:bg-[#C4972A]/10 text-[#C4972A] whitespace-nowrap"
             >
@@ -232,8 +253,8 @@ const ROOM_STATUS_COLORS = {
                   Gemini AI ile otel dolulugunu ve hava durumunu analiz ederek anlik enerji tasarrufu ve karbon emisyonunu azaltma rotalari uretin.
                </p>
             </div>
-            <Button 
-               onClick={loadEnergyReport} 
+            <Button
+               onClick={loadEnergyReport}
                disabled={energyLoading}
                className="bg-[#1a1a22] border border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-400 whitespace-nowrap"
             >
@@ -261,11 +282,11 @@ const ROOM_STATUS_COLORS = {
                          </div>
                        </div>
                        <div className="text-right">
-                         <p className="text-xs text-[#7e7e8a]">Olası Karbon Kazanımı</p>
-                         <p className="text-xl font-bold text-emerald-400">~{energyReport.report.carbon_saving_estimate_kg} kg CO₂</p>
+                         <p className="text-xs text-[#7e7e8a]">Olasi Karbon Kazanimi</p>
+                         <p className="text-xl font-bold text-emerald-400">~{energyReport.report.carbon_saving_estimate_kg} kg CO2</p>
                        </div>
                      </div>
-                     
+
                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                        {energyReport.report.actions?.map((act, i) => (
                          <div key={i} className="bg-[#12121a] border border-white/5 rounded-xl p-4 hover:border-emerald-500/20 transition-all">
@@ -293,14 +314,14 @@ const ROOM_STATUS_COLORS = {
          <div className="flex items-center justify-between mb-4 relative z-10">
             <div>
                <h3 className="text-lg font-bold text-red-400 flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5" /> Çıkış Öncesi Risk Radarı (AI Complaint Predictor)
+                  <AlertTriangle className="w-5 h-5" /> Cikis Oncesi Risk Radari (AI Complaint Predictor)
                </h3>
                <p className="text-xs text-[#a9a9b2] mt-1">
-                  Şu an otelde konaklayan misafirlerin şikayet ve görev geçmişlerini analiz ederek memnuniyetsizlik riskini tahmin edin.
+                  Su an otelde konaklayan misafirlerin sikayet ve gorev gecmislerini analiz ederek memnuniyetsizlik riskini tahmin edin.
                </p>
             </div>
-            <Button 
-               onClick={loadComplaintRadar} 
+            <Button
+               onClick={loadComplaintRadar}
                disabled={radarLoading}
                className="bg-[#1a1a22] border border-red-500/30 hover:bg-red-500/10 text-red-400 whitespace-nowrap"
             >
@@ -313,7 +334,7 @@ const ROOM_STATUS_COLORS = {
             <div className="mt-6 relative z-10">
                {radarLoading ? (
                   <div className="flex items-center gap-2 text-[#7e7e8a] text-sm py-4">
-                     <Loader2 className="w-4 h-4 animate-spin" /> AI, aktif konaklamalardaki görev etkileşimlerini (CX) tarıyor...
+                     <Loader2 className="w-4 h-4 animate-spin" /> AI, aktif konaklamalardaki gorev etkilesimlerini (CX) tariyor...
                   </div>
                ) : radarResults.length > 0 ? (
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -323,8 +344,8 @@ const ROOM_STATUS_COLORS = {
                               <div>
                                  <h4 className="text-[#e5e5e8] font-bold">{result.guest_name}</h4>
                                  <Badge className={`mt-1 text-[10px] border-0 ${
-                                    result.risk_level === 'Yuksek Risk' ? 'bg-red-500/10 text-red-400' : 
-                                    result.risk_level === 'Orta Risk' ? 'bg-orange-500/10 text-orange-400' : 
+                                    result.risk_level === 'Yuksek Risk' ? 'bg-red-500/10 text-red-400' :
+                                    result.risk_level === 'Orta Risk' ? 'bg-orange-500/10 text-orange-400' :
                                     'bg-yellow-500/10 text-yellow-400'
                                  }`}>
                                     {result.risk_level} (%{result.churn_probability_percent})
@@ -337,7 +358,7 @@ const ROOM_STATUS_COLORS = {
                                  <p className="text-sm text-[#e5e5e8] leading-relaxed">{result.reason}</p>
                               </div>
                               <div className="bg-emerald-500/5 rounded-lg p-3 border-l-2 border-emerald-500">
-                                 <p className="text-xs text-emerald-400 mb-1 font-medium">AI Telafi Önerisi</p>
+                                 <p className="text-xs text-emerald-400 mb-1 font-medium">AI Telafi Onerisi</p>
                                  <p className="text-sm text-[#e5e5e8] leading-relaxed">{result.compensation_action}</p>
                               </div>
                            </div>
@@ -346,7 +367,7 @@ const ROOM_STATUS_COLORS = {
                   </div>
                ) : (
                   <p className="text-emerald-400 text-sm py-2 flex items-center gap-2">
-                     <CheckSquare className="w-4 h-4" /> Şu an otelde konaklayan misafirlerde yüksek şikayet riski tespit edilmedi.
+                     <CheckSquare className="w-4 h-4" /> Su an otelde konaklayan misafirlerde yuksek sikayet riski tespit edilmedi.
                   </p>
                )}
             </div>
@@ -467,7 +488,7 @@ const ROOM_STATUS_COLORS = {
                 }`} />
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-[#e5e5e8] truncate">{res.guest_name || 'Misafir'}</p>
-                  <p className="text-[10px] text-[#5a5a65]">{res.room_id} | {res.check_in}</p>
+                  <p className="text-[10px] text-[#5a5a65]">{res.room_id || '-'} | {res.check_in || '-'}</p>
                 </div>
                 <Badge className="text-[9px] bg-white/5 text-[#7e7e8a]">
                   {t(res.status) || res.status}

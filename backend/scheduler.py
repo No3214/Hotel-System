@@ -17,7 +17,7 @@ scheduler = AsyncIOScheduler()
 async def get_todays_reservations():
     """Bugunku aktif rezervasyonlari getir"""
     from database import db
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     reservations = await db.reservations.find({
         "status": {"$in": ["confirmed", "checked_in"]},
         "check_in": {"$lte": today},
@@ -29,7 +29,7 @@ async def get_todays_reservations():
 async def get_todays_checkouts():
     """Bugun check-out yapacak rezervasyonlari getir"""
     from database import db
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     checkouts = await db.reservations.find({
         "status": {"$in": ["confirmed", "checked_in"]},
         "check_out": today,
@@ -40,7 +40,7 @@ async def get_todays_checkouts():
 async def get_todays_checkins():
     """Bugun check-in yapacak rezervasyonlari getir"""
     from database import db
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     checkins = await db.reservations.find({
         "status": {"$in": ["pending", "confirmed"]},
         "check_in": today,

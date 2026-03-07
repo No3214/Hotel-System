@@ -6,6 +6,9 @@ from helpers import utcnow, new_id
 from passlib.context import CryptContext
 import jwt
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["auth"])
 
@@ -178,9 +181,9 @@ async def initial_setup():
         "last_login": None,
     }
     await db.users.insert_one(admin)
+    logger.info("Default admin user created - password change required")
     return {
         "message": "Admin kullanici olusturuldu",
         "username": "admin",
-        "password": "kozbeyli2026",
-        "warning": "Lutfen sifrenizi hemen degistirin!",
+        "warning": "Varsayilan sifre ile giris yapin ve hemen degistirin!",
     }
