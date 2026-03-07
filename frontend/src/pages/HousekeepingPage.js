@@ -5,7 +5,8 @@ import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { BedDouble, Plus, CheckCircle, Clock, Loader2, Sparkles, Map, MapPin } from 'lucide-react';
+import { BedDouble, Plus, CheckCircle, Clock, Loader2, Sparkles, Map, MapPin, Search } from 'lucide-react';
+import { getAILostAndFoundMatch } from '../api';
 
 const STATUS_CONFIG = {
   pending: { label: 'Bekliyor', color: 'bg-yellow-500/20 text-yellow-400', icon: Clock },
@@ -22,6 +23,10 @@ export default function HousekeepingPage() {
   const [form, setForm] = useState({ room_number: '', task_type: 'standard_clean', priority: 'normal', assigned_to: '', notes: '' });
   const [aiRouting, setAiRouting] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
+
+  // Phase 10: Lost & Found
+  const [lostFoundMatches, setLostFoundMatches] = useState(null);
+  const [matchLoading, setMatchLoading] = useState(false);
 
   const load = () => {
     getHousekeeping().then(r => setLogs(r.data.logs)).catch(console.error).finally(() => setLoading(false));
@@ -55,6 +60,21 @@ export default function HousekeepingPage() {
     setAiLoading(false);
   };
 
+  const handleAIMatch = async () => {
+    setMatchLoading(true);
+    try {
+      const res = await getAILostAndFoundMatch();
+      if (res.data?.success) {
+        setLostFoundMatches(res.data.matches);
+        if (res.data.matches.length === 0) alert('Eslesme bulunamadi veya kayit yetersiz.');
+      }
+    } catch(e) {
+      console.error(e);
+      alert('Kayip esya AI eslestirmesi sirasinda hata olustu.');
+    }
+    setMatchLoading(false);
+  };
+
   return (
     <div className="p-6 lg:p-8 space-y-6 max-w-[1400px]" data-testid="housekeeping-page">
       <div className="flex items-center justify-between">
@@ -63,6 +83,10 @@ export default function HousekeepingPage() {
           <p className="text-[#7e7e8a] text-sm mt-1">{logs.length} kayit</p>
         </div>
         <div className="flex gap-2">
+          <Button onClick={handleAIMatch} disabled={matchLoading} className="bg-indigo-600 hover:bg-indigo-500 text-white border-none shadow-md hidden sm:flex">
+            {matchLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Search className="w-4 h-4 mr-2" />}
+            AI Kayip Esya Eslestir
+          </Button>
           <Button onClick={loadAiRouting} disabled={aiLoading} className="bg-sky-600 hover:bg-sky-500 text-white border-none shadow-md" data-testid="ai-routing-btn">
             {aiLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Map className="w-4 h-4 mr-2" />}
             AI Rota Optimizasyonu
@@ -131,6 +155,35 @@ export default function HousekeepingPage() {
                   <p className="text-xs text-[#a9a9b2] mt-1">{step.reason}</p>
                 </div>
               </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Phase 10: AI Lost & Found Matches */}
+      {lostFoundMatches && lostFoundMatches.length > 0 && (
+        <div className="bg-indigo-950/20 border border-indigo-500/30 rounded-xl p-6 relative overflow-hidden">
+          <div className="flex items-center justify-between mb-4 relative z-10">
+            <h2 className="text-lg font-bold text-indigo-400 flex items-center gap-2">
+              <Search className="w-5 h-5" /> Gemini NLP: Kayip & Bulunan Eslesmeleri
+            </h2>
+            <Button variant="ghost" size="sm" onClick={() => setLostFoundMatches(null)} className="text-[#a9a9b2] hover:text-white">Kapat</Button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 relative z-10">
+            {lostFoundMatches.map((m, i) => (
+               <div key={i} className="bg-[#12121a] border border-indigo-500/20 rounded-lg p-4">
+                 <div className="flex items-center justify-between mb-2">
+                    <Badge variant="outline" className={`${m.match_score > 80 ? 'border-green-500/50 text-green-400' : 'border-yellow-500/50 text-yellow-500'} bg-transparent`}>
+                      % {m.match_score} Eslesme
+                    </Badge>
+                 </div>
+                 <p className="text-sm text-[#e5e5e8] leading-relaxed mb-3">
+                   <strong>Eslesme Nedeni:</strong> {m.reason}
+                 </p>
+                 <div className="text-xs text-[#a9a9b2] bg-white/5 p-2 rounded">
+                   Lost ID: {m.lost_id} ↔ Found ID: {m.found_id}
+                 </div>
+               </div>
             ))}
           </div>
         </div>

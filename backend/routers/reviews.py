@@ -175,3 +175,64 @@ async def get_review_ai_analytics():
         return {"success": True, "analytics": data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI Analytics hatasi: {str(e)}")
+
+# ==================== PHASE 15: AI DEEP SENTIMENT ENGINE ====================
+
+@router.get("/reviews/{review_id}/ai-sentiment")
+async def get_deep_sentiment(review_id: str):
+    """
+    Spesifik bir misafir yorumunun derinine inerek satir aralarindaki gizli hissiyati,
+    departman bazli (Temizlik, Lezzet, Hizmet) minyatür skorlamalari ve yonetime uyari cikarir.
+    """
+    from gemini_service import get_chat_response
+
+    review = await db.reviews.find_one({"id": review_id}, {"_id": 0})
+    if not review:
+        raise HTTPException(404, "Yorum bulunamadi")
+
+    # Eger onceden analiz edildiyse direkt dondur (maliyet tasarrufu)
+    if "deep_sentiment" in review and review["deep_sentiment"]:
+         return {"success": True, "sentiment": review["deep_sentiment"]}
+
+    prompt = f"""
+    Sen Kozbeyli Konagi'nin Duygu Analizi Uzmanisin (Deep Sentiment Engine).
+    Gorevin, asagidaki misafir yorumunun EN DERININE inerek (NLP tabanli) acik/gizli elestiri ve ovguleri ortaya cikarmak.
+
+    Yorum Degerlendirmesi ({review['rating']}/5):
+    "{review['review_text']}"
+
+    SADECE JSON DONDUR:
+    {{
+       "scores": {{
+          "service": 8,
+          "cleanliness": 10,
+          "food_quality": 5
+       }},
+       "hidden_complaints": ["Garsonlarin yavaskalmasi sebebiyle siparis gecikti.", "Kahve soguk geldi."],
+       "hidden_praises": ["Odanin manzarasi ve yatagin rahatligi cok iyiydi."],
+       "action_required": true,
+       "department_warning": "F&B Ekibi: Servis hizini artirmak ve sicak icecek sicakligini kontrol etmek gerekiyor."
+    }}
+    (Skorlar 1-10 arasinda, bahsedilmeyen konuya 0 veya null verme, yorumun genel hissiyatina gore ortalama (orn: 7) ver, acikca elestiri varsa dusur)
+    """
+
+    try:
+        ai_resp = await get_chat_response("reviews_sentiment", f"snt_{review_id}", prompt)
+        
+        import re
+        json_match = re.search(r'```(?:json)?(.*?)```', ai_resp, re.DOTALL)
+        res_str = json_match.group(1).strip() if json_match else ai_resp
+        sentiment_data = json.loads(res_str)
+
+        # DB'ye kaydet ki tekrar tekrar sormasin
+        await db.reviews.update_one(
+             {"id": review_id},
+             {"$set": {"deep_sentiment": sentiment_data}}
+        )
+
+        return {
+            "success": True,
+            "sentiment": sentiment_data
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Deep Sentiment hatasi: {str(e)}")

@@ -339,7 +339,6 @@ async def get_channels():
 async def get_config():
     return {
         "mock_mode": MOCK_MODE,
-        "api_key_set": bool(HOTELRUNNER_API_KEY),
         "hotel_id_set": bool(HOTELRUNNER_HOTEL_ID),
         "sync_interval_minutes": 15,
         "features": {
@@ -351,3 +350,84 @@ async def get_config():
             "channel_management": True,
         },
     }
+
+# ==================== VIP ARRIVAL AI ====================
+
+@router.get("/hotelrunner/arrival-briefings")
+async def get_arrival_briefings(date: Optional[str] = None):
+    """
+    Belirtilen gunde (yoksa bugun) giris yapacak misafirleri bulur
+    ve her biri icin AI destekli 'Nasil Karsilanmali' brifingi uretir.
+    Faz 8: VIP Misafir Karşılama Asistanı
+    """
+    from gemini_service import get_chat_response
+    import json
+    import re
+    
+    target_date = date if date else utcnow()[:10]
+    
+    # Bugun giris yapacak olan (check_in == target_date) veya yeni check_in yapmis rezervasyonlar
+    query = {
+        "check_in": {"$regex": f"^{target_date}"},
+        "status": {"$in": ["confirmed", "modified", "new"]}
+    }
+    
+    arrivals = await db.reservations.find(query, {"_id": 0}).to_list(10)
+    
+    briefings = []
+    
+    for res in arrivals:
+        guest_name = f"{res.get('guest_name', '')} {res.get('guest_surname', '')}".strip()
+        source = res.get('source', 'Bilinmiyor')
+        nights = res.get('nights', 1)
+        adults = res.get('adults', 1)
+        children = res.get('children', 0)
+        
+        # Eger zaten bir profil/brifing varsa (Webhook tarafindan uretilmis) onu formatla
+        existing_profile = res.get("ai_guest_profile", {})
+        
+        if existing_profile and existing_profile.get("persona"):
+            briefing = {
+                "id": res.get("id"),
+                "guest_name": guest_name,
+                "room": res.get("room_id", "Atanmadi"),
+                "persona": existing_profile.get("persona"),
+                "greeting_advice": f"Gecmis analizi: {existing_profile.get('upsell_suggestion')}. Karsilama: Sicak ve {existing_profile.get('persona')} profiline uygun davranin.",
+                "upsell": existing_profile.get("upsell_suggestion")
+            }
+            briefings.append(briefing)
+        else:
+            # Yeni bir VIP analiz uret
+            prompt = f"""
+            Sen Kozbeyli Konagi'nin 7 Yildizli VIP Karsilama Asistanisin.
+            Bugun giris yapacak su misafir icin resepsiyoniste KISA (Max 2 cumle) bir brifing hazirla.
+            Misafir: {guest_name}
+            Kanal: {source}
+            Kisi: {adults} Yetiskin, {children} Cocuk
+            Sure: {nights} Gece
+            
+            Lutfen JSON don:
+            {{
+              "persona": "Misafir Tipi Ozeti",
+              "greeting_advice": "Resepsiyonist misafiri tam olarak nasil karsilamali, ne ikram etmeli?",
+              "upsell": "Ne satisi yapilabilir?"
+            }}
+            """
+            try:
+                ai_resp = await get_chat_response(f"arrival_{res.get('id')}", new_id(), prompt)
+                json_match = re.search(r'```(?:json)?(.*?)```', ai_resp, re.DOTALL)
+                res_str = json_match.group(1).strip() if json_match else ai_resp
+                data = json.loads(res_str)
+                
+                briefings.append({
+                    "id": res.get("id"),
+                    "guest_name": guest_name,
+                    "room": res.get("room_id", "Atanmadi"),
+                    "persona": data.get("persona", "Standart Misafir"),
+                    "greeting_advice": data.get("greeting_advice", "Standart karsilama proseduru."),
+                    "upsell": data.get("upsell", "Oda yukseltme")
+                })
+            except Exception as e:
+                logger.error(f"Arrival briefing error for {guest_name}: {e}")
+                
+    return {"success": True, "date": target_date, "count": len(briefings), "briefings": briefings}

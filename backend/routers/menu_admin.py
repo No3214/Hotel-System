@@ -3,6 +3,8 @@ from pydantic import BaseModel
 from typing import Optional
 from database import db
 from helpers import utcnow, new_id, clean_doc
+import json
+from gemini_service import get_chat_response
 
 router = APIRouter(tags=["menu-admin"])
 
@@ -146,3 +148,82 @@ async def update_theme(data: dict):
     )
     theme = await db.theme_settings.find_one({"type": "qr_menu"}, {"_id": 0})
     return theme
+
+
+# ==================== PHASE 12: AI MENU ENGINEERING ====================
+
+@router.get("/menu-admin/ai-engineering")
+async def ai_menu_engineering():
+    """
+    Kozbeyli Konagi Restoran yonetimi icin AI Destekli Menu Muhendisligi.
+    Siparis gecmisini tarar (en cok/en az satanlar, ciro getirenler) ve
+    hava durumuyla harmanlayarak anlik strateji onerir. (Puzzle, Star, Dog, Plowhorse analizleri)
+    """
+    try:
+        # 1. En son tamamlanan mutfak siparislerini cek (ornek 50 siparis)
+        recent_orders = await db.kitchen_orders.find({"status": "completed"}, {"_id": 0, "items": 1, "total_amount": 1}).sort("created_at", -1).limit(50).to_list(50)
+        
+        # 2. Mevcut menu itemlarini cek (hangisi ne kadar fiyatli vs)
+        menu_items = await db.menu_items.find({"is_available": True}, {"_id": 0, "name": 1, "price_try": 1, "category": 1}).to_list(100)
+        
+        # 3. Siparis istatistiklerini cikar
+        sales_data = {}
+        for order in recent_orders:
+            for it in order.get("items", []):
+                name = it.get("name")
+                qty = it.get("quantity", 1)
+                if name:
+                    if name not in sales_data:
+                        sales_data[name] = {"qty": 0, "revenue": 0}
+                    sales_data[name]["qty"] += qty
+                    sales_data[name]["revenue"] += qty * it.get("price", 0)
+                    
+        # Eger hic siparis yoksa (sistem yeniyse) mock data gonder, analizi gorelim
+        if not sales_data:
+             sales_data = {
+                 "Karisik Ege Kahvaltisi": {"qty": 45, "revenue": 18000},
+                 "Levrek Izgara": {"qty": 12, "revenue": 6000},
+                 "Sıcak Sarap": {"qty": 5, "revenue": 1250},
+                 "Kuzu Incik": {"qty": 3, "revenue": 2400}, # Kârli ama az satiyor (Puzzle)
+                 "Patates Kizartmasi": {"qty": 50, "revenue": 5000} # Cok satiyor ama ucuz (Plowhorse)
+             }
+
+        # 4. Basit bir hava durumu context'i (Gercek API yerine simule)
+        import random
+        weather_conditions = ["12C Yagmurlu ve Ruzgarli", "25C Gunesli ve Acik", "18C Bulutlu, Aksam Serin"]
+        current_weather = random.choice(weather_conditions)
+
+        prompt = f"""
+        Sen Kozbeyli Konagi'nin Executive Sefi ve Restoran Kâr Optimizasyonu (F&B) Uzmanisin.
+        Asagidaki verilere bakarak 'Menu Muhendisligi' (Menu Engineering - Matrix) raporu çikar.
+
+        Hava Durumu Su An: {current_weather}
+        
+        Son Siparis Istatistikleri:
+        {json.dumps(sales_data, ensure_ascii=False, indent=2)}
+
+        Gorevin:
+        Yukarıdaki satışlara ve hava durumuna bakarak bana sadece şu JSON yapısını döndür:
+        {{
+           "weather_context": "Hava durumuna ozel şefin yorumu (1 cumle)",
+           "stars": ["Cok satan ve yuksek cirolu basarili urunler"],
+           "puzzles": ["Cirosu yuksek ama az satan, satisi artirilmasi gereken urunler (Orn: 'Aksamlari garsonlar Kuzu Incik onersin')"],
+           "plowhorses": ["Menunun vazgecilmezleri, cok satan ama ucuz ürünler. 'Porsiyonu kucult' veya 'Yaninda urun sat' tavsiyesi ver."],
+           "dogs": ["Az satan ve az kazandiran urunler. 'Sertifikali cikarilmali' veya 'guncellenmeli'"],
+           "action_plan": "Mutfak ekibine ve garsonlara bugun/bu hafta yapmalari gereken 2 maddelik net talimat."
+        }}
+        """
+
+        ai_resp = await get_chat_response("menu_engineering", new_id(), prompt)
+        
+        import re
+        json_match = re.search(r'```(?:json)?(.*?)```', ai_resp, re.DOTALL)
+        res_str = json_match.group(1).strip() if json_match else ai_resp
+        report_data = json.loads(res_str)
+
+        return {
+            "success": True,
+            "report": report_data
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Menu Engineering hatasi: {str(e)}")

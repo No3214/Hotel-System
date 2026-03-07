@@ -21,6 +21,8 @@ const FALLBACK_TR = {
   general: "Genel", communication: "Iletisim", operations: "Operasyon",
   information: "Bilgi", system: "Sistem",
   hotel_management: "Otel Yonetim Paneli",
+  crm: "B2B Kurumsal CRM",
+  loyalty: "VIP & Sadakat",
   occupancy_rate: "Doluluk Orani", total_rooms: "Toplam Oda",
   occupied_rooms: "Dolu Oda", available_rooms: "Bos Oda",
   todays_checkins: "Bugunun Girisleri", todays_checkouts: "Bugunun Cikislari",
@@ -36,6 +38,7 @@ const FALLBACK_TR = {
   today: "Bugun", this_month: "Bu Ay",
   revenue: "Gelir Yonetimi", analytics: "Analitik", audit: "Guvenlik",
   hotelrunner: "HotelRunner", integrations: "Entegrasyonlar",
+  sustainability: "Green Hotel AI",
 };
 
 export function LanguageProvider({ children }) {

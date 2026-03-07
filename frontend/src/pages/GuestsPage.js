@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { getGuests, createGuest, updateGuest, getLoyaltyStats, getGuestLoyalty, updateGuestLoyalty } from '../api';
+import { getGuests, createGuest, updateGuest, getLoyaltyStats, getGuestLoyalty, updateGuestLoyalty, getAIRetargetingCampaigns } from '../api';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
-import { Users, Plus, Search, Phone, Mail, Globe, Award, TrendingUp, Star, Crown, ArrowUp, RefreshCw } from 'lucide-react';
+import { Users, Plus, Search, Phone, Mail, Globe, Award, TrendingUp, Star, Crown, ArrowUp, RefreshCw, Sparkles, Loader2, Send } from 'lucide-react';
 
 const LOYALTY_ICONS = {
   bronze: Award,
@@ -30,6 +29,10 @@ export default function GuestsPage() {
   const [loyaltyStats, setLoyaltyStats] = useState(null);
   const [tab, setTab] = useState('all');
   const [form, setForm] = useState({ name: '', email: '', phone: '', nationality: '', notes: '' });
+
+  // Phase 12 AI Retargeting State
+  const [retargetingCampaigns, setRetargetingCampaigns] = useState([]);
+  const [retargetingLoading, setRetargetingLoading] = useState(false);
 
   const load = () => {
     getGuests({ search: search || undefined })
@@ -61,6 +64,15 @@ export default function GuestsPage() {
     await updateGuestLoyalty(guestId);
     openGuestDetail(detailGuest);
     load();
+  };
+
+  const loadRetargeting = async () => {
+    setRetargetingLoading(true);
+    try {
+      const res = await getAIRetargetingCampaigns();
+      if (res.data?.success) setRetargetingCampaigns(res.data.campaigns || []);
+    } catch(e) { console.error("Retargeting load err", e); }
+    setRetargetingLoading(false);
   };
 
   const getLoyaltyInfo = (guest) => {
@@ -160,17 +172,71 @@ export default function GuestsPage() {
           className={tab === 'vip' ? 'bg-[#C4972A] text-white' : 'text-[#7e7e8a]'} data-testid="tab-vip">
           <Crown className="w-4 h-4 mr-1" /> VIP
         </Button>
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7e7e8a]" />
-          <Input placeholder="Misafir ara..." value={search} onChange={e => setSearch(e.target.value)}
-            className="pl-10 bg-white/5 border-white/10" data-testid="guest-search" />
-        </div>
+        <Button variant={tab === 'ai-retargeting' ? 'default' : 'ghost'} 
+          onClick={() => { setTab('ai-retargeting'); if(retargetingCampaigns.length===0) loadRetargeting(); }}
+          className={tab === 'ai-retargeting' ? 'bg-[#1a1a22] border border-[#C4972A]/50 text-[#C4972A]' : 'text-[#7e7e8a]'} data-testid="tab-ai">
+          <Sparkles className="w-4 h-4 mr-1 text-[#C4972A]" /> AI Retargeting
+        </Button>
+        {tab !== 'ai-retargeting' && (
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7e7e8a]" />
+            <Input placeholder="Misafir ara..." value={search} onChange={e => setSearch(e.target.value)}
+              className="pl-10 bg-white/5 border-white/10" data-testid="guest-search" />
+          </div>
+        )}
       </div>
 
-      {/* Guest List */}
+      {/* Guest List OR AI Retargeting List */}
       <div className="space-y-2">
-        {filteredGuests.map(g => {
-          const loyalty = getLoyaltyInfo(g);
+        {tab === 'ai-retargeting' ? (
+           <div className="space-y-4">
+              <div className="flex items-center justify-between bg-[#C4972A]/5 border border-[#C4972A]/20 p-4 rounded-xl">
+                 <div>
+                    <h3 className="text-[#C4972A] font-bold flex items-center gap-2"><Sparkles className="w-5 h-5" /> AI Lifecycle Pazarlamacısı</h3>
+                    <p className="text-xs text-[#a9a9b2] mt-1">Eski misafirlerinizi analiz edip onları tekrar getirecek özel e-posta/SMS taslakları oluşturur.</p>
+                 </div>
+                 <Button onClick={loadRetargeting} disabled={retargetingLoading} className="bg-[#1a1a22] text-[#C4972A] border border-[#C4972A]/30 hover:bg-[#C4972A]/10">
+                    {retargetingLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+                    Yeni Kampanyalar Üret
+                 </Button>
+              </div>
+
+              {retargetingLoading ? (
+                 <div className="text-center py-12 text-[#7e7e8a]">
+                    <Loader2 className="w-8 h-8 mx-auto mb-3 animate-spin text-[#C4972A]" />
+                    <p>AI eski rezervasyonları tarıyor ve kişiye özel fırsatlar yazıyor...</p>
+                 </div>
+              ) : retargetingCampaigns.length > 0 ? (
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {retargetingCampaigns.map((camp, i) => (
+                       <div key={i} className="glass rounded-xl p-5 hover:border-[#C4972A]/30 transition-all border border-white/5 relative group">
+                          <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                             <Button size="sm" className="h-7 text-xs bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"><Send className="w-3 h-3 mr-1" /> Gönder</Button>
+                          </div>
+                          <div className="flex items-center gap-2 mb-3">
+                             <div className="w-8 h-8 rounded-full bg-[#C4972A]/10 flex items-center justify-center text-[#C4972A] font-bold text-sm">
+                               {camp.guest_name?.[0]}
+                             </div>
+                             <div>
+                                <h4 className="text-sm font-bold text-[#e5e5e8]">{camp.guest_name}</h4>
+                                <Badge className="bg-white/5 text-[#a9a9b2] mt-0.5 border-0 text-[10px]">{camp.target_segment}</Badge>
+                             </div>
+                          </div>
+                          <div className="bg-[#1a1a22]/50 rounded-lg p-3 text-sm text-[#e5e5e8] relative">
+                             <span className="absolute -top-2 left-3 bg-[#1a1a22] px-1 text-[10px] text-[#C4972A]">{camp.channel} Taslağı</span>
+                             <p className="mt-2 text-xs leading-relaxed italic text-[#a9a9b2]">"{camp.message}"</p>
+                          </div>
+                       </div>
+                    ))}
+                 </div>
+              ) : (
+                 <div className="text-center py-12 text-[#7e7e8a]">Henüz oluşturulmuş kampanya yok.</div>
+              )}
+           </div>
+        ) : (
+           <>
+             {filteredGuests.map(g => {
+               const loyalty = getLoyaltyInfo(g);
           const colors = LOYALTY_COLORS[loyalty.level] || {};
           const Icon = LOYALTY_ICONS[loyalty.level] || Award;
           return (
@@ -216,6 +282,8 @@ export default function GuestsPage() {
             <Users className="w-12 h-12 mx-auto mb-3 opacity-30" />
             <p>{tab === 'vip' ? 'Henuz VIP misafir yok' : 'Henuz misafir kaydi yok'}</p>
           </div>
+        )}
+        </>
         )}
       </div>
 

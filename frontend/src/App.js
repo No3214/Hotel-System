@@ -4,7 +4,7 @@ import {
   LayoutDashboard, BedDouble, Users, MessageCircle, CheckSquare,
   Calendar, Sparkles, BookOpen, UtensilsCrossed, Menu, ChevronLeft,
   CalendarCheck, UserCog, Mail, MapPin, Settings, Star, Heart, LogOut, QrCode, Share2,
-  Globe, Bell, FileText
+  Globe, Bell, FileText, Building2, Crown
 } from 'lucide-react';
 
 import { setAuthToken, getMe } from './api';
@@ -39,6 +39,9 @@ const HotelRunnerPage = lazy(() => import('./pages/HotelRunnerPage'));
 const OrganizationPage = lazy(() => import('./pages/OrganizationPage'));
 const ProposalsPage = lazy(() => import('./pages/ProposalsPage'));
 const ManagerAIPage = lazy(() => import('./pages/ManagerAIPage'));
+const CRMPage = lazy(() => import('./pages/CRMPage'));
+const LoyaltyPage = lazy(() => import('./pages/LoyaltyPage'));
+const SustainabilityPage = lazy(() => import('./pages/SustainabilityPage'));
 
 const NAV_CONFIG = [
   {
@@ -61,6 +64,8 @@ const NAV_CONFIG = [
       { id: 'campaigns', nameKey: 'campaigns', icon: Mail },
       { id: 'reviews', nameKey: 'reviews', icon: Star },
       { id: 'lifecycle', nameKey: 'lifecycle', icon: Heart },
+      { id: 'loyalty', nameKey: 'loyalty', icon: Crown },
+      { id: 'crm', nameKey: 'crm', icon: Building2 },
       { id: 'social', nameKey: 'social', icon: Share2 },
     ],
   },
@@ -93,6 +98,7 @@ const NAV_CONFIG = [
   {
     labelKey: 'system',
     items: [
+      { id: 'sustainability', nameKey: 'sustainability', icon: Sparkles }, // We'll need to define 'sustainability' in translations, or just rely on fallback
       { id: 'automation', nameKey: 'automation', icon: Settings },
       { id: 'audit', nameKey: 'audit', icon: Settings },
       { id: 'settings', nameKey: 'settings', icon: Settings },
@@ -127,6 +133,9 @@ const PAGES = {
   organization: OrganizationPage,
   proposals: ProposalsPage,
   manager_ai: ManagerAIPage,
+  crm: CRMPage,
+  loyalty: LoyaltyPage,
+  sustainability: SustainabilityPage,
 };
 
 export default function App() {

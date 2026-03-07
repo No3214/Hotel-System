@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   getKitchenOrders, createKitchenOrder, updateKitchenOrderStatus, 
-  cancelKitchenOrder, getKitchenSummary, getKitchenNotifications, getKitchenAIForecast 
+  cancelKitchenOrder, getKitchenSummary, getKitchenNotifications, 
+  getKitchenAIForecast, getAiProcurementDrafts
 } from '../api';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -11,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { 
   ChefHat, Plus, Clock, AlertTriangle, CheckCircle, 
   XCircle, Play, Bell, Package, Users, Utensils, 
-  Coffee, Moon, RefreshCw, Trash2, Eye, Sparkles, Loader2
+  Coffee, Moon, RefreshCw, Trash2, Eye, Sparkles, Loader2, Send, ShoppingCart
 } from 'lucide-react';
 
 const STATUS_CONFIG = {
@@ -43,6 +44,11 @@ export default function KitchenPage() {
   const [loading, setLoading] = useState(true);
   const [aiForecast, setAiForecast] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
+  
+  // Phase 8: Smart Procurement Feature
+  const [procurementDrafts, setProcurementDrafts] = useState([]);
+  const [procurementLoading, setProcurementLoading] = useState(false);
+
   const [filter, setFilter] = useState('active');
   const [open, setOpen] = useState(false);
   const [detailOrder, setDetailOrder] = useState(null);
@@ -128,6 +134,25 @@ export default function KitchenPage() {
     setAiLoading(false);
   };
 
+  const loadProcurementDrafts = async () => {
+    setProcurementLoading(true);
+    try {
+       const res = await getAiProcurementDrafts();
+       if (res.data?.success) {
+          setProcurementDrafts(res.data.drafts || []);
+       }
+    } catch (e) {
+       console.error("AI Procurement Error:", e);
+       alert("Satin alma taslaklari olusturulamadi.");
+    }
+    setProcurementLoading(false);
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    alert('Mesaj panoya kopyalandi! WhatsApp Web uzerinden yapistirabilirsiniz.');
+  };
+
   const addItem = () => {
     setForm({ ...form, items: [...form.items, { name: '', quantity: 1, notes: '' }] });
   };
@@ -167,6 +192,10 @@ export default function KitchenPage() {
           <Button onClick={loadAiForecast} disabled={aiLoading} className="bg-emerald-600 hover:bg-emerald-500 text-white" data-testid="ai-forecast-btn">
             {aiLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
             AI Tahmin
+          </Button>
+          <Button onClick={loadProcurementDrafts} disabled={procurementLoading} className="bg-[#C4972A] hover:bg-[#a87a1f] text-white">
+            {procurementLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ShoppingCart className="w-4 h-4 mr-2" />}
+            Akilli Tedarik (Bot)
           </Button>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -371,6 +400,54 @@ export default function KitchenPage() {
             </div>
           </motion.div>
         )}
+      </AnimatePresence>
+
+      {/* AI Smart Procurement Panel (Phase 8) */}
+      <AnimatePresence>
+         {procurementDrafts.length > 0 && (
+            <motion.div
+               initial={{ opacity: 0, y: -10 }}
+               animate={{ opacity: 1, y: 0 }}
+               exit={{ opacity: 0, height: 0 }}
+               className="glass rounded-xl p-6 border border-[#C4972A]/30 relative overflow-hidden"
+            >
+               <div className="absolute top-0 right-0 w-48 h-48 bg-[#C4972A]/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
+               <div className="flex justify-between items-start mb-4 relative z-10">
+                  <div>
+                     <h3 className="font-semibold text-lg text-[#C4972A] flex items-center gap-2">
+                        <ShoppingCart className="w-5 h-5" /> AI Tedarik & Satin Alma (WhatsApp Bot Taslaklari)
+                     </h3>
+                     <p className="text-xs text-[#a9a9b2] mt-1">Eksik envanter analizi tamamlandi. Tedarikcilere ulastirmak uzere utretilen mesajlari kopyalayip gonderebilirsiniz.</p>
+                  </div>
+                  <button onClick={() => setProcurementDrafts([])} className="text-[#7e7e8a] hover:text-[#C4972A]">
+                     <XCircle className="w-5 h-5" />
+                  </button>
+               </div>
+
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10 mt-4">
+                  {procurementDrafts.map((draft, idx) => (
+                     <div key={idx} className="bg-[#12121a] border border-white/5 rounded-xl p-4">
+                        <div className="flex justify-between items-center mb-2">
+                           <h4 className="text-[#e5e5e8] font-medium flex items-center gap-2">
+                              <Users className="w-4 h-4 text-[#C4972A]" /> {draft.supplier}
+                           </h4>
+                           <Badge className="bg-[#C4972A]/10 text-[#C4972A] border-none text-[10px]">{draft.item_summary}</Badge>
+                        </div>
+                        <div className="bg-[#2a303c] rounded-lg p-3 relative group">
+                           <p className="text-sm text-[#e5e5e8] whitespace-pre-wrap">{draft.whatsapp_draft}</p>
+                           <button 
+                              onClick={() => copyToClipboard(draft.whatsapp_draft)}
+                              className="absolute top-2 right-2 p-1.5 bg-[#1a1a22]/80 hover:bg-[#C4972A] hover:text-white rounded text-[#a9a9b2] opacity-0 group-hover:opacity-100 transition-all flex items-center gap-1"
+                              title="Mesaji Kopyala"
+                           >
+                              <Send className="w-3.5 h-3.5" /> <span className="text-[10px] uppercase font-bold pr-1">Kopyala</span>
+                           </button>
+                        </div>
+                     </div>
+                  ))}
+               </div>
+            </motion.div>
+         )}
       </AnimatePresence>
 
       {/* Stats */}

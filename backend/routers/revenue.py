@@ -292,6 +292,48 @@ async def get_ai_revenue_insights():
         raise HTTPException(status_code=500, detail=f"AI analiz hatasi: {str(e)}")
 
 
+@router.post("/revenue/ai-simulator")
+async def api_revenue_simulator(
+    price_change_percent: float = Query(...),
+):
+    """
+    Simulates the impact of a given percentage price change on occupancy and total revenue using Gemini.
+    """
+    try:
+        import json
+        import re
+
+        forecast = await get_revenue_forecast(date.today(), (date.today() + timedelta(days=30)))
+        current_revenue = forecast.get('total_predicted_revenue', 0)
+        
+        prompt = f"""
+        Sen Kozbeyli Konagi'nin ileri duzey 'Revenue Management' (Gelir Yonetimi) Yapay Zeka Simulatorsun.
+        Guncel 30 Gunluk Tahmini Gelir: {current_revenue} TL.
+        
+        Otel yoneticisi tum oda baz fiyatlarini %{price_change_percent} oraninda {'ARTIRMAK' if price_change_percent > 0 else 'DUSURMEK'} istiyor.
+        
+        Ekonomik fiyat esnekligi (price elasticity) kurallarina gore luks segment bir butik otel icin bu hamlenin tahmini doluluk oranini nasil etkileyecegini ve yeni toplam gelirin ne olabilecegini tahmin et.
+        Daha yuksek fiyat genelde talebi dusurur ama kar marjini artirabilir. Indirimler ise talebi artirir ama revPAR'i dusurebilir.
+        
+        Lutfen SADECE asagidaki JSON formatinda sonuc don (Markdown icinde). Baska hicbir aciklama yazma.
+        {{
+            "predicted_occupancy_delta": "%+5", 
+            "new_predicted_revenue": 1050000,
+            "revenue_delta_percent": "+5%",
+            "risk_level": "Orta",
+            "ai_advice": "Fiyatlari bu kadar artirmak dolulugu etkileyebilir ancak toplam gelirde %5 artis saglamasi olasi."
+        }}
+        """
+        
+        ai_response = await get_chat_response("Revenue Simulator", new_id(), prompt)
+        
+        json_match = re.search(r'```(?:json)?(.*?)```', ai_response, re.DOTALL)
+        res_str = json_match.group(1).strip() if json_match else ai_response
+        parsed_result = json.loads(res_str)
+
+        return {"success": True, "simulation": parsed_result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI Simulasyon hatasi: {str(e)}")
 
 # ==================== FORECAST ====================
 
@@ -430,3 +472,58 @@ async def get_revenue_kpi(
 @router.get("/revenue/room-types")
 async def get_room_types():
     return {"room_types": [{"key": k, "base_price": v} for k, v in BASE_RATES.items()]}
+
+
+@router.get("/revenue/ai-market-intel")
+async def get_market_intelligence():
+    """
+    Analyzes simulated competitor pricing and market demand to provide strategic positioning.
+    """
+    try:
+        import json
+        import re
+        
+        # Simulating competitor data for demonstration
+        competitors = [
+            {"name": "Foca Boutique Hotel", "distance_km": 1.2, "current_rate": 3200, "occupancy_est": "Yuksek"},
+            {"name": "Luxury Resort & Spa", "distance_km": 3.5, "current_rate": 4500, "occupancy_est": "Orta"},
+            {"name": "Local Guesthouse", "distance_km": 0.5, "current_rate": 1800, "occupancy_est": "Cok Yuksek"}
+        ]
+        
+        my_avg_rate = round(sum(BASE_RATES.values()) / len(BASE_RATES))
+        
+        prompt = f"""
+        Sen Kozbeyli Konagi'nin ileri duzey 'Market Intelligence' (Pazar Zekasi) Yapay Zeka Danismanisin.
+        Gorevin: Asagidaki bolgesel rakip fiyatlarini ve tahmini doluluklarini analiz ederek stratejik fiyatlandirma ve pazar konumlandirma (positioning) onerileri sunmak.
+        
+        Otelimizin (Kozbeyli Konagi) Ortalama Fiyati: {my_avg_rate} TL
+        
+        Bolgesel Rakiplerin Su Anki Durumu:
+        {json.dumps(competitors, indent=2)}
+        
+        Lutfen SADECE asagidaki JSON formatinda sonuc don (Markdown icinde). Baska hicbir aciklama yazma.
+        {{
+            "market_position": "Premium - Fiyat/Performans Dengesi",
+            "competitor_analysis": "Rakipler ortalama 3166 TL bandinda. Foca Boutique Hotel fiyat olarak en yakin rakibiniz.",
+            "recommended_strategy": "Hafta sonu icin fiyatlari Foca Boutique Hotel'in %5 uzerinde konumlandirin, bolgede doluluk yuksek.",
+            "rate_adjustment_suggestion": "+5%",
+            "actionable_insights": [
+                "Local Guesthouse tamamen dolu oldugu icin ucuz arayan musteriler yer bulamayıp size yonelebilir (Upsell sansi).",
+                "Luxury Resort ile fiyat farkinizi koruyun, luks beklentiyi karsiladiginizdan emin olun."
+            ]
+        }}
+        """
+        
+        ai_response = await get_chat_response(
+            message="Bana guncel pazar analizi ve rakip istihbarati raporu ver.", 
+            session_id=new_id(), 
+            system_prompt=prompt
+        )
+        
+        json_match = re.search(r'```(?:json)?\s*(.*?)\s*```', ai_response, re.DOTALL)
+        res_str = json_match.group(1).strip() if json_match else ai_response
+        parsed_result = json.loads(res_str)
+
+        return {"success": True, "intelligence": parsed_result, "competitors_data": competitors}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI Market Intel error: {str(e)}")

@@ -1,7 +1,8 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from typing import Optional
 from database import db
 from helpers import utcnow, new_id
+import json
 from datetime import datetime, timedelta, timezone
 from hotel_data import HOTEL_POLICIES
 from celery_tasks import (
@@ -270,11 +271,83 @@ async def list_scheduled_jobs():
     return {"jobs": jobs, "total": len(jobs)}
 
 
-@router.get("/automation/group-notifications")
-async def list_group_notifications(notification_type: Optional[str] = None, limit: int = 50):
-    """Grup bildirimlerini listele"""
-    query = {"type": notification_type} if notification_type else {}
-    notifications = await db.group_notifications.find(
-        query, {"_id": 0}
-    ).sort("created_at", -1).limit(limit).to_list(limit)
     return {"notifications": notifications, "total": len(notifications)}
+
+
+# ==================== PHASE 10: AI SÜRDÜRÜLEBİLİRLİK (GREEN HOTEL AI) ====================
+
+@router.get("/automation/energy-ai")
+async def get_energy_ai_report():
+    """
+    Otel dolulugunu ve kat bazli bos odalari analiz ederek 
+    enerji tasarruf (klima kapatma, koridor isiklari) onerileri sunar.
+    """
+    try:
+        from gemini_service import get_chat_response
+        import random
+        now = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+        # 1. Tum odalari ve aktif rezervasyonlari cek
+        rooms = await db.rooms.find({}, {"_id": 0, "id": 1, "floor": 1, "status": 1}).to_list(100)
+        
+        active_res = await db.reservations.find({
+            "status": "checked_in",
+            "check_in": {"$lte": now},
+            "check_out": {"$gt": now}
+        }, {"_id": 0, "room_id": 1}).to_list(100)
+        occupied_room_ids = [r.get("room_id") for r in active_res if r.get("room_id")]
+
+        # Kat bazli analiz
+        floor_data = {}
+        for r in rooms:
+            floor = r.get("floor", "Zemin")
+            if floor not in floor_data:
+                floor_data[floor] = {"total": 0, "occupied": 0, "empty": 0}
+            floor_data[floor]["total"] += 1
+            if r.get("id") in occupied_room_ids:
+                floor_data[floor]["occupied"] += 1
+            else:
+                floor_data[floor]["empty"] += 1
+
+        # Ornek hava durumu verisi (Normalde dis API'den alinmali, simdilik mock)
+        weather_conditions = ["Gunesli, 25C", "Bulutlu, 15C", "Hafif Yagmurlu, 12C", "Sicak, 32C"]
+        current_weather = random.choice(weather_conditions)
+
+        prompt = f"""
+        Sen 'Green Hotel AI' adlı bir sürdürülebilirlik ve enerji tasarruf uzmanısın.
+        Bugünün tarihi: {now} | Hava Durumu (Foça): {current_weather}
+        
+        Kat bazlı güncel doluluk oranları (Sadece 'occupied' olan odalarda misafir var):
+        {json.dumps(floor_data, indent=2, ensure_ascii=False)}
+        
+        Görevlerin:
+        1. Doluluk verilerini ve hava durumunu analiz et.
+        2. Tamamen veya büyük oranda boş olan katlar için (örneğin X. kattaki koridor aydınlatmalarını 1/3 oranına düşürün, ortak alan klimalarını kapatın gibi) "Enerji Tasarruf Aksiyonları" belirle.
+        3. Hava durumuna göre genel bina iklimlendirme (havuz ısıtması, genel lobi kliması vb.) tavsiyesi ver.
+        
+        Lutfen aşağıdaki JSON formatında don:
+        {{
+            "weather_context": "Disarisi 25C Gunesli oldugu icin...",
+            "carbon_saving_estimate_kg": 15.5,
+            "actions": [
+                {{"title": "2. Kat Ortak Alanlar", "description": "2. Katta hic misafir yok, koridor ve lobi klimalarini tamamen kapatin.", "department": "teknik"}}
+            ]
+        }}
+        """
+
+        ai_resp = await get_chat_response("automation", new_id(), prompt)
+        
+        import re
+        json_match = re.search(r'```(?:json)?(.*?)```', ai_resp, re.DOTALL)
+        res_str = json_match.group(1).strip() if json_match else ai_resp
+        report_data = json.loads(res_str)
+        
+        return {
+            "success": True,
+            "date": now,
+            "weather": current_weather,
+            "floor_occupancy": floor_data,
+            "report": report_data
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Green AI Raporu olusturulamadi: {str(e)}")

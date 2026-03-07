@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { DollarSign, TrendingUp, TrendingDown, Plus, Trash2, ChevronLeft, ChevronRight, PieChart, BarChart3, ArrowUpRight, ArrowDownRight } from 'lucide-react';
-import { getFinancialCategories, addIncome, addExpense, getIncomeList, getExpenseList, deleteFinancialRecord, getDailySummary, getMonthlySummary } from '../api';
+import { DollarSign, TrendingUp, TrendingDown, Plus, Trash2, ChevronLeft, ChevronRight, PieChart, BarChart3, ArrowUpRight, ArrowDownRight, Sparkles, Loader2, AlertTriangle, CheckCircle, ShieldAlert, Zap, Award, LineChart, Lightbulb } from 'lucide-react';
+import { getFinancialCategories, addIncome, addExpense, getIncomeList, getExpenseList, deleteFinancialRecord, getDailySummary, getMonthlySummary, getFinancialAudit, getFinancialForecast, getVendorROIAnalysis } from '../api';
 
 const TABS = [
   { key: 'overview', label: 'Genel Bakis' },
@@ -23,6 +23,18 @@ export default function FinancialsPage() {
   const [showForm, setShowForm] = useState(null); // 'income' | 'expense' | null
   const [formData, setFormData] = useState({ date: new Date().toISOString().split('T')[0], category: '', description: '', amount: '', source: 'direct', commission_rate: 0, vendor: '' });
   const [loading, setLoading] = useState(true);
+
+  // Phase 9: AI Audit
+  const [aiAudit, setAiAudit] = useState(null);
+  const [auditLoading, setAuditLoading] = useState(false);
+
+  // Phase 16: AI Forecast
+  const [aiForecast, setAiForecast] = useState(null);
+  const [forecastLoading, setForecastLoading] = useState(false);
+
+  // Phase 23: AI Vendor ROI
+  const [vendorRoi, setVendorRoi] = useState(null);
+  const [vendorRoiLoading, setVendorRoiLoading] = useState(false);
 
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
@@ -98,6 +110,58 @@ export default function FinancialsPage() {
           <p className="text-sm text-[#a9a9b2]">Finansal raporlar ve KPI'lar</p>
         </div>
         <div className="flex items-center gap-2">
+          <button 
+            onClick={async () => {
+              setForecastLoading(true);
+              try {
+                const res = await getFinancialForecast();
+                if (res.data?.success) setAiForecast(res.data.forecast);
+              } catch(e) { console.error(e); alert('Tahmin calistirilamadi.'); }
+              setForecastLoading(false);
+            }} 
+            disabled={forecastLoading}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition-all text-sm mr-2 shadow-[0_0_15px_rgba(79,70,229,0.3)]"
+          >
+            {forecastLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <LineChart className="w-4 h-4" />}
+            AI Gelecek Ay Tahmini
+          </button>
+
+          <button 
+            onClick={async () => {
+              setVendorRoiLoading(true);
+              try {
+                const res = await getVendorROIAnalysis(6);
+                if (res.data?.success) setVendorRoi(res.data.report);
+                else {
+                  alert(res.data?.message || 'Yeterli veri bulunamadi.');
+                  setVendorRoi(null);
+                }
+              } catch(e) { console.error(e); alert('Tedarikci Analizi calistirilamadi.'); }
+              setVendorRoiLoading(false);
+            }} 
+            disabled={vendorRoiLoading}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-medium transition-all text-sm mr-2 shadow-[0_0_15px_rgba(147,51,234,0.3)]"
+          >
+            {vendorRoiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <TrendingDown className="w-4 h-4" />}
+            AI TedarikCFO Raporu
+          </button>
+
+          <button 
+            onClick={async () => {
+              setAuditLoading(true);
+              try {
+                const res = await getFinancialAudit(year, month);
+                if (res.data?.success) setAiAudit(res.data.audit);
+              } catch(e) { console.error(e); alert('Denetim calistirilamadi.'); }
+              setAuditLoading(false);
+            }} 
+            disabled={auditLoading}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-medium transition-all text-sm mr-4"
+          >
+            {auditLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            Gemini CFO Denetimi
+          </button>
+          
           <button onClick={() => changeMonth(-1)} className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white" data-testid="prev-month-btn"><ChevronLeft className="w-4 h-4" /></button>
           <span className="text-white font-medium min-w-[140px] text-center">{MONTHS_TR[month-1]} {year}</span>
           <button onClick={() => changeMonth(1)} className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white" data-testid="next-month-btn"><ChevronRight className="w-4 h-4" /></button>
@@ -173,6 +237,265 @@ export default function FinancialsPage() {
                     ))}
                   </div>
                 </div>
+              )}
+
+              {/* Phase 16: AI Forecast Panel */}
+              {aiForecast && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-indigo-950/20 border border-indigo-500/30 rounded-xl p-6 relative overflow-hidden mt-6">
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
+                  <div className="flex justify-between items-start mb-6 relative z-10">
+                    <div>
+                      <h3 className="font-bold text-xl text-indigo-400 flex items-center gap-2">
+                        <LineChart className="w-6 h-6" /> AI Finansal Öngörü & Projeksiyon
+                      </h3>
+                      <p className="text-indigo-300 text-sm mt-1">Gelecek ay için beklenen nakit akışı ve öneriler</p>
+                    </div>
+                    <button onClick={() => setAiForecast(null)} className="text-[#a9a9b2] hover:text-white px-3 py-1 bg-white/5 rounded-lg text-sm">Paneli Kapat</button>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 relative z-10 mb-6">
+                     <div className="bg-[#12121a] border border-white/5 rounded-xl p-4 text-center">
+                        <div className="text-xs text-[#a9a9b2] mb-1">Tahmini Gelir</div>
+                        <div className="text-xl font-bold text-emerald-400">{formatMoney(aiForecast.projected_revenue_try)}</div>
+                     </div>
+                     <div className="bg-[#12121a] border border-white/5 rounded-xl p-4 text-center">
+                        <div className="text-xs text-[#a9a9b2] mb-1">Tahmini Gider</div>
+                        <div className="text-xl font-bold text-red-400">{formatMoney(aiForecast.projected_expense_try)}</div>
+                     </div>
+                     <div className="bg-[#12121a] border border-white/5 rounded-xl p-4 text-center">
+                        <div className="text-xs text-[#a9a9b2] mb-1">Beklenen Net Kâr</div>
+                        <div className="text-xl font-bold text-[#C4972A]">{formatMoney(aiForecast.projected_profit_try)}</div>
+                     </div>
+                     <div className="bg-[#12121a] border border-white/5 rounded-xl p-4 text-center">
+                        <div className="text-xs text-[#a9a9b2] mb-1">Beklenen Doluluk</div>
+                        <div className="text-xl font-bold text-blue-400">%{aiForecast.expected_occupancy_percent}</div>
+                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
+                    <div className="bg-[#0a0a0f] p-4 rounded-xl border border-white/5">
+                       <h4 className="flex items-center gap-2 font-medium text-white mb-3 text-sm">
+                          <BarChart3 className="w-4 h-4 text-indigo-400" /> Tahmin Notları & Gerekçeler
+                       </h4>
+                       <ul className="space-y-2">
+                          {aiForecast.forecast_notes?.map((note, idx) => (
+                             <li key={idx} className="text-xs text-[#c8c8d0] flex items-start gap-2">
+                                <span className="text-indigo-400 mt-0.5">•</span> {note}
+                             </li>
+                          ))}
+                       </ul>
+                    </div>
+                    <div className="bg-[#0a0a0f] p-4 rounded-xl border border-white/5">
+                       <h4 className="flex items-center gap-2 font-medium text-white mb-3 text-sm">
+                          <Lightbulb className="w-4 h-4 text-amber-400" /> Yönetim Tavsiyeleri
+                       </h4>
+                       <ul className="space-y-2">
+                          {aiForecast.actionable_advice?.map((adv, idx) => (
+                             <li key={idx} className="text-xs text-[#c8c8d0] flex items-start gap-2">
+                                <span className="text-amber-400 mt-0.5">•</span> {adv}
+                             </li>
+                          ))}
+                       </ul>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Phase 23: AI Vendor ROI Detailed Panel */}
+              {vendorRoi && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-purple-950/20 border border-purple-500/30 rounded-xl p-6 relative overflow-hidden mt-6">
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
+                  <div className="flex justify-between items-start mb-6 relative z-10">
+                    <div>
+                      <h3 className="font-bold text-xl text-purple-400 flex items-center gap-2">
+                        <TrendingDown className="w-6 h-6" /> Yapay Zeka Satin Alma & Tedarikci Analizi (ROI)
+                      </h3>
+                      <p className="text-purple-300 text-sm mt-1">Son 6 Aylik Verilere Dayali Tasarruf Odakli CFO Raporu</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      {vendorRoi.procurement_health_score !== undefined && (
+                        <div className="flex items-center gap-2 bg-purple-500/10 px-3 py-1.5 rounded-lg border border-purple-500/20">
+                          <Award className="w-5 h-5 text-purple-400" />
+                          <span className="text-purple-400 font-bold">Saglik: {vendorRoi.procurement_health_score}/100</span>
+                        </div>
+                      )}
+                      <button onClick={() => setVendorRoi(null)} className="text-[#a9a9b2] hover:text-white px-3 py-1 bg-white/5 rounded-lg text-sm">Paneli Kapat</button>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 relative z-10 mb-6">
+                    {/* Red Flags */}
+                    <div className="bg-[#0a0a0f] rounded-xl p-5 border border-white/5">
+                      <h4 className="flex items-center gap-2 font-medium text-white mb-4">
+                        <AlertTriangle className="w-5 h-5 text-red-500" /> Kirmizi Bayraklar & Fiyat Sismeleri
+                      </h4>
+                      {vendorRoi.red_flags?.length > 0 ? (
+                          <div className="space-y-3">
+                            {vendorRoi.red_flags.map((f, i) => (
+                              <div key={i} className="p-3 rounded-lg border bg-red-500/10 border-red-500/20 flex gap-3">
+                                <AlertTriangle className="w-5 h-5 flex-shrink-0 text-red-400" />
+                                <div>
+                                  <h5 className="text-sm font-semibold mb-1 text-red-300">{f.vendor}</h5>
+                                  <p className="text-[#e5e5e8] text-sm">{f.issue}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                      ) : (
+                          <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-center gap-3 text-emerald-400">
+                            <CheckCircle className="w-5 h-5" />
+                            Aciklanamayan fiyat artisi tespit edilmedi.
+                          </div>
+                      )}
+                    </div>
+                    
+                    {/* Savings Opportunities */}
+                    <div className="bg-[#0a0a0f] rounded-xl p-5 border border-white/5">
+                      <h4 className="flex items-center gap-2 font-medium text-white mb-4">
+                        <TrendingDown className="w-5 h-5 text-emerald-400" /> Tasarruf Firsatlari
+                      </h4>
+                      {vendorRoi.savings_opportunities?.length > 0 ? (
+                        <div className="space-y-4">
+                          {vendorRoi.savings_opportunities.map((s, i) => (
+                            <div key={i} className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-4">
+                              <div className="flex justify-between items-start mb-2">
+                                <h5 className="font-medium text-emerald-400">{s.opportunity}</h5>
+                                <span className="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded-full font-bold">
+                                  {formatMoney(s.estimated_monthly_saving_try)} / Ay
+                                </span>
+                              </div>
+                              <p className="text-sm text-[#e5e5e8] leading-relaxed">{s.action}</p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-[#a9a9b2]">Su an icin belirgin bir tasarruf firsati bulunamadi.</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 relative z-10">
+                    <div className="bg-[#0a0a0f] rounded-xl p-5 border border-purple-500/30">
+                      <h4 className="flex items-center gap-2 font-medium text-purple-400 mb-4 border-b border-purple-500/20 pb-3">
+                        Genel CFO Satin Alma Ozeti
+                      </h4>
+                      <p className="text-sm text-[#e5e5e8] leading-relaxed whitespace-pre-line">{vendorRoi.summary_message}</p>
+                    </div>
+
+                    <div className="bg-[#0a0a0f] rounded-xl p-5 border border-white/5">
+                      <h4 className="flex items-center gap-2 font-medium text-white mb-4">
+                        <Lightbulb className="w-5 h-5 text-amber-400" /> En Cok Harcama Yapilan Tedarikciler
+                      </h4>
+                      <div className="space-y-3">
+                        {vendorRoi.vendor_insights?.map((v, i) => (
+                          <div key={i} className="p-3 bg-white/5 border border-white/10 rounded-lg">
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="font-semibold text-white">{v.vendor}</span>
+                              <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded ${
+                                v.status === 'renegotiate' ? 'bg-orange-500/20 text-orange-400' : 
+                                v.status === 'replace' ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'
+                              }`}>{v.status}</span>
+                            </div>
+                            <p className="text-xs text-[#a9a9b2]">{v.note}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+              
+              {/* Phase 9: AI Audit Detailed Panel */}
+              {aiAudit && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-emerald-950/20 border border-emerald-500/30 rounded-xl p-6 relative overflow-hidden mt-6">
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
+                  <div className="flex justify-between items-start mb-6 relative z-10">
+                    <div>
+                      <h3 className="font-bold text-xl text-emerald-400 flex items-center gap-2">
+                        <ShieldAlert className="w-6 h-6" /> CFO Düzeyinde Yapay Zeka Denetim Raporu
+                      </h3>
+                      <p className="text-emerald-500/80 text-sm mt-1">{year}-{month} Donemi Icin Finansal Analiz ve Anomaliler</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      {aiAudit.financial_score && (
+                        <div className="flex items-center gap-2 bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20">
+                          <Award className="w-5 h-5 text-emerald-400" />
+                          <span className="text-emerald-400 font-bold">Skor: {aiAudit.financial_score}/100</span>
+                        </div>
+                      )}
+                      <button onClick={() => setAiAudit(null)} className="text-[#a9a9b2] hover:text-white px-3 py-1 bg-white/5 rounded-lg text-sm">Raporu Kapat</button>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 relative z-10">
+                    <div className="lg:col-span-2 space-y-6">
+                      {/* Anomalies */}
+                      <div className="bg-[#0a0a0f] rounded-xl p-5 border border-white/5">
+                        <h4 className="flex items-center gap-2 font-medium text-white mb-4">
+                          <AlertTriangle className="w-5 h-5 text-red-400" /> Tespit Edilen Anomaliler & Riskler
+                        </h4>
+                        {aiAudit.anomalies?.length > 0 ? (
+                           <div className="space-y-3">
+                             {aiAudit.anomalies.map((a, i) => (
+                               <div key={i} className={`p-3 rounded-lg border flex gap-3 ${a.severity === 'high' ? 'bg-red-500/10 border-red-500/20' : 'bg-orange-500/10 border-orange-500/20'}`}>
+                                  <AlertTriangle className={`w-5 h-5 flex-shrink-0 ${a.severity === 'high' ? 'text-red-400' : 'text-orange-400'}`} />
+                                  <div>
+                                    <h5 className={`text-sm font-semibold mb-1 ${a.severity === 'high' ? 'text-red-300' : 'text-orange-300'}`}>{a.type}</h5>
+                                    <p className="text-[#e5e5e8] text-sm">{a.description}</p>
+                                  </div>
+                               </div>
+                             ))}
+                           </div>
+                        ) : (
+                           <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-center gap-3 text-emerald-400">
+                             <CheckCircle className="w-5 h-5" />
+                             Bu donemde supheli bir finansal islem (anomali) tespit edilmedi.
+                           </div>
+                        )}
+                      </div>
+                      
+                      {/* Savings & ROI */}
+                      <div className="bg-[#0a0a0f] rounded-xl p-5 border border-white/5">
+                        <h4 className="flex items-center gap-2 font-medium text-white mb-4">
+                          <TrendingUp className="w-5 h-5 text-[#C4972A]" /> Tedarikci ROI & Tasarruf Tavsiyeleri
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                          {aiAudit.savings_recommendations?.map((r, i) => (
+                             <div key={i} className="bg-white/5 border border-white/10 rounded-lg p-4">
+                               <h5 className="font-medium text-[#C4972A] mb-2">{r.title}</h5>
+                               <p className="text-sm text-[#e5e5e8] leading-relaxed mb-3">{r.detail}</p>
+                               <span className="text-xs px-2 py-1 bg-white/10 rounded text-[#a9a9b2]">Etki: {r.impact?.toUpperCase()}</span>
+                             </div>
+                          ))}
+                        </div>
+                        
+                        {aiAudit.revenue_insights && aiAudit.revenue_insights.length > 0 && (
+                           <>
+                              <h4 className="flex items-center gap-2 font-medium text-white mb-4 pt-4 border-t border-white/5">
+                                <Zap className="w-5 h-5 text-blue-400" /> Gelir Artirma Stratejileri
+                              </h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {aiAudit.revenue_insights.map((r, i) => (
+                                   <div key={i} className="bg-blue-500/5 border border-blue-500/20 rounded-lg p-4">
+                                     <h5 className="font-medium text-blue-400 mb-2">{r.title}</h5>
+                                     <p className="text-sm text-[#e5e5e8] leading-relaxed mb-3">{r.detail}</p>
+                                   </div>
+                                ))}
+                              </div>
+                           </>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* General Summary Sidebar */}
+                    <div className="bg-[#0a0a0f] rounded-xl p-5 border border-emerald-500/30 shadow-[0_0_30px_rgba(16,185,129,0.05)]">
+                       <h4 className="flex items-center gap-2 font-medium text-emerald-400 mb-4 border-b border-emerald-500/20 pb-3">
+                         Yapay Zeka CFO Ozeti
+                       </h4>
+                       <p className="text-sm text-[#e5e5e8] leading-relaxed whitespace-pre-line">{aiAudit.summary}</p>
+                    </div>
+                  </div>
+                </motion.div>
               )}
             </motion.div>
           )}

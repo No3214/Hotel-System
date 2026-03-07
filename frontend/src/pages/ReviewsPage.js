@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getReviews, createReview, generateReviewResponse, updateReview, deleteReview, getReviewStats, getReviewAIAnalytics } from '../api';
+import { getReviews, createReview, generateReviewResponse, updateReview, deleteReview, getReviewStats, getReviewAIAnalytics, getDeepSentiment } from '../api';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
-import { Star, Plus, Trash2, Sparkles, Copy, Check, RefreshCw, MessageSquare, TrendingUp, ThumbsUp, ThumbsDown, Loader2 } from 'lucide-react';
+import { Star, Plus, Trash2, Sparkles, Copy, Check, RefreshCw, MessageSquare, TrendingUp, ThumbsUp, ThumbsDown, Loader2, SearchX, Search, AlertCircle, Heart } from 'lucide-react';
 
 const TONES = [
   { value: 'professional', label: 'Profesyonel' },
@@ -32,6 +32,10 @@ function ReviewCard({ review, onGenerate, onDelete, generating }) {
   const [tone, setTone] = useState('professional');
   const [editedResponse, setEditedResponse] = useState(review.ai_response || '');
   const [saving, setSaving] = useState(false);
+  
+  // Phase 15 Sentiment State
+  const [sentiment, setSentiment] = useState(review.deep_sentiment || null);
+  const [sentimentLoading, setSentimentLoading] = useState(false);
 
   useEffect(() => { setEditedResponse(review.ai_response || ''); }, [review.ai_response]);
 
@@ -46,6 +50,17 @@ function ReviewCard({ review, onGenerate, onDelete, generating }) {
     setSaving(true);
     await updateReview(review.id, { ai_response: editedResponse }).catch(console.error);
     setSaving(false);
+  };
+
+  const handleDeepSentiment = async () => {
+      setSentimentLoading(true);
+      try {
+          const { data } = await getDeepSentiment(review.id);
+          if (data.success) {
+              setSentiment(data.sentiment);
+          }
+      } catch (e) { console.error("Deep Sentiment err:", e); }
+      setSentimentLoading(false);
   };
 
   return (
@@ -80,6 +95,65 @@ function ReviewCard({ review, onGenerate, onDelete, generating }) {
       <p className="text-[#c8c8d0] text-sm leading-relaxed bg-white/3 rounded-lg p-3 border-l-2 border-[#C4972A]/30" data-testid="review-text">
         "{review.review_text}"
       </p>
+
+      {/* Phase 15: AI Deep Sentiment Panel */}
+      <div className="mt-2">
+         {!sentiment ? (
+            <Button size="sm" variant="outline" onClick={handleDeepSentiment} disabled={sentimentLoading} className="text-[10px] h-7 border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10">
+               {sentimentLoading ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Search className="w-3 h-3 mr-1" />}
+               Duygu & Eğilim Analizi (Deep Sentiment)
+            </Button>
+         ) : (
+            <div className="bg-[#12121a] border border-indigo-500/20 rounded-lg p-4 space-y-3 relative overflow-hidden">
+               <div className="absolute top-0 right-0 p-2 opacity-5"><Search className="w-16 h-16 text-indigo-400" /></div>
+               <h4 className="text-xs font-semibold text-indigo-400 flex items-center gap-1 mb-2"><Sparkles className="w-3 h-3"/> AI Duygu Analizi Raporu</h4>
+               
+               <div className="grid grid-cols-3 gap-2">
+                  <div className="bg-white/5 rounded p-2 text-center">
+                     <div className="text-[10px] text-[#7e7e8a] mb-0.5">Hizmet Skoru</div>
+                     <div className="text-sm font-bold text-white">{sentiment.scores?.service || '-'} <span className="text-[10px] text-[#7e7e8a] font-normal">/10</span></div>
+                  </div>
+                  <div className="bg-white/5 rounded p-2 text-center">
+                     <div className="text-[10px] text-[#7e7e8a] mb-0.5">Temizlik Skoru</div>
+                     <div className="text-sm font-bold text-white">{sentiment.scores?.cleanliness || '-'} <span className="text-[10px] text-[#7e7e8a] font-normal">/10</span></div>
+                  </div>
+                  <div className="bg-white/5 rounded p-2 text-center">
+                     <div className="text-[10px] text-[#7e7e8a] mb-0.5">Lezzet Skoru</div>
+                     <div className="text-sm font-bold text-white">{sentiment.scores?.food_quality || '-'} <span className="text-[10px] text-[#7e7e8a] font-normal">/10</span></div>
+                  </div>
+               </div>
+
+               <div className="grid grid-cols-2 gap-3 mt-3">
+                  {sentiment.hidden_praises?.length > 0 && (
+                     <div className="space-y-1">
+                        <div className="text-[10px] font-semibold text-emerald-400 flex items-center gap-1"><Heart className="w-3 h-3"/> Gizli Övgüler</div>
+                        <ul className="space-y-1">
+                           {sentiment.hidden_praises.map((item, idx) => <li key={idx} className="text-[10px] text-[#c8c8d0]">• {item}</li>)}
+                        </ul>
+                     </div>
+                  )}
+                  {sentiment.hidden_complaints?.length > 0 && (
+                     <div className="space-y-1">
+                        <div className="text-[10px] font-semibold text-red-400 flex items-center gap-1"><SearchX className="w-3 h-3"/> Gizli Şikayetler</div>
+                        <ul className="space-y-1">
+                           {sentiment.hidden_complaints.map((item, idx) => <li key={idx} className="text-[10px] text-[#c8c8d0]">• {item}</li>)}
+                        </ul>
+                     </div>
+                  )}
+               </div>
+
+               {sentiment.action_required && (
+                  <div className="mt-3 bg-red-500/10 border border-red-500/20 rounded p-2 flex items-start gap-2">
+                     <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                     <div className="text-[11px] text-red-200">
+                        <strong className="text-red-400 block mb-0.5">Departman Uyarısı:</strong>
+                        {sentiment.department_warning}
+                     </div>
+                  </div>
+               )}
+            </div>
+         )}
+      </div>
 
       {/* AI Response Section */}
       <div className="space-y-3">

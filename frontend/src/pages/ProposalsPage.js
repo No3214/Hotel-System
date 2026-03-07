@@ -62,6 +62,10 @@ export default function ProposalsPage() {
     internal_notes: '',
   });
 
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiTheme, setAiTheme] = useState('');
+  const [aiDietary, setAiDietary] = useState('');
+
   const load = useCallback(async () => {
     try {
       const [propRes, statsRes] = await Promise.all([
@@ -114,6 +118,35 @@ export default function ProposalsPage() {
       setCreating(false);
       load();
     } catch (err) { alert(err.response?.data?.detail || 'Hata'); }
+  };
+
+  const generateAIMenu = async () => {
+    setAiLoading(true);
+    try {
+      const res = await api.post('/proposals/ai-menu-planner', {
+         event_type: form.event_type,
+         guest_count: form.guest_count,
+         budget_per_person: form.meal_per_person,
+         dietary_notes: aiDietary,
+         theme: aiTheme
+      });
+      if (res.data.ai_menus && res.data.ai_menus.length > 0) {
+         const aiMenu = res.data.ai_menus[0];
+         setForm(p => ({
+             ...p, 
+             meal_per_person: aiMenu.per_person_price,
+             meal_cash_price: aiMenu.per_person_price * 0.9,
+             notes: p.notes + '\n\n--- AI ZIYAFET MENUSU ---\n' + aiMenu.description
+         }));
+         alert("AI Menü başarıyla oluşturuldu! Fiyat güncellendi ve menü detayları Notlar kısmına eklendi.");
+      } else if (res.data.error) {
+         alert(res.data.error);
+      }
+    } catch (e) {
+      alert("Hata olustu.");
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   const handleStatus = async (id, status) => {
@@ -415,7 +448,28 @@ export default function ProposalsPage() {
 
             {/* Yemek */}
             <div>
-              <h4 className="text-sm font-medium text-orange-400 mb-2">Yemek ({form.guest_count} kisi)</h4>
+              <div className="flex justify-between items-center mb-2">
+                 <h4 className="text-sm font-medium text-orange-400">Yemek ({form.guest_count} kisi)</h4>
+                 <Dialog>
+                    <DialogTrigger asChild>
+                       <Button size="sm" variant="outline" className="border-orange-500/30 text-orange-400 h-7 text-xs">
+                          <Sparkles className="w-3 h-3 mr-1" /> AI Menü Tasarla
+                       </Button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-[#1a1a2e] border-orange-500/20 max-w-md text-white">
+                       <DialogHeader><DialogTitle className="text-orange-400">AI Ziyafet Menüsü Tasarımcısı</DialogTitle></DialogHeader>
+                       <div className="space-y-3">
+                          <p className="text-xs text-gray-400">Müsşterinin bütçesi, konsepti ve diyet isteklerine göre otomatik vegan/glütensiz veya gösterişli menüler oluşturun.</p>
+                          <Input placeholder="Tema/Konsept (Örn: Rustik Kır Düğünü)" value={aiTheme} onChange={e => setAiTheme(e.target.value)} className="bg-white/5 border-white/10" />
+                          <Input placeholder="Özel Diyet (Örn: %20 Vegan Menü)" value={aiDietary} onChange={e => setAiDietary(e.target.value)} className="bg-white/5 border-white/10" />
+                          <Input type="number" placeholder="Kişi Başı Hedef Bütçe (TL)" value={form.meal_per_person} onChange={e => setForm(p => ({ ...p, meal_per_person: parseFloat(e.target.value) || 0 }))} className="bg-white/5 border-white/10" />
+                          <Button onClick={generateAIMenu} disabled={aiLoading} className="w-full bg-orange-600 hover:bg-orange-700 text-white">
+                             {aiLoading ? 'Menü Üretiliyor...' : 'Menüyü Oluştur ve Teklife Ekle'}
+                          </Button>
+                       </div>
+                    </DialogContent>
+                 </Dialog>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs text-[#7e7e8a]">Kredi Karti (kisi basi)</label>

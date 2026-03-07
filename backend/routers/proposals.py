@@ -73,6 +73,14 @@ class ProposalCreate(BaseModel):
     internal_notes: str = ""
 
 
+class AIMenuRequest(BaseModel):
+    event_type: str = "dugun"
+    guest_count: int = 50
+    budget_per_person: float = 0
+    dietary_notes: str = ""
+    theme: str = ""
+
+
 class ProposalUpdate(BaseModel):
     status: Optional[str] = None
     customer_name: Optional[str] = None
@@ -269,6 +277,51 @@ async def proposal_stats():
         "accepted_value": accepted_value,
         "conversion_rate": round(accepted / sent * 100, 1) if sent > 0 else 0,
     }
+
+
+@router.post("/proposals/ai-menu-planner")
+async def generate_ai_menu(data: AIMenuRequest):
+    """Yapay Zeka destekli Banket/Etkinlik Menusu uret"""
+    from gemini_service import get_chat_response
+    import json
+    import re
+
+    prompt = f"""
+    Sen luks ve tarihi bir mekan olan 'Kozbeyli Konagi'nin bas asisi ve etkinlik planlayacisisin.
+    Amac: Asagidaki kriterlere cok uygun, detayli ve maliyetlendirilmis bir organizasyon menusu (Yemek Secenekleri) uretmek.
+
+    Kriterler:
+    - Etkinlik Turu: {data.event_type}
+    - Kisi Sayisi: {data.guest_count}
+    - Kisi Basi Hedef Bütce: {data.budget_per_person} TL
+    - Ozel Diyet/Kisitlamalar: {data.dietary_notes}
+    - Tema/Konsept: {data.theme}
+
+    Lutfen bana bütceye uygun, yaratici ve gösterisli 1 veya 2 farkli menu opsiyonu sun.
+    Sadece asagidaki JSON formatinda sonuc don. (Markdown icinde)
+    [
+      {{
+        "description": "Orn: Vegan Ruyasi Menusu - Baslangic: ..., Ana Yemek: ..., Tatli: ...",
+        "per_person_price": 450.0,
+        "guest_count": {data.guest_count},
+        "payment_method": "{data.theme} konseptine ozel hazirlanmistir."
+      }}
+    ]
+    Eger bütce cok duksukse bile en iyi alternatif menuyu yarat. fiyatlar mantikli olsun.
+    """
+
+    try:
+        ai_response = await get_chat_response("Menü Planla", new_id(), prompt)
+        json_match = re.search(r'```(?:json)?(.*?)```', ai_response, re.DOTALL)
+        res_str = json_match.group(1).strip() if json_match else ai_response
+        parsed_menus = json.loads(res_str)
+
+        for m in parsed_menus:
+            m["total"] = float(m.get("per_person_price", 0)) * data.guest_count
+
+        return {"ai_menus": parsed_menus, "analysis": "Menu, belirttiginiz butce ve konsept dahilinde AI tarafindan uretildi."}
+    except Exception as e:
+        return {"error": f"AI Menu uretilirken hata olustu: {str(e)}"}
 
 
 # ===================== PDF GENERATION =====================

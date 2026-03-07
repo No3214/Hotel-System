@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { getStaff, createStaff, deleteStaff, getShifts, createShift, deleteShift, getAIShifts } from '../api';
+import { getStaff, createStaff, deleteStaff, getShifts, createShift, deleteShift, getAIShifts, getAIPerformance, getAIHRAnalytics } from '../api';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Users, Plus, Trash2, Clock, Calendar, Sparkles, AlertCircle, Check } from 'lucide-react';
+import { Users, Plus, Trash2, Clock, Calendar, Sparkles, AlertCircle, Check, Activity, ShieldAlert, Award, TrendingUp } from 'lucide-react';
 
 const DEPARTMENTS = {
   resepsiyon: 'Resepsiyon',
@@ -31,6 +31,17 @@ export default function StaffPage() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiStartDate, setAiStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [aiResult, setAiResult] = useState(null);
+
+  // AI Performance State
+  const [perfLoading, setPerfLoading] = useState(false);
+  const [perfResult, setPerfResult] = useState(null);
+  const [selectedStaffForPerf, setSelectedStaffForPerf] = useState(null);
+  const [openPerf, setOpenPerf] = useState(false);
+
+  // AI HR Analytics State
+  const [aiHrLoading, setAiHrLoading] = useState(false);
+  const [aiHrResult, setAiHrResult] = useState(null);
+  const [openAiHr, setOpenAiHr] = useState(false);
 
   const loadStaff = () => { getStaff().then(r => setStaff(r.data.staff)).catch(console.error).finally(() => setLoading(false)); };
   const loadShifts = () => { getShifts().then(r => setShifts(r.data.shifts)).catch(console.error); };
@@ -92,6 +103,44 @@ export default function StaffPage() {
     setTab('shifts');
   };
 
+  const handleGenerateAIPerformance = async (staffMember) => {
+    setSelectedStaffForPerf(staffMember);
+    setOpenPerf(true);
+    setPerfLoading(true);
+    setPerfResult(null);
+    try {
+      const res = await getAIPerformance(staffMember.id);
+      if (res.data.performance) {
+        setPerfResult(res.data.performance);
+      } else if (res.data.error) {
+        alert(res.data.error);
+        setOpenPerf(false);
+      }
+    } catch (e) {
+      console.error(e);
+      alert("AI Performans Raporu üretirken hata olustu.");
+      setOpenPerf(false);
+    } finally {
+      setPerfLoading(false);
+    }
+  };
+
+  const handleGenerateAIHRAnalytics = async () => {
+    setOpenAiHr(true);
+    setAiHrLoading(true);
+    setAiHrResult(null);
+    try {
+      const res = await getAIHRAnalytics();
+      if (res.data?.report) setAiHrResult(res.data.report);
+      else if (res.data?.error) alert(res.data.error);
+    } catch (e) {
+      console.error(e);
+      alert('HR Analizi üretilirken hata oluştu.');
+    } finally {
+      setAiHrLoading(false);
+    }
+  };
+
   return (
     <div className="p-6 lg:p-8 space-y-6 max-w-[1400px]" data-testid="staff-page">
       <div className="flex items-center justify-between">
@@ -100,6 +149,9 @@ export default function StaffPage() {
           <p className="text-[#7e7e8a] text-sm mt-1">{staff.length} personel, {shifts.length} vardiya</p>
         </div>
         <div className="flex gap-2">
+          <Button onClick={handleGenerateAIHRAnalytics} className="bg-purple-600 hover:bg-purple-500 text-white shadow-[0_0_15px_rgba(147,51,234,0.3)]">
+            <ShieldAlert className="w-4 h-4 mr-2" /> AI HR Radarı
+          </Button>
           <Dialog open={openStaff} onOpenChange={setOpenStaff}>
             <DialogTrigger asChild>
               <Button className="bg-[#C4972A] hover:bg-[#a87a1f] text-white" data-testid="add-staff-btn">
@@ -189,15 +241,161 @@ export default function StaffPage() {
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
-              <div className="mt-3 flex items-center gap-2">
+              <div className="mt-3 flex items-center gap-2 mb-3">
                 <Badge className="bg-white/5 text-[#7e7e8a] text-xs">{DEPARTMENTS[s.department] || s.department}</Badge>
                 {s.phone && <span className="text-xs text-[#7e7e8a]">{s.phone}</span>}
+              </div>
+              <div className="border-t border-white/5 pt-3">
+                <Button size="sm" onClick={() => handleGenerateAIPerformance(s)} className="w-full bg-blue-500/10 text-blue-400 hover:bg-blue-500/20">
+                  <Activity className="w-3 h-3 mr-2" /> AI Performans Raporu
+                </Button>
               </div>
             </div>
           ))}
           {staff.length === 0 && <div className="col-span-3 text-center py-12 text-[#7e7e8a]"><Users className="w-12 h-12 mx-auto mb-3 opacity-30" /><p>Henuz personel yok</p></div>}
         </div>
       )}
+
+      {/* AI Performance Modal */}
+      <Dialog open={openPerf} onOpenChange={setOpenPerf}>
+        <DialogContent className="bg-[#1a1a22] border-blue-500/20 max-w-lg text-white">
+          <DialogHeader>
+            <DialogTitle className="text-blue-400 flex items-center gap-2">
+              <Sparkles className="w-5 h-5" /> AI Personel Performans Raporu
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {perfLoading ? (
+              <div className="text-center py-8">
+                <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                <p className="text-gray-400 text-sm">Gemini {selectedStaffForPerf?.name} icin 360 derece performans verilerini (Gorev, Yorum, Vardiya) analiz ediyor...</p>
+              </div>
+            ) : perfResult ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between bg-blue-500/10 p-4 rounded-lg">
+                  <div>
+                    <h3 className="font-semibold text-white">{selectedStaffForPerf?.name}</h3>
+                    <p className="text-xs text-blue-300">{DEPARTMENTS[selectedStaffForPerf?.department]}</p>
+                  </div>
+                  <div className="text-center">
+                    <span className="text-3xl font-bold tracking-tighter text-blue-400">{perfResult.score}</span>
+                    <span className="text-xs text-gray-500 block">/ 10</span>
+                  </div>
+                </div>
+
+                <div className="text-sm text-gray-300 leading-relaxed italic bg-white/5 p-3 rounded">
+                  "{perfResult.summary}"
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 mt-2">
+                  <div className="bg-green-500/10 p-3 rounded border border-green-500/20">
+                    <h4 className="text-xs font-semibold text-green-400 mb-2">Güçlü Yönleri</h4>
+                    <ul className="list-disc pl-4 text-xs text-gray-300 space-y-1">
+                      {perfResult.strengths?.map((s, i) => <li key={i}>{s}</li>)}
+                    </ul>
+                  </div>
+                  <div className="bg-red-500/10 p-3 rounded border border-red-500/20">
+                    <h4 className="text-xs font-semibold text-red-400 mb-2">Gelişim Alanları</h4>
+                    <ul className="list-disc pl-4 text-xs text-gray-300 space-y-1">
+                      {perfResult.areas_of_improvement?.map((s, i) => <li key={i}>{s}</li>)}
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="bg-[#C4972A]/10 p-3 rounded border border-[#C4972A]/20">
+                  <h4 className="text-xs font-semibold text-[#C4972A] mb-1">Yönetici Tavsiyesi</h4>
+                  <p className="text-xs text-gray-300">{perfResult.manager_advice}</p>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI HR Analytics Modal */}
+      <Dialog open={openAiHr} onOpenChange={setOpenAiHr}>
+        <DialogContent className="bg-[#1a1a22] border-purple-500/30 max-w-4xl text-white max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-purple-400 flex items-center gap-2 text-xl">
+              <ShieldAlert className="w-6 h-6" /> AI İnsan Kaynakları & Tükenmişlik Radarı
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
+            {aiHrLoading ? (
+              <div className="text-center py-12">
+                <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-gray-400 text-sm">Gemini otel genelindeki is yükünü ve vardiya dökümlerini analiz ediyor...</p>
+              </div>
+            ) : aiHrResult ? (
+              <div className="space-y-6">
+                
+                {/* Score & Summary */}
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-6 text-center flex-shrink-0 flex flex-col justify-center items-center min-w-[200px]">
+                    <Award className="w-8 h-8 text-purple-400 mb-2" />
+                    <div className="text-sm text-purple-300 mb-1">HR Sağlık Skoru</div>
+                    <div className="text-4xl font-bold text-white">{aiHrResult.hr_health_score}</div>
+                  </div>
+                  <div className="bg-white/5 border border-white/10 rounded-xl p-6 flex-1 flex flex-col justify-center">
+                    <h4 className="text-purple-400 font-medium mb-2 flex items-center gap-2"><Sparkles className="w-4 h-4"/> Yönetici Özeti</h4>
+                    <p className="text-[#e5e5e8] text-sm leading-relaxed">{aiHrResult.summary}</p>
+                  </div>
+                </div>
+
+                {/* Burnout Risks */}
+                <div>
+                  <h4 className="flex items-center gap-2 text-red-400 font-medium mb-3">
+                    <AlertCircle className="w-5 h-5" /> Tükenmişlik Riskleri (Kırmızı Bayraklar)
+                  </h4>
+                  {aiHrResult.burnout_risks?.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {aiHrResult.burnout_risks.map((risk, i) => (
+                        <div key={i} className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+                           <div className="flex justify-between items-start mb-2">
+                              <span className="font-semibold text-white">{risk.staff_name}</span>
+                              <Badge className={risk.risk_level === 'high' ? 'bg-red-500 text-white' : 'bg-orange-500 text-white'}>{risk.risk_level.toUpperCase()}</Badge>
+                           </div>
+                           <p className="text-xs text-red-200 mb-1">Departman: {DEPARTMENTS[risk.department] || risk.department}</p>
+                           <p className="text-sm text-gray-300">{risk.reason}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-4 rounded-lg flex items-center gap-2 text-sm">
+                      <Check className="w-4 h-4" /> Şu an için kritik seviyede tükenmişlik riski taşıyan personel bulunmuyor.
+                    </div>
+                  )}
+                </div>
+
+                {/* Grid for Imbalance and Actions */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <div className="bg-white/5 border border-white/10 rounded-xl p-5">
+                      <h4 className="text-orange-400 font-medium mb-3 flex items-center gap-2">
+                         <TrendingUp className="w-4 h-4"/> İş Yükü Dengesizliği
+                      </h4>
+                      <p className="text-sm text-gray-300 leading-relaxed">{aiHrResult.workload_imbalance}</p>
+                   </div>
+                   
+                   <div className="bg-white/5 border border-white/10 rounded-xl p-5">
+                      <h4 className="text-[#C4972A] font-medium mb-3 flex items-center gap-2">
+                         <Activity className="w-4 h-4"/> Motivasyon Eylem Planı
+                      </h4>
+                      <ul className="space-y-3">
+                         {aiHrResult.motivation_actions?.map((act, i) => (
+                           <li key={i} className="text-sm p-3 bg-black/20 rounded">
+                             <div className="font-semibold text-[#C4972A] mb-1">{act.target}</div>
+                             <div className="text-gray-300 text-xs">{act.action}</div>
+                           </li>
+                         ))}
+                      </ul>
+                   </div>
+                </div>
+
+              </div>
+            ) : null}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Shifts List */}
       {tab === 'shifts' && (

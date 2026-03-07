@@ -3,6 +3,8 @@ from typing import Optional
 from database import db
 from helpers import utcnow, new_id, clean_doc
 from models import EventCreate
+import json
+from gemini_service import get_chat_response
 
 router = APIRouter(tags=["events"])
 
@@ -126,3 +128,57 @@ async def seed_sample_events():
             inserted += 1
 
     return {"success": True, "inserted": inserted, "total_samples": len(sample_events)}
+
+# ==================== PHASE 14: AI EVENT PLANNER ====================
+
+@router.post("/events/ai-planner")
+async def ai_event_planner(plan_params: dict):
+    """
+    Parametreler: event_type, headcount, budget_level (low/med/high), special_requests
+    Otel icin (dugun, toplanti, yoga kampi vb.) detayli saatlik akis, menu onerisi ve personel tahmini uretir.
+    """
+    event_type = plan_params.get("event_type", "Kurumsal Toplanti")
+    headcount = plan_params.get("headcount", 50)
+    budget = plan_params.get("budget_level", "medium")
+    special = plan_params.get("special_requests", "")
+
+    try:
+        prompt = f"""
+        Sen luks bir butik otelin (Kozbeyli Konagi) Bas Etkinlik ve Ziyafet Planlayicisisin (AI Event Planner).
+        Musteri soyle bir etkinlik talebinde bulundu:
+        - Etkinlik Tipi: {event_type}
+        - Kisi Sayisi: {headcount}
+        - Butce Seviyesi: {budget}
+        - Ozel Istekler: {special}
+
+        Gorevin, bu parametrelere uygun, satisi kapatacak kadar estetik, detayli ve gercekci bir etkinlik plani sunmak.
+        SADECE JSON FORMATINDA dondur:
+        {{
+           "event_title": "...",
+           "theme_concept": "...",
+           "recommended_menu": [
+              {{"course": "Baslangic", "item": "..."}},
+              {{"course": "Ana Yemek", "item": "..."}}
+           ],
+           "schedule": [
+              {{"time": "14:00", "activity": "Karsilama ve Hosgeldin Kokteyli"}},
+              {{"time": "15:00", "activity": "..."}}
+           ],
+           "staff_requirements": "Orn: 3 Garson, 1 Sef, 1 Etkinlik Yoneticisi",
+           "estimated_cost_try": 25000,
+           "ai_advice": "Satisi kapatmak icin musteriye sunulacak ozel bir jest veya tavsiye"
+        }}
+        """
+        ai_resp = await get_chat_response("events", f"plan_{headcount}", prompt)
+        
+        import re
+        json_match = re.search(r'```(?:json)?(.*?)```', ai_resp, re.DOTALL)
+        res_str = json_match.group(1).strip() if json_match else ai_resp
+        plan_data = json.loads(res_str)
+
+        return {
+            "success": True,
+            "plan": plan_data
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI Event Planner hatasi: {str(e)}")

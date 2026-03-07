@@ -2,6 +2,8 @@ from fastapi import APIRouter, Request
 from database import db
 from helpers import utcnow, new_id
 from models import ChatRequest, WhatsAppMessage
+from pydantic import BaseModel
+from typing import Optional
 from hotel_data import ROOMS, RESTAURANT_MENU, HOTEL_POLICIES, FOCA_LOCAL_GUIDE, GEMINI_SYSTEM_PROMPT
 from chatbot_engine import (
     process_chatbot_message, detect_intent, route_to_agent,
@@ -11,6 +13,11 @@ from anti_hallucination import sanitize_response
 from rate_limiter import rate_limit_or_raise
 
 router = APIRouter(tags=["chatbot"])
+
+class TranslateRequest(BaseModel):
+    message: str
+    target_language: str = "tr"  # Usually we want to translate foreign messages to Turkish for the staff
+    hotel_context: Optional[str] = None # E.g. "Guest is asking for early checkin, we are full"
 
 
 @router.post("/chatbot")
@@ -111,6 +118,47 @@ async def chat_history(session_id: str):
         {"session_id": session_id}, {"_id": 0}
     ).sort("created_at", 1).to_list(100)
     return {"messages": messages}
+
+
+@router.post("/messages/ai-translate")
+async def ai_translate_message(request: TranslateRequest):
+    """
+    Translates an incoming guest message to the staff's language (Turkish) 
+    AND generates a proposed professional response in the guest's ORIGINAL language.
+    """
+    from gemini_service import get_chat_response
+    import json
+    import re
+    
+    prompt = f"""
+    Sen Kozbeyli Konagi otelinin cok dilli iletisim asistanisin.
+    
+    Gelen Misafir Mesaji: "{request.message}"
+    Otel Yoneticisinin (Senin) Notu / Baglami: "{request.hotel_context or 'Mantikli ve kibar bir sekilde yanitla.'}"
+    
+    Gorevlerin:
+    1. Gelen mesajin dilini tespit et (Orn: 'en', 'ru', 'de').
+    2. Gelen mesaji Turkceye cevir.
+    3. Eger otel yoneticisinin bir notu varsa, bu notu baz alarak; yoksa genel otel kurallarina gore misafirin KENDI DİLİNDE profesyonel, kibar ve pazarimsil bir otel yaniti (smart reply) olustur.
+    
+    Lutfen SADECE asagidaki JSON formatinda sonuc don. Markdown icinde olabilir ama gecerli JSON olmali.
+    {{
+        "detected_language": "English",
+        "translated_text": "Erken giris yapabilir miyim?",
+        "suggested_reply": "Dear guest, subject to availability on your arrival day, we will do our best to accommodate your early check-in request. We look forward to welcoming you!"
+    }}
+    """
+    
+    try:
+        ai_response = await get_chat_response("Translation Service", "translate_" + new_id(), prompt)
+        
+        json_match = re.search(r'```(?:json)?(.*?)```', ai_response, re.DOTALL)
+        res_str = json_match.group(1).strip() if json_match else ai_response
+        parsed_result = json.loads(res_str)
+        
+        return {"success": True, "data": parsed_result}
+    except Exception as e:
+        return {"success": False, "error": f"AI Ceviri hatasi: {str(e)}"}
 
 
 @router.delete("/chatbot/session/{session_id}")

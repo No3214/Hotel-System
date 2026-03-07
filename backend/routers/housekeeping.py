@@ -121,3 +121,75 @@ async def get_ai_routing():
         return {"success": True, "routing": data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI Rotalama hatasi: {str(e)}")
+
+
+# ==================== PHASE 10: AI LOST & FOUND MATCHER ====================
+
+@router.post("/housekeeping/lost-found-match")
+async def ai_lost_and_found_match():
+    """
+    Yapay zeka (NLP) kullanarak "Kayıp" (Lost) bildirimleri ile 
+    kat görevlilerinin girdiği "Bulunan" (Found) eşyaları anlamsal olarak eşleştirir.
+    """
+    try:
+        # 1. Veritabanından (örnek/mock veya gerçek koleksiyondan) kayıp eşyaları çek
+        # Not: Halihazırda 'lost_and_found' tablosu projenin şemasında var varsayalım veya DB'den çekelim.
+        # Eğitici olması için db'de aranacak ama şimdilik örnek data üzerinden gösteriyoruz,
+        # gercek senaryoda `await db.lost_and_found.find(...)` yapilir.
+        
+        items = await db.lost_and_found.find({"status": {"$in": ["lost", "found"]}}, {"_id": 0}).to_list(100)
+        
+        # Eger tablo bossa, AI mantigini gostermek icin mock data basilabilir:
+        if not items:
+            items = [
+                {"id": "L1", "type": "lost", "description": "Siyah renk iPhone 13 Pro Max", "location": "Havuz basi", "date": "2026-10-05"},
+                {"id": "L2", "type": "lost", "description": "Mavi camli, ince metal cerceveli gunes gozlugu", "location": "Lobi", "date": "2026-10-06"},
+                {"id": "F1", "type": "found", "description": "Koyu renkli, arka cami catlak bir akilli telefon", "location": "Genel Havuz", "date": "2026-10-06"},
+                {"id": "F2", "type": "found", "description": "Rayban marka renkli camli bir obje", "location": "Lobi wc", "date": "2026-10-06"},
+                {"id": "F3", "type": "found", "description": "Pembe cocuk oyuncagi", "location": "Restoran", "date": "2026-10-07"},
+            ]
+            
+        lost_items = [i for i in items if i.get("type") == "lost"]
+        found_items = [i for i in items if i.get("type") == "found"]
+        
+        if not lost_items or not found_items:
+            return {"success": True, "matches": [], "message": "Eslesme yapilacak yeterli kayit yok (Hem kayip hem bulunan lazim)."}
+
+        prompt = f"""
+        Sen Kozbeyli Konagi'nin Kayip Esya Eslestirme Uzmanisin (AI Matcher).
+        Klasik kelime aramasi yerine, Doğal Dil İşleme (NLP) yeteneğinle "Kayıp" bildirilen esyalarin tanimlariyla,
+        bulunan esyalarin tespit tanımlarını ANLAMSAL olarak kiyaslamani istiyorum.
+
+        Kayip Edilenler (Lost):
+        {json.dumps(lost_items, ensure_ascii=False, indent=2)}
+
+        Bulunanlar (Found):
+        {json.dumps(found_items, ensure_ascii=False, indent=2)}
+
+        Gorevin: Hangi Kayip esya (L), hangi bulunan esyayla (F) eşleşiyor olabilir? 
+        Aynı renktir, esanlamlıdır (örn. "gözlük" ile "camlı obje") veya aynı konumdandır gibi çıkarımlar yap.
+        Mantıklı eslesmeleri % cinsinden guven skoruyla (match_score) belirt. (Sadece %60 uzeri ihtimalleri raporla).
+        
+        Sadece JSON yolla:
+        {{
+           "matches": [
+               {{"lost_id": "L1", "found_id": "F1", "match_score": 90, "reason": "Siyah iPhone 13 ile Akilli Telefon ayni mekan, ve ozelik olarak uysuyor."}}
+           ]
+        }}
+        """
+
+        ai_resp = await get_chat_response("housekeeping", new_id(), prompt)
+        
+        import re
+        json_match = re.search(r'```(?:json)?(.*?)```', ai_resp, re.DOTALL)
+        res_str = json_match.group(1).strip() if json_match else ai_resp
+        match_data = json.loads(res_str)
+
+        return {
+            "success": True,
+            "lost_count": len(lost_items),
+            "found_count": len(found_items),
+            "matches": match_data.get("matches", [])
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Kayıp Eşya Eşleştirme hatası: {str(e)}")

@@ -1,15 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { getMessages, sendWhatsAppWebhook } from '../api';
+import { getMessages, sendWhatsAppWebhook, translateMessage } from '../api';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
-import { MessageCircle, Send, Phone, Instagram } from 'lucide-react';
+import { MessageCircle, Send, Phone, Instagram, Languages, Loader2, Sparkles } from 'lucide-react';
 
 export default function MessagesPage() {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [testForm, setTestForm] = useState({ from_number: '+905321234567', message: '', sender_name: 'Test Misafir' });
+
+  // Translation State
+  const [translatingId, setTranslatingId] = useState(null);
+  const [translations, setTranslations] = useState({});
+  const [replyContext, setReplyContext] = useState({});
 
   const load = () => {
     getMessages({ platform: filter !== 'all' ? filter : undefined })
@@ -24,6 +29,25 @@ export default function MessagesPage() {
     await sendWhatsAppWebhook(testForm);
     setTestForm({ ...testForm, message: '' });
     load();
+  };
+
+  const handleTranslate = async (msgId, messageText) => {
+    setTranslatingId(msgId);
+    try {
+      const context = replyContext[msgId] || '';
+      const res = await translateMessage({ message: messageText, hotel_context: context });
+      if (res.data.success) {
+        setTranslations({ ...translations, [msgId]: res.data.data });
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Ceviri sirasinda bir hata olustu.');
+    }
+    setTranslatingId(null);
+  };
+
+  const handleContextChange = (msgId, text) => {
+    setReplyContext({ ...replyContext, [msgId]: text });
   };
 
   return (
@@ -73,21 +97,83 @@ export default function MessagesPage() {
       <div className="space-y-3">
         {messages.map(msg => (
           <div key={msg.id} className="glass rounded-xl p-4" data-testid={`message-${msg.id}`}>
-            <div className="flex items-center gap-2 mb-2">
-              <Badge className={msg.platform === 'whatsapp' ? 'bg-green-500/20 text-green-400' : 'bg-pink-500/20 text-pink-400'}>
-                {msg.platform}
-              </Badge>
-              <span className="text-xs text-[#7e7e8a]">{msg.sender_name || msg.from_number || msg.sender}</span>
-              <span className="text-xs text-[#7e7e8a] ml-auto">{msg.created_at?.slice(11, 16)}</span>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Badge className={msg.platform === 'whatsapp' ? 'bg-green-500/20 text-green-400' : 'bg-pink-500/20 text-pink-400'}>
+                  {msg.platform}
+                </Badge>
+                <span className="text-xs text-[#7e7e8a]">{msg.sender_name || msg.from_number || msg.sender}</span>
+              </div>
+              <span className="text-xs text-[#7e7e8a]">{msg.created_at?.slice(11, 16)}</span>
             </div>
-            <div className="space-y-2">
+            
+            <div className="space-y-3">
+              {/* Original Message */}
               <div className="bg-white/5 rounded-lg p-3">
                 <p className="text-sm">{msg.message}</p>
+                
+                {/* AI Translate Button */}
+                {!msg.response && !translations[msg.id] && (
+                  <div className="mt-3 flex items-center justify-end border-t border-white/5 pt-2">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleTranslate(msg.id, msg.message)}
+                      disabled={translatingId === msg.id}
+                      className="h-7 text-xs text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
+                    >
+                      {translatingId === msg.id ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Languages className="w-3 h-3 mr-1" />}
+                      Gemini ile Cevir & Yanitla
+                    </Button>
+                  </div>
+                )}
               </div>
+
+              {/* Engine/Auto Response */}
               {msg.response && (
                 <div className="bg-[#C4972A]/5 border border-[#C4972A]/10 rounded-lg p-3 ml-6">
-                  <p className="text-xs text-[#C4972A]/60 mb-1">AI Yanit</p>
+                  <p className="text-xs text-[#C4972A]/60 mb-1">Bot Yaniti</p>
                   <p className="text-sm text-[#a9a9b2]">{msg.response}</p>
+                </div>
+              )}
+
+              {/* AI Translation & Smart Reply Section */}
+              {translations[msg.id] && !msg.response && (
+                <div className="bg-blue-500/5 border border-blue-500/20 rounded-lg p-3 ml-6 space-y-3">
+                  <div className="flex items-center gap-1.5 text-xs text-blue-400 font-medium pb-2 border-b border-blue-500/10">
+                    <Sparkles className="w-4 h-4" /> AI Ceviri & Akilli Yanit
+                    <Badge className="ml-2 bg-blue-500/20 text-blue-300 hover:bg-blue-500/20">{translations[msg.id].detected_language}</Badge>
+                  </div>
+                  
+                  <div>
+                    <p className="text-xs text-blue-300/70 mb-1">Turkce Cevirisi:</p>
+                    <p className="text-sm text-[#e5e5e8]">{translations[msg.id].translated_text}</p>
+                  </div>
+
+                  <div className="bg-[#1a1a22] p-2.5 rounded border border-white/5">
+                    <p className="text-xs text-blue-300/70 mb-1">AI'in Onerdigi Orijinal Dildeki Yanit:</p>
+                    <p className="text-sm text-green-400 font-medium">{translations[msg.id].suggested_reply}</p>
+                  </div>
+
+                  <div className="pt-2 border-t border-blue-500/10">
+                    <p className="text-xs text-[#7e7e8a] mb-1.5">Yaniti Yonlendir (Opsiyonel Baglam Ekle):</p>
+                    <div className="flex gap-2">
+                      <Input 
+                        value={replyContext[msg.id] || ''} 
+                        onChange={e => handleContextChange(msg.id, e.target.value)}
+                        placeholder="Örn: Erken check-in yapamayiz, odalar dolu de." 
+                        className="h-8 bg-black/20 border-white/5 text-xs"
+                      />
+                      <Button 
+                        size="sm"
+                        onClick={() => handleTranslate(msg.id, msg.message)}
+                        disabled={translatingId === msg.id}
+                        className="h-8 bg-blue-600 hover:bg-blue-700 text-white text-xs px-3"
+                      >
+                        {translatingId === msg.id ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Yeniden Uret'}
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

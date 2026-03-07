@@ -1,10 +1,14 @@
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 from typing import Optional
 from database import db
 from helpers import utcnow, new_id, clean_doc
-from models import TaskCreate, TaskUpdate, TaskStatus
+from models import TaskCreate, TaskUpdate, TaskStatus, TaskPriority
 
 router = APIRouter(tags=["tasks"])
+
+class AITaskRequest(BaseModel):
+    text: str
 
 
 @router.get("/tasks")
@@ -50,3 +54,50 @@ async def delete_task(task_id: str):
     if result.deleted_count == 0:
         raise HTTPException(404, "Gorev bulunamadi")
     return {"success": True}
+
+
+@router.post("/tasks/ai-auto-assign")
+async def ai_auto_assign_task(data: AITaskRequest):
+    """Metin tabanli ariza/talep bildirimlerini yapay zeka ile analiz et ve gorev olustur."""
+    from gemini_service import get_chat_response
+    import json
+    import re
+
+    prompt = f"""
+    Sen luks 'Kozbeyli Konagi' otelinin Operasyon Yapay Zekasisin.
+    Gelen su ariza/talep bildirimini metnini analiz et: "{data.text}"
+
+    Gorevi uygun departmana (teknik_servis, kat_hizmetleri, resepsiyon, mutfak, guvenlik) ata,
+    Onceligini (low, normal, high, urgent) belirle,
+    ve kisa bir aciklama ile tahmini onarım suresini yaz.
+
+    Lutfen SADECE asagidaki JSON formatinda sonuc don. (Markdown icinde)
+    {{
+      "title": "Analiz edilmis kisa baslik (Orn: 201 Nolu Oda Klima Arizasi)",
+      "description": "Detayli yorum ve tahmini cozum suresi.",
+      "assignee_role": "teknik_servis",
+      "priority": "urgent"
+    }}
+    """
+    try:
+        ai_response = await get_chat_response("Gorev Ata", new_id(), prompt)
+        json_match = re.search(r'```(?:json)?(.*?)```', ai_response, re.DOTALL)
+        res_str = json_match.group(1).strip() if json_match else ai_response
+        parsed_task = json.loads(res_str)
+
+        task = {
+            "id": new_id(),
+            "title": parsed_task.get("title", data.text[:50]),
+            "description": parsed_task.get("description", data.text),
+            "assignee_role": parsed_task.get("assignee_role", "general"),
+            "priority": parsed_task.get("priority", "normal"),
+            "status": TaskStatus.PENDING,
+            "source": "ai_auto",
+            "created_at": utcnow(),
+            "updated_at": utcnow(),
+        }
+        await db.tasks.insert_one(task)
+        return {"success": True, "task": clean_doc(task)}
+
+    except Exception as e:
+        return {"error": f"AI Gorev olustururken hata olustu: {str(e)}"}

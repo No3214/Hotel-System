@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { getMenuItems, createMenuItem, updateMenuItem, deleteMenuItem, getMenuCategories, createMenuCategory, updateMenuCategory, deleteMenuCategory, getMenuTheme, updateMenuTheme } from '../api';
+import { getMenuItems, createMenuItem, updateMenuItem, deleteMenuItem, getMenuCategories, createMenuCategory, updateMenuCategory, deleteMenuCategory, getMenuTheme, updateMenuTheme, getAIMenuEngineering } from '../api';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { Plus, Trash2, Edit2, Save, X, ExternalLink, Palette, UtensilsCrossed, ChevronDown, ChevronUp, Eye } from 'lucide-react';
+import { Plus, Trash2, Edit2, Save, X, ExternalLink, Palette, UtensilsCrossed, ChevronDown, ChevronUp, Eye, Sparkles, Loader2, TrendingUp, AlertTriangle } from 'lucide-react';
 
 const TABS = [
   { id: 'items', label: 'Menu Ogeleri', icon: UtensilsCrossed },
@@ -20,6 +20,11 @@ export default function MenuPage() {
   const [newItem, setNewItem] = useState(null);
   const [newCategory, setNewCategory] = useState(null);
   const [editingCat, setEditingCat] = useState(null);
+
+  // AI Menu Engineering State
+  const [aiReport, setAiReport] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [showAiPanel, setShowAiPanel] = useState(false);
 
   const loadData = async () => {
     try {
@@ -99,6 +104,16 @@ export default function MenuPage() {
 
   const publicUrl = `${window.location.origin}/menu`;
 
+  const handleRunAIAnalytics = async () => {
+    setAiLoading(true);
+    setShowAiPanel(true);
+    try {
+       const res = await getAIMenuEngineering();
+       if (res.data?.success) setAiReport(res.data.report);
+    } catch(e) { console.error("AI Engineering load error", e); }
+    setAiLoading(false);
+  };
+
   if (loading) return <div className="p-8"><div className="h-8 w-48 bg-white/5 rounded animate-pulse" /></div>;
 
   return (
@@ -122,11 +137,64 @@ export default function MenuPage() {
         </a>
       </div>
 
-      {/* Public URL */}
-      <div className="glass rounded-xl p-4 mb-6 flex items-center gap-3">
-        <span className="text-xs text-[#7e7e8a]">QR Menu URL:</span>
-        <code className="text-sm text-[#C4972A] bg-[#C4972A]/10 px-3 py-1 rounded-lg flex-1 truncate" data-testid="public-url">{publicUrl}</code>
+      {/* Public URL & AI Actions */}
+      <div className="flex gap-4 mb-6">
+        <div className="glass rounded-xl p-4 flex items-center gap-3 flex-1 flex-wrap">
+          <span className="text-xs text-[#7e7e8a]">QR Menu URL:</span>
+          <code className="text-sm text-[#C4972A] bg-[#C4972A]/10 px-3 py-1 rounded-lg truncate" data-testid="public-url">{publicUrl}</code>
+        </div>
+        <div className="glass rounded-xl p-4 border border-[#C4972A]/20 bg-[#C4972A]/5 flex items-center">
+          <Button 
+            onClick={handleRunAIAnalytics} 
+            disabled={aiLoading}
+            className="bg-[#C4972A] hover:bg-[#a87a1f] text-white whitespace-nowrap"
+          >
+            {aiLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
+            AI Menü Optimizasyonu
+          </Button>
+        </div>
       </div>
+
+      {/* AI Menu Engineering Panel */}
+      {showAiPanel && (
+        <div className="glass rounded-xl p-6 border border-[#C4972A]/30 mb-8 relative overflow-hidden animate-fade-in-up">
+           <div className="absolute top-0 right-0 w-64 h-64 bg-[#C4972A]/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
+           <div className="relative z-10 flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-[#C4972A] flex items-center gap-2">
+                 <Sparkles className="w-5 h-5" /> AI Executive Chef (Menu Engineering Matrix)
+              </h3>
+              <button onClick={() => setShowAiPanel(false)} className="text-[#7e7e8a] hover:text-white"><X className="w-4 h-4" /></button>
+           </div>
+           
+           {aiLoading ? (
+             <div className="flex items-center gap-3 text-[#7e7e8a] py-6 justify-center">
+                <Loader2 className="w-5 h-5 animate-spin text-[#C4972A]" /> 
+                <span>AI siparişleri, karlılık oranlarını ve anlık hava durumunu sentezliyor...</span>
+             </div>
+           ) : aiReport ? (
+             <div className="space-y-4 relative z-10">
+                <div className="bg-[#1a1a22]/80 border border-white/5 rounded-lg p-3 text-sm text-[#e5e5e8]">
+                   <p className="text-[#C4972A] mb-1 font-medium text-xs">Durum Tespiti & Şefin Yorumu</p>
+                   {aiReport.weather_context}
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                   <MatrixCard title="Yıldızlar (Stars)" icon={Sparkles} color="text-yellow-400" bg="bg-yellow-500/10" items={aiReport.stars} />
+                   <MatrixCard title="Bulmacalar (Puzzles)" icon={TrendingUp} color="text-blue-400" bg="bg-blue-500/10" items={aiReport.puzzles} />
+                   <MatrixCard title="Çiftçi Atları (Plowhorses)" icon={TrendingUp} color="text-emerald-400" bg="bg-emerald-500/10" items={aiReport.plowhorses} />
+                   <MatrixCard title="Köpekler (Dogs)" icon={AlertTriangle} color="text-red-400" bg="bg-red-500/10" items={aiReport.dogs} />
+                </div>
+                
+                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4 mt-2">
+                   <h4 className="text-emerald-400 text-sm font-bold mb-2">Aksiyon Planı</h4>
+                   <p className="text-sm text-[#e5e5e8] whitespace-pre-wrap">{aiReport.action_plan}</p>
+                </div>
+             </div>
+           ) : (
+              <div className="text-[#7e7e8a] text-sm text-center py-4">Rapor oluşturulamadı. Lütfen tekrar deneyin.</div>
+           )}
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6">
@@ -382,6 +450,24 @@ function ColorField({ label, value, onChange }) {
           className="bg-white/5 border-white/10 text-white text-xs h-7 mt-0.5"
         />
       </div>
+    </div>
+  );
+}
+
+function MatrixCard({ title, icon: Icon, color, bg, items }) {
+  return (
+    <div className={`glass rounded-xl p-4 hover:border-white/10 transition-colors ${bg}`}>
+      <h4 className={`text-sm font-bold flex items-center gap-2 mb-3 ${color}`}>
+        <Icon className="w-4 h-4" /> {title}
+      </h4>
+      <ul className="space-y-2 text-xs text-[#a9a9b2]">
+        {items && items.length > 0 ? items.map((item, i) => (
+          <li key={i} className="flex gap-2.5 items-start">
+             <span className="mt-1 w-1 h-1 rounded-full bg-white/30 shrink-0" />
+             <span className="leading-relaxed">{item}</span>
+          </li>
+        )) : <li>Listelenecek ürün yok.</li>}
+      </ul>
     </div>
   );
 }

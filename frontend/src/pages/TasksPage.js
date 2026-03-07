@@ -28,6 +28,9 @@ export default function TasksPage() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ title: '', description: '', priority: 'normal', assignee_role: '' });
 
+  const [aiText, setAiText] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+
   const load = () => {
     const params = filter !== 'all' ? { status: filter } : {};
     getTasks(params).then(r => setTasks(r.data.tasks)).catch(console.error).finally(() => setLoading(false));
@@ -41,6 +44,20 @@ export default function TasksPage() {
     setForm({ title: '', description: '', priority: 'normal', assignee_role: '' });
     setOpen(false);
     load();
+  };
+
+  const handleAIAutoAssign = async () => {
+    if (!aiText) return;
+    setAiLoading(true);
+    try {
+      await api.post('/tasks/ai-auto-assign', { text: aiText });
+      setAiText('');
+      load();
+    } catch(e) {
+      alert("AI Görev atarken hata oluştu!");
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   const handleStatusChange = async (id, status) => {
@@ -88,6 +105,31 @@ export default function TasksPage() {
             </div>
           </DialogContent>
         </Dialog>
+      </div>
+
+      {/* AI Smart Input */}
+      <div className="glass rounded-xl p-4 md:p-6 mb-6">
+         <div className="flex flex-col md:flex-row gap-4 items-center">
+            <div className="w-12 h-12 rounded-full bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
+               <AlertCircle className="w-6 h-6 text-indigo-400" />
+            </div>
+            <div className="flex-1 w-full">
+               <h3 className="text-[#e5e5e8] font-medium mb-1">Akıllı Görev Bildirimi</h3>
+               <p className="text-[#7e7e8a] text-sm mb-3">Arıza veya sorunu sadece metin olarak yazın, Yapay Zeka anlasın ve doğru departmana Aciliyet koduyla atasın.</p>
+               <div className="flex gap-2">
+                  <Input 
+                     placeholder='Örn: "201 Nolu odada klima su akıtıyor, hızlı müdahale lazım"' 
+                     value={aiText} 
+                     onChange={e => setAiText(e.target.value)} 
+                     className="bg-[#1a1a22] border-indigo-500/30 flex-1"
+                     onKeyDown={(e) => e.key === 'Enter' && handleAIAutoAssign()}
+                  />
+                  <Button onClick={handleAIAutoAssign} disabled={aiLoading || !aiText} className="bg-indigo-600 hover:bg-indigo-700 text-white whitespace-nowrap">
+                     {aiLoading ? 'İşleniyor...' : 'AI Analiz & Ata'}
+                  </Button>
+               </div>
+            </div>
+         </div>
       </div>
 
       {/* Filters */}

@@ -243,77 +243,111 @@ def _calc_nights(reservation: dict) -> int:
     return 1
 
 
-# ==================== FAZ 5: AI CRM & Loyalty Manager ====================
+# ==================== FAZ 18: AI CRM & Loyalty Manager ====================
 
-@router.get("/loyalty/ai-campaigns")
-async def generate_ai_loyalty_campaigns():
-    """Yapay zeka destegi ile yaklasik 1 yil once kalan veya dogum gunu/yildonumu yaklasan misafirleri tespit et"""
+@router.get("/loyalty/segments")
+async def get_loyalty_segments():
+    """
+    Sistemdeki gecmis misafirlere bakarak sadakat (loyalty) segmentleri olusturur.
+    VIP, Repeat Guest, Yaklasan Yildonumu ve Eski Dostlar (Churn Risk) ayrimi.
+    """
+    guests = await db.guests.find({}, {"_id": 0}).to_list(1000)
+    
+    segments = {
+        "vip": [],         
+        "repeat": [],      
+        "upcoming": [],    
+        "churn_risk": [],  
+    }
+    
+    from datetime import datetime
+    now = datetime.utcnow()
+    
+    for g in guests:
+        # 1. VIP Kontrolu
+        if g.get("vip", False):
+            segments["vip"].append(g)
+            
+        # 2. Repeat Kontrolu
+        stays = g.get("total_stays", 0)
+        if stays > 1:
+            segments["repeat"].append(g)
+            
+        # 3. Churn ve Upcoming Kontrolu islenecek (gerel bilgiler last_visit'te)
+        last_visit_raw = g.get("last_visit")
+        if stays == 1 and last_visit_raw:
+             try:
+                 co_date = datetime.strptime(last_visit_raw[:10], "%Y-%m-%d")
+                 days_since = (now - co_date).days
+                 if days_since > 365:
+                     g["last_visit_days_ago"] = days_since
+                     segments["churn_risk"].append(g)
+                 elif days_since < -5: # Gelecek rezervasyon (?)
+                     segments["upcoming"].append(g)
+             except:
+                 pass
+                 
+    return {
+        "success": True, 
+        "segments": {
+            k: sorted(v, key=lambda x: x.get("total_spent", 0), reverse=True) 
+            for k, v in segments.items()
+        }
+    }
+
+
+@router.post("/loyalty/ai-campaign")
+async def generate_ai_campaign(request: dict):
+    """
+    Belirli bir misafir veya segment icin AI destekli kisisellestirilmis SMS/E-Posta uretir.
+    request: { guest_name, segment, last_visit_info, special_note }
+    """
+    guest_name = request.get("guest_name", "Değerli Misafirimiz")
+    segment = request.get("segment", "repeat")
+    last_visit = request.get("last_visit_info", "")
+    note = request.get("special_note", "")
+    
+    from gemini_service import get_chat_response
+    import json
+    import re
+    from fastapi import HTTPException
+    
+    segment_context = {
+        "vip": "Bu misafirimiz otelimizin en önemli VIP konuklarından biridir. Saygılı ama son derece samimi, ayrıcalıklı ve lüks hissettiren bir dil kullan.",
+        "repeat": "Bu misafirimiz otelimize birden çok kez geldi. İçeride 'Aileden biri' olduğunu hissettir.",
+        "churn_risk": "Bu misafirimiz 1 yıldan uzun süredir bize gelmiyor. Onu özlediğimizi belirten ve tekrar gelmesi için küçük sürprizler (indirim/ikram) vadeden bir iletişim kur.",
+        "upcoming": "Bu misafirimizin yakında rezervasyonu var. Konaklaması öncesi heyecanını artıracak ve işine yarayacak ekstra bir hizmet teklif eden (Upsell - Örn: Spa, Masaj, Transfer) sıcak bir hava yarat."
+    }
+    
+    prompt = f"""
+    Sen Kozbeyli Konagi Butik Otelinin Misafir Iilişkileri (CRM) AI Direktörüsün.
+    Amacın misafire OTO-MESAJ (robotik) olduğunu %1 oranında bile hissettirmeden, tamamen ONA ÖZEL çok samimi ve sıcak bir kurgu oluşturmak.
+    
+    Misafir Adı: {guest_name}
+    Segment Stratejisi: {segment_context.get(segment, "")}
+    Ekstra Not / Geçmiş: {last_visit} - {note}
+    
+    Lütfen bu misafir için:
+    1. Kısa, samimi, SMS formatında bir metin (Max 2-3 cümle, uygun emojilerle)
+    2. Konu başlığı ile birlikte daha doyurucu ama yine samimi bir E-Posta Metni (Satır arası %15 indirim hediye ettiğimizi belirterek)
+    
+    Çıktıyı SADECE aşağıdaki JSON formatında ver (Markdown veya açıklama kullanma, doğrudan {{ ile başla):
+    
+    {{
+      "sms": "Örnek sms...",
+      "email_subject": "Örnek e-posta konusu",
+      "email_body": "Sevgili Ahmet Bey..."
+    }}
+    """
+    
     try:
-        from datetime import datetime, timedelta
-        import json
-        import logging
-        from gemini_service import get_chat_response
+        ai_resp = await get_chat_response("loyalty_campaign_gen", new_id(), prompt)
         
-        logger = logging.getLogger(__name__)
-        today = datetime.now()
+        json_match = re.search(r'```(?:json)?(.*?)```', ai_resp, re.DOTALL)
+        res_str = json_match.group(1).strip() if json_match else ai_resp
         
-        # Ornek Senaryo: Tam 1 yil onceki ay (veya +/- 1 ay) kalmis misafirler
-        one_year_ago_start = (today - timedelta(days=365+15)).strftime("%Y-%m-%d")
-        one_year_ago_end = (today - timedelta(days=365-15)).strftime("%Y-%m-%d")
-        
-        # Son 1 yilda hic gelmemis, AMA tam 1 yil once kalmis eski misafirler
-        past_res = await db.reservations.find({
-            "status": "checked_out",
-            "check_in": {"$gte": one_year_ago_start, "$lte": one_year_ago_end}
-        }, {"_id": 0}).to_list(10)
-        
-        if not past_res:
-            return {"campaigns": [], "message": "Bu donem icin hedef kitle bulunamadi."}
-            
-        campaigns = []
-        for res in past_res:
-            guest_name = res.get('guest_name', 'Degerli Misafirimiz')
-            nights = res.get('nights', 1)
-            room = res.get('room_type_name', 'Oda')
-            
-            prompt = f"""
-            Sen Kozbeyli Konagi'nin Luks Misafir Iliskileri AI Asistanisin (Loyalty Manager).
-            Asagidaki misafir tam 1 yil once {nights} gece {room} odasinda kalmisti. 
-            Amacimiz: Onlari bu yilki tatilleri (veya yildonumleri) icin tekrar otelimize davet etmek.
-            
-            Bana sunlari tasiyan saf bir JSON don:
-            {{
-               "subject": "E-posta/Mesaj Basligi",
-               "message": "Sicak, samimi ve kisisellestirilmis (Maks 3-4 cumle) hosgeldin mesaji. Icine %15 Sadakat indirimi koy."
-            }}
-            
-            Misafir: {guest_name}
-            Tarih: Gecen yil tam bu zamanlar
-            """
-            
-            try:
-                ai_response = await get_chat_response("Mesaji hazirla", new_id(), prompt)
-                import re
-                json_match = re.search(r'```(?:json)?(.*?)```', ai_response, re.DOTALL)
-                res_str = json_match.group(1).strip() if json_match else ai_response
-                parsed = json.loads(res_str)
-                
-                campaigns.append({
-                    "id": new_id(),
-                    "guest_id": res.get("guest_id"),
-                    "guest_name": guest_name,
-                    "guest_email": res.get("guest_email", ""),
-                    "guest_phone": res.get("guest_phone", ""),
-                    "reason": "1. Yil Donumu / Sadakat Hatirlatmasi",
-                    "subject": parsed.get("subject", "Sizi Ozledik!"),
-                    "message": parsed.get("message", "Gecen yilki ziyaretinizin ustunden 1 yil gecti. Sizi tekrar agirlamak isteriz."),
-                    "status": "draft"
-                })
-            except Exception as e:
-                logger.error(f"AI CRM hata (misafir: {guest_name}): {e}")
-                
-        return {"campaigns": campaigns, "count": len(campaigns)}
-        
+        parsed = json.loads(res_str)
+        return {"success": True, "campaign": parsed}
     except Exception as e:
-        return {"error": str(e)}
+         raise HTTPException(status_code=500, detail=f"AI Kampanya oluşturulamadı: {str(e)}")
 

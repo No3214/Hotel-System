@@ -297,3 +297,55 @@ async def get_kitchen_ai_forecast():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI analiz hatasi: {str(e)}")
 
+
+@router.get("/kitchen/ai-procurement")
+async def get_ai_procurement():
+    """Gemini ile Akilli Tedarik ve Satin Alma Otomasyonu (AI Smart Procurement) - Faz 8"""
+    try:
+        from gemini_service import get_chat_response
+        import json
+        
+        # Ornek Senaryo: Sistem depoda azalan urunleri veya "Predictive Kitchen" tahminini alir
+        # Biz burada cesitlilik olmasi adina statik bir analiz ornegi kullaniyoruz,
+        # gercek sistemde bu db.inventory.find({"stock": {"$lt": "$min_stock"}}) olabilir.
+        
+        mock_shortages = [
+            {"item": "Domates", "qty": "50 KG", "supplier": "Manav Ali Abi", "style": "samimi ve yoresel"},
+            {"item": "Sut", "qty": "20 Litre", "supplier": "Gursut Mandira", "style": "kurumsal ve resmi"},
+            {"item": "Kuzu Karkas", "qty": "2 Adet", "supplier": "Kasap Veli", "style": "samimi esnaf agzi"},
+            {"item": "Filtre Kahve", "qty": "5 Paket", "supplier": "Roastery Co.", "style": "profesyonel ve kibar"}
+        ]
+        
+        prompt = f"""
+        Sen Kozbeyli Konagi'nin satin alma mudurusun. Asagidaki eksik listesi icin 
+        tedarikcilere gonderilecek WhatsApp mesaj taslaklari hazirla. 
+        Her bir tedarikci icin istenen 'tarz' (style) yapisina uymalisin.
+        Mesajlarda otelin adini (Kozbeyli Konagi) ve siparisin kisa zamanda (yarin sabah) teslim edilmesini rica et.
+        
+        Eksikler:
+        {json.dumps(mock_shortages, ensure_ascii=False, indent=2)}
+        
+        Lutfen SADECE asagidaki JSON formatinda cevap don:
+        [
+          {{
+            "supplier": "Tedarikci Adi",
+            "item_summary": "Isteneceklerin kisa ozeti",
+            "whatsapp_draft": "Istenen tarza uygun WhatsApp mesaji metni..."
+          }}
+        ]
+        """
+        
+        ai_resp = await get_chat_response("procurement", new_id(), prompt)
+        
+        import re
+        json_match = re.search(r'```(?:json)?(.*?)```', ai_resp, re.DOTALL)
+        res_str = json_match.group(1).strip() if json_match else ai_resp
+        drafts = json.loads(res_str)
+        
+        return {
+            "success": True, 
+            "drafts": drafts
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Satin alma mesaji uretilemedi: {str(e)}")
+

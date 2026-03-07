@@ -28,6 +28,7 @@ export const getGuests = (params) => api.get('/guests', { params });
 export const createGuest = (data) => api.post('/guests', data);
 export const getGuest = (id) => api.get(`/guests/${id}`);
 export const updateGuest = (id, data) => api.patch(`/guests/${id}`, data);
+export const getAIComplaintRadar = () => api.get('/guests/ai-complaint-radar');
 
 // Reservations
 export const getReservations = (params) => api.get('/reservations', { params });
@@ -45,12 +46,14 @@ export const getEvents = (params) => api.get('/events', { params });
 export const createEvent = (data) => api.post('/events', data);
 export const updateEvent = (id, data) => api.patch(`/events/${id}`, data);
 export const deleteEvent = (id) => api.delete(`/events/${id}`);
+export const getAIEventPlan = (data) => api.post('/events/ai-planner', data);
 
 // Housekeeping
 export const getHousekeeping = (params) => api.get('/housekeeping', { params });
 export const createHousekeeping = (data) => api.post('/housekeeping', data);
 export const updateHousekeepingStatus = (id, status) => api.patch(`/housekeeping/${id}/status?status=${status}`);
 export const getHousekeepingAIRouting = () => api.get('/housekeeping/ai-routing');
+export const getAILostAndFoundMatch = () => api.post('/housekeeping/lost-found-match');
 
 // Staff
 export const getStaff = () => api.get('/staff');
@@ -70,8 +73,9 @@ export const clearChat = (sessionId) => api.delete(`/chatbot/session/${sessionId
 export const sendManagerCommand = (data) => api.post('/manager-ai/chat', data);
 
 // Messages (WhatsApp/Instagram)
-export const getMessages = (params) => api.get('/messages', { params });
-export const sendWhatsAppWebhook = (data) => api.post('/whatsapp/webhook', data);
+export const getMessages = (params) => api.get('/chatbot/messages', { params });
+export const sendWhatsAppWebhook = (data) => api.post('/chatbot/whatsapp/webhook', data);
+export const translateMessage = (data) => api.post('/messages/ai-translate', data);
 
 // Seed
 export const seedDatabase = () => api.post('/seed');
@@ -91,11 +95,17 @@ export const getAIShifts = (startDate) => api.get('/staff/ai-shifts', { params: 
 // Staff extended
 export const updateStaff = (id, data) => api.patch(`/staff/${id}`, data);
 export const deleteStaff = (id) => api.delete(`/staff/${id}`);
+export const getAIPerformance = (id) => api.get(`/staff/${id}/ai-performance`);
+export const getAIHRAnalytics = () => api.get('/staff/ai-hr-analytics');
 
 // Reservations extended
 export const getReservation = (id) => api.get(`/reservations/${id}`);
 export const updateReservation = (id, data) => api.patch(`/reservations/${id}`, data);
 export const deleteReservation = (id) => api.delete(`/reservations/${id}`);
+export const autoAllocateRooms = () => api.post('/reservations/ai-allocation');
+export const getAISmartRoomAllocation = () => api.post('/reservations/ai-allocation');
+export const getAIUpsellOpps = (id) => api.get(`/reservations/${id}/ai-upsell`);
+export const getAIGuestJourney = () => api.get('/reservations/ai-guest-journey');
 
 // Settings
 export const getSettings = () => api.get('/settings');
@@ -113,6 +123,7 @@ export const autoScheduleHousekeeping = () => api.post('/housekeeping/auto-sched
 
 // Hotel
 export const getHotelHistory = () => api.get('/hotel/history');
+export const getAILocalGuideItinerary = (data) => api.post('/hotel/guide/ai-itinerary', data);
 
 // Reviews
 export const getReviews = (params) => api.get('/reviews', { params });
@@ -122,11 +133,13 @@ export const updateReview = (id, data) => api.patch(`/reviews/${id}`, data);
 export const deleteReview = (id) => api.delete(`/reviews/${id}`);
 export const getReviewStats = () => api.get('/reviews/stats');
 export const getReviewAIAnalytics = () => api.get('/reviews/ai-analytics');
+export const getDeepSentiment = (id) => api.get(`/reviews/${id}/ai-sentiment`);
 
 // Dynamic Pricing
 export const calculatePrice = (roomId, date) => api.get(`/pricing/calculate?room_id=${roomId}&date=${date}`);
 export const getPriceRange = (roomId, start, end) => api.get(`/pricing/range?room_id=${roomId}&start_date=${start}&end_date=${end}`);
 export const getSeasons = () => api.get('/pricing/seasons');
+export const getAIMarketIntel = () => api.get('/revenue/ai-market-intel');
 export const getHolidays = () => api.get('/pricing/holidays');
 
 // Table Reservations
@@ -143,6 +156,8 @@ export const getLifecycleTemplate = (key) => api.get(`/lifecycle/templates/${key
 export const previewLifecycleMessage = (templateKey, reservationId) => api.post(`/lifecycle/preview?template_key=${templateKey}${reservationId ? `&reservation_id=${reservationId}` : ''}`);
 export const sendLifecycleMessage = (templateKey, reservationId, channel) => api.post(`/lifecycle/send?template_key=${templateKey}&reservation_id=${reservationId}&channel=${channel}`);
 export const getLifecycleHistory = (params) => api.get('/lifecycle/history', { params });
+export const getAIRetargetingCampaigns = () => api.get('/marketing/ai-re-engagement');
+export const getAIB2BLeads = (industry) => api.get('/marketing/b2b-leads', { params: industry ? { industry } : {} });
 
 // Automation
 export const runPaymentReminder = () => api.post('/automation/payment-reminder');
@@ -157,6 +172,7 @@ export const runEveningRoomCheck = () => api.post('/automation/evening-room-chec
 export const getScheduledJobs = () => api.get('/automation/scheduled-jobs');
 export const getGroupNotifications = (params) => api.get('/automation/group-notifications', { params });
 export const seedSampleEvents = () => api.post('/events/seed-samples');
+export const getEnergyAIReport = () => api.get('/automation/energy-ai');
 
 // Public Menu (no auth)
 export const getPublicMenu = () => axios.get(`${API_BASE}/api/public/menu`);
@@ -173,6 +189,7 @@ export const updateMenuCategory = (id, data) => api.patch(`/menu-admin/categorie
 export const deleteMenuCategory = (id) => api.delete(`/menu-admin/categories/${id}`);
 export const getMenuTheme = () => api.get('/menu-admin/theme');
 export const updateMenuTheme = (data) => api.patch('/menu-admin/theme', data);
+export const getAIMenuEngineering = () => api.get('/menu-admin/ai-engineering');
 
 // Social Media
 export const getSocialPosts = (params) => api.get('/social/posts', { params });
@@ -195,6 +212,7 @@ export const cancelKitchenOrder = (id) => api.delete(`/kitchen/orders/${id}`);
 export const getKitchenSummary = () => api.get('/kitchen/summary');
 export const getKitchenNotifications = () => api.get('/kitchen/notifications');
 export const getKitchenAIForecast = () => api.get('/kitchen/ai-forecast');
+export const getAiProcurementDrafts = () => api.get('/kitchen/ai-procurement');
 
 // Auth
 export const login = (data) => api.post('/auth/login', data);
@@ -241,6 +259,7 @@ export const getRevenueForecast = (dateFrom, dateTo) => api.get('/revenue/foreca
 export const getRevenueKPI = (dateFrom, dateTo) => api.get('/revenue/kpi', { params: { date_from: dateFrom, date_to: dateTo } });
 export const getPricingRules = () => api.get('/revenue/pricing/rules');
 export const getRevenueAIInsights = () => api.get('/revenue/ai-insights');
+export const simulateRevenueStrategy = (priceChangePercent) => api.post(`/revenue/ai-simulator?price_change_percent=${priceChangePercent}`);
 
 // Analytics
 export const getAnalyticsKPI = (dateFrom, dateTo) => api.get('/analytics/dashboard/kpi', { params: { date_from: dateFrom, date_to: dateTo } });
@@ -288,5 +307,20 @@ export const getExpenseList = (params) => api.get('/financials/expense', { param
 export const deleteFinancialRecord = (id) => api.delete(`/financials/${id}`);
 export const getDailySummary = (dateStr) => api.get(`/financials/daily/${dateStr}`);
 export const getMonthlySummary = (year, month) => api.get('/financials/monthly', { params: { year, month } });
+export const getFinancialAudit = (year, month) => api.get('/financials/ai-audit', { params: { year, month } });
+export const getFinancialForecast = () => api.get('/financials/ai-forecast');
+export const getVendorROIAnalysis = (monthsBack) => api.get('/financials/ai-vendor-roi', { params: { months_back: monthsBack || 6 } });
+
+// CRM / B2B Pipeline
+export const getDeals = () => api.get('/crm/deals');
+export const createDeal = (data) => api.post('/crm/deals', data);
+export const updateDealStatus = (id, status) => api.put(`/crm/deals/${id}/status`, { status });
+export const deleteDeal = (id) => api.delete(`/crm/deals/${id}`);
+export const simulateAILeadDiscovery = () => api.post('/crm/ai-lead-discovery');
+export const getAIPitch = (dealId) => api.get(`/crm/deals/${dealId}/ai-pitch`);
+
+// Loyalty & VIP
+export const getLoyaltySegments = () => api.get('/loyalty/segments');
+export const generateLoyaltyAICampaign = (data) => api.post('/loyalty/ai-campaign', data);
 
 export default api;
