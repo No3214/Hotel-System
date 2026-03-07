@@ -72,7 +72,7 @@ async def get_performance(campaign_id: Optional[str] = None):
 async def create_campaign(data: CampaignCreateRequest):
     """Yeni kampanya olustur"""
     from services.meta_ads_service import create_campaign
-    result = await create_campaign(data.dict())
+    result = await create_campaign(data.model_dump())
     return result
 
 

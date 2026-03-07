@@ -70,7 +70,7 @@ async def get_ad_formats():
 async def create_campaign(data: GoogleCampaignCreate):
     """Yeni kampanya olustur"""
     from services.google_ads_service import create_google_campaign
-    result = await create_google_campaign(data.dict())
+    result = await create_google_campaign(data.model_dump())
     return result
 
 
@@ -91,7 +91,7 @@ async def list_campaigns(status: Optional[str] = None, campaign_type: Optional[s
 async def update_campaign(data: GoogleCampaignUpdate):
     """Kampanya guncelle"""
     from services.google_ads_service import update_google_campaign
-    updates = {k: v for k, v in data.dict().items() if v is not None and k != "campaign_id"}
+    updates = {k: v for k, v in data.model_dump().items() if v is not None and k != "campaign_id"}
     result = await update_google_campaign(data.campaign_id, updates)
     if "error" in result:
         raise HTTPException(404, result["error"])
@@ -102,7 +102,7 @@ async def update_campaign(data: GoogleCampaignUpdate):
 async def add_ad(data: GoogleAdCreate):
     """Kampanyaya reklam ekle"""
     from services.google_ads_service import add_ad_to_campaign
-    result = await add_ad_to_campaign(data.campaign_id, data.dict())
+    result = await add_ad_to_campaign(data.campaign_id, data.model_dump())
     return result
 
 

@@ -58,7 +58,7 @@ async def analyze_review(data: ReviewAnalyzeRequest):
 async def add_review(data: ReviewAddRequest):
     """Yeni degerlendirme ekle"""
     from services.reputation_service import add_review_to_db
-    result = await add_review_to_db(data.dict())
+    result = await add_review_to_db(data.model_dump())
     return result
 
 

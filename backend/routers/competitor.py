@@ -2,7 +2,7 @@
 Kozbeyli Konagi - Rakip Analizi Router
 Rakip otellerin takibi, karsilastirma, SWOT analizi
 """
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List
 
@@ -46,7 +46,6 @@ async def analyze_competitor(competitor_id: str):
     if not comp:
         comp = COMPETITORS.get(competitor_id)
     if not comp:
-        from fastapi import HTTPException
         raise HTTPException(404, "Rakip bulunamadi")
     return await do_analyze(comp)
 

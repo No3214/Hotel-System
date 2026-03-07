@@ -67,6 +67,23 @@ app = FastAPI(title="Kozbeyli Konagi API")
 api = APIRouter(prefix="/api")
 
 
+# ==================== GLOBAL ERROR HANDLER ====================
+from fastapi import Request
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Catch all unhandled exceptions and return proper JSON error."""
+    logger.error(f"Unhandled error on {request.method} {request.url.path}: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "Sunucu hatasi olustu. Lutfen tekrar deneyin.",
+            "error_type": type(exc).__name__,
+        },
+    )
+
+
 # ==================== HEALTH ====================
 
 @api.get("/health")
