@@ -1,5 +1,7 @@
 from fastapi import FastAPI, APIRouter
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
+from starlette.responses import FileResponse
 from dotenv import load_dotenv
 from pathlib import Path
 import logging
@@ -240,6 +242,41 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ==================== FRONTEND STATIC FILES ====================
+
+FRONTEND_DIR = Path(__file__).parent / "static_frontend"
+
+if FRONTEND_DIR.exists() and (FRONTEND_DIR / "index.html").exists():
+    # Serve static assets (JS, CSS, images) from /static subdir
+    static_dir = FRONTEND_DIR / "static"
+    if static_dir.exists():
+        app.mount("/static", StaticFiles(directory=str(static_dir)), name="frontend-static")
+
+    # Serve other build assets (manifest, icons, etc.)
+    @app.get("/manifest.json")
+    async def manifest():
+        return FileResponse(str(FRONTEND_DIR / "manifest.json"))
+
+    @app.get("/favicon.ico")
+    async def favicon():
+        fav = FRONTEND_DIR / "favicon.ico"
+        if fav.exists():
+            return FileResponse(str(fav))
+        return JSONResponse(status_code=404, content={"detail": "Not found"})
+
+    # SPA catch-all: any non-API route serves index.html
+    @app.get("/{path:path}")
+    async def serve_spa(path: str):
+        # Try to serve actual file first (e.g. logo, robots.txt)
+        file_path = (FRONTEND_DIR / path).resolve()
+        if path and file_path.is_relative_to(FRONTEND_DIR.resolve()) and file_path.exists() and file_path.is_file():
+            return FileResponse(str(file_path))
+        # Otherwise serve index.html for SPA routing
+        return FileResponse(str(FRONTEND_DIR / "index.html"))
+else:
+    logger.warning("Frontend build not found at %s - serving API only", FRONTEND_DIR)
 
 
 @app.on_event("startup")
