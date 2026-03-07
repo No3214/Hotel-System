@@ -110,14 +110,19 @@ async def health():
         "celery_broker": "configured" if os.environ.get("CELERY_BROKER_URL") else "using_default",
     }
 
-    # Count collections
+    # Count collections (parallel)
     try:
+        import asyncio
+        rooms_c, res_c, guests_c, social_c, tasks_c = await asyncio.gather(
+            db.rooms.count_documents({}),
+            db.reservations.count_documents({}),
+            db.guests.count_documents({}),
+            db.social_posts.count_documents({}),
+            db.tasks.count_documents({}),
+        )
         collections_stats = {
-            "rooms": await db.rooms.count_documents({}),
-            "reservations": await db.reservations.count_documents({}),
-            "guests": await db.guests.count_documents({}),
-            "social_posts": await db.social_posts.count_documents({}),
-            "tasks": await db.tasks.count_documents({}),
+            "rooms": rooms_c, "reservations": res_c, "guests": guests_c,
+            "social_posts": social_c, "tasks": tasks_c,
         }
     except Exception:
         collections_stats = {}
