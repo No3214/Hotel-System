@@ -46,7 +46,9 @@ from routers.proposals import router as proposals_router
 from routers.manager_ai import router as manager_ai_router
 from routers.marketing import router as marketing_router
 from routers.crm import router as crm_router
-
+from routers.revenue import router as revenue_router
+from routers.financials import router as financials_router
+from routers.kitchen import router as kitchen_router
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
@@ -132,7 +134,9 @@ api.include_router(proposals_router)
 api.include_router(manager_ai_router)
 api.include_router(marketing_router)
 api.include_router(crm_router)
-
+api.include_router(revenue_router)
+api.include_router(financials_router)
+api.include_router(kitchen_router)
 app.include_router(api)
 
 app.add_middleware(

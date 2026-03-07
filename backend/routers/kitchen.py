@@ -262,7 +262,9 @@ async def get_kitchen_ai_forecast():
         
         context = "Son 7 gunun en cok satan urunleri:\n"
         for item in recent_items:
-            context += f"- {item['_id']}: {item['count']} porsiyon\n"
+            item_name = item.get('_id', item.get('item', 'Bilinmeyen'))
+            item_count = item.get('count', item.get('quantity', 0))
+            context += f"- {item_name}: {item_count} porsiyon\n"
             
         system_prompt = """
         Sen Kozbeyli Konagi'nin yapay zeka destekli Executive Chef'i ve Envanter Yöneticisisin (Smart Kitchen).
@@ -279,11 +281,11 @@ async def get_kitchen_ai_forecast():
         }
         """
         
+        full_prompt = system_prompt + "\n\n" + context
         response_text = await get_chat_response(
             message="Yarin icin mutfak taleplerini tahmin et ve hazirlik onerileri sun.",
             session_id=new_id(),
-            system_prompt=system_prompt,
-            context=context
+            system_prompt=full_prompt
         )
         
         import json
