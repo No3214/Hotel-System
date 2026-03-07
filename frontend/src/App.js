@@ -4,7 +4,8 @@ import {
   LayoutDashboard, BedDouble, Users, MessageCircle, CheckSquare,
   Calendar, Sparkles, BookOpen, UtensilsCrossed, Menu, ChevronLeft,
   CalendarCheck, UserCog, Mail, MapPin, Settings, Star, Heart, LogOut, QrCode, Share2,
-  Globe, Bell, FileText, Target, TrendingUp, Search, BarChart3, Eye
+  Globe, Bell, FileText, Target, TrendingUp, Search, BarChart3, Eye,
+  DollarSign, Tags
 } from 'lucide-react';
 
 import { setAuthToken, getMe } from './api';
@@ -44,6 +45,11 @@ const MarketingHubPage = lazy(() => import('./pages/MarketingHubPage'));
 const PresenceMonitorPage = lazy(() => import('./pages/PresenceMonitorPage'));
 const SEOPage = lazy(() => import('./pages/SEOPage'));
 const CompetitorPage = lazy(() => import('./pages/CompetitorPage'));
+const FinancialsPage = lazy(() => import('./pages/FinancialsPage'));
+const KitchenPage = lazy(() => import('./pages/KitchenPage'));
+const MenuPage = lazy(() => import('./pages/MenuPage'));
+const PricingPage = lazy(() => import('./pages/PricingPage'));
+const RevenueManagementPage = lazy(() => import('./pages/RevenueManagementPage'));
 
 const NAV_CONFIG = [
   {
@@ -83,6 +89,15 @@ const NAV_CONFIG = [
       { id: 'organization', nameKey: 'organization', icon: Heart },
       { id: 'proposals', nameKey: 'proposals', icon: FileText },
       { id: 'event_leads', nameKey: 'event_leads', icon: Target },
+      { id: 'kitchen', nameKey: 'kitchen', icon: UtensilsCrossed },
+    ],
+  },
+  {
+    labelKey: 'finance',
+    items: [
+      { id: 'financials', nameKey: 'financials', icon: DollarSign },
+      { id: 'pricing', nameKey: 'pricing', icon: Tags },
+      { id: 'revenue', nameKey: 'revenue', icon: TrendingUp },
     ],
   },
   {
@@ -140,6 +155,11 @@ const PAGES = {
   presence_monitor: PresenceMonitorPage,
   seo: SEOPage,
   competitor: CompetitorPage,
+  financials: FinancialsPage,
+  kitchen: KitchenPage,
+  menu: MenuPage,
+  pricing: PricingPage,
+  revenue: RevenueManagementPage,
 };
 
 export default function App() {

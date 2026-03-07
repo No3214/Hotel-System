@@ -38,6 +38,8 @@ const FALLBACK_TR = {
   hotelrunner: "HotelRunner", integrations: "Entegrasyonlar",
   marketing_hub: "Pazarlama", event_leads: "Etkinlik Leadleri",
   presence_monitor: "Online Varlik", seo: "SEO Yonetimi", competitor: "Rakip Analizi",
+  financials: "Gelir/Gider", kitchen: "Mutfak", pricing: "Fiyatlandirma",
+  revenue: "Gelir Yonetimi", finance: "Finans",
 };
 
 export function LanguageProvider({ children }) {
