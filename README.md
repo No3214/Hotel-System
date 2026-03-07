@@ -48,7 +48,6 @@
   - DeepSeek API
   - Google Gemini API
   - OpenRouter API
-  - Emergent Universal Key (embedding için)
 
 ### Frontend
 - **React 19** - UI framework
@@ -83,7 +82,6 @@ Tüm LLM API anahtarları `/app/backend/.env` dosyasında tanımlı:
 - DEEPSEEK_API_KEY  
 - GOOGLE_API_KEY
 - OPENROUTER_API_KEY
-- EMERGENT_LLM_KEY
 
 ---
 
@@ -206,9 +204,7 @@ POST /api/search/semantic?query={text}&limit={10}
    ↓
 6. OPENROUTER - Kalite Kontrolü (5-10 sn)
    ↓
-7. EMERGENT - Embedding Oluşturma (semantic search)
-   ↓
-8. Sonuç: Bilgi Öğeleri + Görevler
+7. Sonuç: Bilgi Öğeleri + Görevler
 ```
 
 **Toplam İşlem Süresi**: ~40-60 saniye (doküman boyutuna göre)
